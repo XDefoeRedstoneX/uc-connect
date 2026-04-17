@@ -34,6 +34,16 @@ git push -u origin main
 4. Root directory: project root (`stitch_uc_connect` if monorepo; otherwise repository root).
 5. Leave build command empty.
 
+### 2.1) Set Node.js Version (Required)
+In Vercel Dashboard:
+1. Open your project > `Settings` > `General`.
+2. Find `Node.js Version`.
+3. Set it to `20.x`.
+4. Save changes, then redeploy.
+
+If this is left on `24.x`, deployment can fail with:
+`Found invalid Node.js Version: "24.x"`.
+
 ### 3) Environment Variables in Vercel
 Set these in Project Settings > Environment Variables:
 - `NODE_ENV=production`
