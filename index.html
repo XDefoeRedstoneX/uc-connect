@@ -1,0 +1,269 @@
+﻿<!DOCTYPE html>
+<html lang="id" class="light">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>UC-Connect | Student Business Directory</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        colors: {
+          background: '#f8f9ff',
+          surface: '#f8f9ff',
+          'surface-container-low': '#eff4ff',
+          'surface-container-lowest': '#ffffff',
+          'surface-container-high': '#dee9fc',
+          'surface-container-highest': '#d9e3f6',
+          primary: '#00236f',
+          'primary-container': '#1e3a8a',
+          secondary: '#2b6954',
+          'secondary-container': '#adedd3',
+          'on-surface': '#121c2a',
+          'on-surface-variant': '#444651',
+          'on-primary': '#ffffff',
+          'on-secondary-container': '#306d58',
+          'outline-variant': '#c5c5d3'
+        },
+        fontFamily: {
+          headline: ['Manrope'],
+          body: ['Inter']
+        },
+        borderRadius: {
+          DEFAULT: '0.125rem',
+          lg: '0.25rem',
+          xl: '0.5rem',
+          full: '0.75rem'
+        }
+      }
+    }
+  };
+</script>
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  .font-headline { font-family: 'Manrope', sans-serif; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+</style>
+</head>
+<body class="bg-background text-on-surface antialiased">
+<nav class="fixed top-0 z-50 w-full bg-[#f8f9ff]/80 backdrop-blur-xl border-b border-white/50">
+  <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
+    <a class="font-headline text-xl font-extrabold tracking-tight text-primary" href="/">UC-Connect</a>
+    <div class="hidden items-center gap-8 md:flex">
+      <a class="font-medium text-primary" href="/#directory">Directory</a>
+      <a class="font-medium text-on-surface-variant hover:text-primary" href="/community">Community</a>
+      <a class="font-medium text-on-surface-variant hover:text-primary" href="/profile">Profile</a>
+      <a class="font-medium text-on-surface-variant hover:text-primary" href="/login">Login</a>
+    </div>
+    <a class="rounded-md bg-primary px-5 py-2 text-sm font-semibold text-on-primary transition-transform active:scale-95" href="/directory">Browse Vendors</a>
+  </div>
+</nav>
+
+<main class="pt-24">
+  <section class="relative overflow-hidden px-6 py-16 lg:py-24">
+    <div class="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+      <div>
+        <p class="mb-4 inline-flex items-center gap-2 rounded-full bg-secondary-container px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-on-secondary-container">
+          <span class="material-symbols-outlined text-sm">verified</span>
+          Verified student vendors
+        </p>
+        <h1 class="font-headline text-5xl font-extrabold leading-[1.05] tracking-tight text-primary lg:text-7xl">
+          Find student businesses, fast.
+        </h1>
+        <p class="mt-6 max-w-2xl text-lg leading-relaxed text-on-surface-variant lg:text-xl">
+          UC-Connect is a usable directory for discovering local student vendors, joining forum discussions, and managing your profile without dead ends.
+        </p>
+        <div class="mt-10 flex flex-col gap-3 sm:flex-row">
+          <a class="rounded-md bg-primary px-6 py-3 text-center font-semibold text-on-primary transition-transform active:scale-95" href="/directory">Explore directory</a>
+          <a class="rounded-md bg-surface-container-low px-6 py-3 text-center font-semibold text-primary transition-transform active:scale-95" href="/community">Join the forum</a>
+        </div>
+        <div class="mt-10 grid max-w-xl grid-cols-3 gap-4 text-sm">
+          <div class="rounded-xl bg-surface-container-lowest p-4">
+            <div class="text-2xl font-bold text-primary">40+</div>
+            <div class="mt-1 text-on-surface-variant">vendors listed</div>
+          </div>
+          <div class="rounded-xl bg-surface-container-lowest p-4">
+            <div class="text-2xl font-bold text-primary">12</div>
+            <div class="mt-1 text-on-surface-variant">business categories</div>
+          </div>
+          <div class="rounded-xl bg-surface-container-lowest p-4">
+            <div class="text-2xl font-bold text-primary">100%</div>
+            <div class="mt-1 text-on-surface-variant">verified entries</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-2xl bg-surface-container-lowest p-5 shadow-[0_24px_80px_rgba(0,35,111,0.08)]">
+        <div class="rounded-xl bg-surface-container-low p-4">
+          <label class="mb-2 block text-xs font-bold uppercase tracking-[0.2em] text-on-surface-variant">Quick search</label>
+          <div class="flex gap-3">
+            <input id="home-search" class="min-w-0 flex-1 rounded-md border-0 bg-white px-4 py-3 text-sm text-on-surface shadow-sm outline-none ring-1 ring-transparent transition focus:ring-primary/20" placeholder="Search bakery, design, event..." type="search"/>
+            <button id="search-action" class="rounded-md bg-primary px-5 py-3 text-sm font-semibold text-on-primary">Search</button>
+          </div>
+          <p class="mt-3 text-xs text-on-surface-variant">Try the live filter below or jump directly to a page.</p>
+        </div>
+
+        <div class="mt-5 grid gap-3 sm:grid-cols-2">
+          <a class="rounded-xl bg-primary p-4 text-on-primary" href="/login">
+            <div class="text-xs uppercase tracking-[0.2em] text-on-primary/70">Account</div>
+            <div class="mt-2 font-headline text-lg font-bold">Login or register</div>
+          </a>
+          <a class="rounded-xl bg-secondary p-4 text-on-primary" href="/vendor/bite-bliss-bakery">
+            <div class="text-xs uppercase tracking-[0.2em] text-on-primary/70">Featured vendor</div>
+            <div class="mt-2 font-headline text-lg font-bold">Bite &amp; Bliss Bakery</div>
+          </a>
+          <a class="rounded-xl bg-surface-container-low p-4 text-primary" href="/profile">
+            <div class="text-xs uppercase tracking-[0.2em] text-on-surface-variant">Customer</div>
+            <div class="mt-2 font-headline text-lg font-bold">Open profile</div>
+          </a>
+          <a class="rounded-xl bg-surface-container-low p-4 text-primary" href="/admin">
+            <div class="text-xs uppercase tracking-[0.2em] text-on-surface-variant">Admin</div>
+            <div class="mt-2 font-headline text-lg font-bold">Control panel</div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="px-6 pb-8">
+    <div class="mx-auto flex max-w-7xl flex-wrap gap-3" id="filters">
+      <button class="filter-btn rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-on-primary" data-filter="all">All</button>
+      <button class="filter-btn rounded-full bg-surface-container-low px-5 py-2.5 text-sm font-medium text-on-surface-variant" data-filter="food">Food</button>
+      <button class="filter-btn rounded-full bg-surface-container-low px-5 py-2.5 text-sm font-medium text-on-surface-variant" data-filter="creative">Creative</button>
+      <button class="filter-btn rounded-full bg-surface-container-low px-5 py-2.5 text-sm font-medium text-on-surface-variant" data-filter="event">Event</button>
+      <button class="filter-btn rounded-full bg-surface-container-low px-5 py-2.5 text-sm font-medium text-on-surface-variant" data-filter="daily">Daily</button>
+    </div>
+  </section>
+
+  <section id="directory" class="px-6 py-10 lg:py-16">
+    <div class="mx-auto max-w-7xl">
+      <div class="mb-8 flex items-end justify-between gap-4">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-[0.22em] text-primary">Featured vendors</p>
+          <h2 class="mt-2 font-headline text-3xl font-bold text-on-surface">Start with the most useful pages</h2>
+        </div>
+        <a class="text-sm font-semibold text-primary" href="/directory">View full directory</a>
+      </div>
+
+      <div id="vendor-grid" class="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <a class="vendor-card group rounded-xl bg-surface-container-lowest overflow-hidden" data-tags="food breakfast" href="/vendor/bite-bliss-bakery">
+          <img class="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTDftmU3isio0oWqtsO7pKK-35uu_XbtgEgEffX_pG_rS1DNcGLVBLRIQ1hXLDlyahvGvTijqhBd2RtttnNWB9UPpsE23p7RvElScIM0CErCzPe-Ny9mutWHLsYRIBlE8CNqp9fF6q0sZEV35o5KHveCKl3sytXEZVZHOXRRUC3muRpsHe1JaAup46F4km0wZ7ndjOnbwcRD8KzzBNCsYLR9ka_Zy4yFiJwZFgeCfoCDQvlPwXZNYsesWtcDFTQDDSu9WEgDwmCCqe" alt="Bite and Bliss Bakery"/>
+          <div class="p-5">
+            <div class="flex items-center justify-between gap-3">
+              <h3 class="font-headline text-lg font-bold text-on-surface">Bite &amp; Bliss Bakery</h3>
+              <span class="rounded-full bg-secondary-container px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-on-secondary-container">Verified</span>
+            </div>
+            <p class="mt-2 text-sm text-on-surface-variant">Food and beverage, within 5 km</p>
+          </div>
+        </a>
+
+        <a class="vendor-card group rounded-xl bg-surface-container-lowest overflow-hidden" data-tags="creative design" href="/directory">
+          <img class="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCZfh4_G3IgXViDkSTnuWoaqsrS3xWbMzaICo1zdhmWz5Vv0rFFwOTKFQy7I1h08xnH-RmIVXmFtMIyhx8SFPNdkfE3b_7hjZsJ4o1aC1HxNihk8V-_YsR65miQsF4VHBWscD0zbasN6ZyWldA0ybI7witiDMWMcZAmSAqAxBs2vP7rfopNI1b6UNcUDkafmgc3pw9F1zsL3w8tzzriDw9RfZlsqsgtHFz-qCx2n8YKrzGOMS0N2mOzYfPqC8I4iJ2VSvNojZZT2G-" alt="Frame Focus Studio"/>
+          <div class="p-5">
+            <div class="flex items-center justify-between gap-3">
+              <h3 class="font-headline text-lg font-bold text-on-surface">Frame Focus Studio</h3>
+              <span class="rounded-full bg-secondary-container px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-on-secondary-container">Verified</span>
+            </div>
+            <p class="mt-2 text-sm text-on-surface-variant">Creative services and brand support</p>
+          </div>
+        </a>
+
+        <a class="vendor-card group rounded-xl bg-surface-container-lowest overflow-hidden" data-tags="event" href="/community">
+          <img class="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDj6vDT4irxO3rvsTjy9rP4A6qFtT1VkIvyEGfpUUXh3NmEFe_w7GRpYLq-XWu0jRUzZNEIW9HZwyv2YhesopntAnSygvkOGyp7YsBl1NIRcOot6EH5TN3pXm22dEKlVVqPbY1Q4ok0BW_dxE5p_IM5xSXkm_Cgsmfe4KV8GFcIF4YLtUdD7ZNknS8-np6SDj1ukEHhDmJ22pQ-W-ylTdu_siLfawdKjPiXNsHpS8SlpWSS-hXHKnvF-aVlGnJofCnICNcxNm_XfB83" alt="Bloom Events"/>
+          <div class="p-5">
+            <div class="flex items-center justify-between gap-3">
+              <h3 class="font-headline text-lg font-bold text-on-surface">Bloom Events</h3>
+              <span class="rounded-full bg-secondary-container px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-on-secondary-container">Verified</span>
+            </div>
+            <p class="mt-2 text-sm text-on-surface-variant">Event support and celebration packages</p>
+          </div>
+        </a>
+
+        <a class="vendor-card group rounded-xl bg-surface-container-lowest overflow-hidden" data-tags="daily essentials" href="/profile">
+          <img class="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxjB6IDz0VrZGx_nje5WnW-rWR8dftq1onRdwr-EI5XbDmqNAa1G3HcJge5mkIyvjiiyaMylIj_2hwKFx5Q_j3Qax6ZT52FvISZXAd2Gtn_bZnAw2JbpeXwoTeekjJufcV2NtuUjRkUFMoDDGrhb3FyQfo1dgSe1_Di9J_bkDMJf38exPqHb9RYnr2n0AlCjsNSsfmw2iejSxrro7htB4HoKoM9xy4SffzLdkJh_tEnlJl0X4Xaawf0i54-5JSQkJ45PY6BJrSiTtG" alt="Daily Dose Cafe"/>
+          <div class="p-5">
+            <div class="flex items-center justify-between gap-3">
+              <h3 class="font-headline text-lg font-bold text-on-surface">Daily Dose Cafe</h3>
+              <span class="rounded-full bg-secondary-container px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-on-secondary-container">Verified</span>
+            </div>
+            <p class="mt-2 text-sm text-on-surface-variant">Daily essentials and student hangout</p>
+          </div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="px-6 py-10 lg:py-16">
+    <div class="mx-auto grid max-w-7xl gap-6 lg:grid-cols-3">
+      <a class="rounded-2xl bg-primary p-8 text-on-primary" href="/login">
+        <div class="text-xs uppercase tracking-[0.22em] text-on-primary/70">Account flow</div>
+        <div class="mt-3 font-headline text-2xl font-bold">Sign in or create an account</div>
+        <p class="mt-3 text-sm text-on-primary/80">Use the combined auth screen for login and signup.</p>
+      </a>
+      <a class="rounded-2xl bg-surface-container-lowest p-8 text-primary" href="/community">
+        <div class="text-xs uppercase tracking-[0.22em] text-on-surface-variant">Community</div>
+        <div class="mt-3 font-headline text-2xl font-bold">Open the discussion forum</div>
+        <p class="mt-3 text-sm text-on-surface-variant">Browse local recommendations and questions.</p>
+      </a>
+      <a class="rounded-2xl bg-secondary p-8 text-on-primary" href="/vendor/dashboard">
+        <div class="text-xs uppercase tracking-[0.22em] text-on-primary/70">Vendor tools</div>
+        <div class="mt-3 font-headline text-2xl font-bold">Manage a vendor dashboard</div>
+        <p class="mt-3 text-sm text-on-primary/80">Review orders, promos, and store activity.</p>
+      </a>
+    </div>
+  </section>
+</main>
+
+<footer class="border-t border-white/60 bg-surface-container-low px-6 py-10">
+  <div class="mx-auto flex max-w-7xl flex-col gap-6 md:flex-row md:items-center md:justify-between">
+    <div>
+      <div class="font-headline text-lg font-bold text-primary">UC-Connect</div>
+      <p class="mt-2 max-w-xl text-sm text-on-surface-variant">A usable static site for discovering student businesses, community threads, and profile flows.</p>
+    </div>
+    <div class="flex flex-wrap gap-4 text-sm font-medium">
+      <a class="text-primary" href="/directory">Directory</a>
+      <a class="text-primary" href="/community">Community</a>
+      <a class="text-primary" href="/login">Login</a>
+      <a class="text-primary" href="/profile">Profile</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const searchInput = document.getElementById('home-search');
+  const searchAction = document.getElementById('search-action');
+  const filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
+  const cards = Array.from(document.querySelectorAll('.vendor-card'));
+
+  function applyFilter(filter) {
+    const query = (searchInput.value || '').trim().toLowerCase();
+    cards.forEach((card) => {
+      const tags = (card.dataset.tags || '').toLowerCase();
+      const text = card.textContent.toLowerCase();
+      const matchesFilter = filter === 'all' || tags.includes(filter);
+      const matchesQuery = !query || text.includes(query) || tags.includes(query);
+      card.style.display = matchesFilter && matchesQuery ? '' : 'none';
+    });
+  }
+
+  filterButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      filterButtons.forEach((item) => {
+        item.classList.remove('bg-primary', 'text-on-primary');
+        item.classList.add('bg-surface-container-low', 'text-on-surface-variant');
+      });
+      button.classList.add('bg-primary', 'text-on-primary');
+      button.classList.remove('bg-surface-container-low', 'text-on-surface-variant');
+      applyFilter(button.dataset.filter);
+    });
+  });
+
+  searchInput.addEventListener('input', () => applyFilter('all'));
+  searchAction.addEventListener('click', () => applyFilter('all'));
+</script>
+</body>
+</html>
