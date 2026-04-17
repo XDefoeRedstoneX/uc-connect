@@ -365,10 +365,6 @@ if (require.main === module) {
     console.error(error);
     process.exit(1);
   });
-} else {
-  initializeApp().catch((error) => {
-    console.error('Initialization error:', error);
-  });
 }
 
 module.exports = app;

@@ -7,6 +7,7 @@ const databaseConfig = {
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'uc_connect',
+  connectTimeout: Number(process.env.DB_CONNECT_TIMEOUT || 2000),
   waitForConnections: true,
   connectionLimit: 10,
   multipleStatements: true,
