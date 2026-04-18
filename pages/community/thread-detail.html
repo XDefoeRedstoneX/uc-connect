@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Forum Thread | UC-Connect</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Manrope:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary-container": "#6e2c00",
+                    "tertiary": "#4b1c00",
+                    "inverse-surface": "#27313f",
+                    "on-surface-variant": "#444651",
+                    "surface-container": "#e6eeff",
+                    "outline-variant": "#c5c5d3",
+                    "background": "#f8f9ff",
+                    "primary-fixed-dim": "#b6c4ff",
+                    "on-tertiary-fixed": "#341100",
+                    "tertiary-fixed-dim": "#ffb691",
+                    "on-surface": "#121c2a",
+                    "inverse-primary": "#b6c4ff",
+                    "secondary-fixed": "#b0f0d6",
+                    "on-secondary-fixed": "#002117",
+                    "on-secondary": "#ffffff",
+                    "outline": "#757682",
+                    "on-error-container": "#93000a",
+                    "secondary-fixed-dim": "#95d3ba",
+                    "surface-container-high": "#dee9fc",
+                    "on-primary": "#ffffff",
+                    "tertiary-fixed": "#ffdbcb",
+                    "on-primary-fixed-variant": "#264191",
+                    "on-background": "#121c2a",
+                    "surface-dim": "#d0dbed",
+                    "surface": "#f8f9ff",
+                    "inverse-on-surface": "#eaf1ff",
+                    "on-tertiary-fixed-variant": "#773205",
+                    "on-primary-fixed": "#00164e",
+                    "primary-fixed": "#dce1ff",
+                    "secondary": "#2b6954",
+                    "primary": "#00236f",
+                    "primary-container": "#1e3a8a",
+                    "on-secondary-container": "#306d58",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-container": "#f39461",
+                    "surface-container-low": "#eff4ff",
+                    "on-secondary-fixed-variant": "#0b513d",
+                    "surface-variant": "#d9e3f6",
+                    "secondary-container": "#adedd3",
+                    "surface-tint": "#4059aa",
+                    "error": "#ba1a1a",
+                    "on-tertiary": "#ffffff",
+                    "on-primary-container": "#90a8ff",
+                    "on-error": "#ffffff",
+                    "surface-container-highest": "#d9e3f6",
+                    "surface-bright": "#f8f9ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9ff; }
+        .font-headline { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body class="text-on-surface antialiased">
+<!-- Top Navigation Bar (Updated to match SCREEN_3) -->
+<nav class="fixed top-0 w-full z-50 bg-[#f8f9ff]/80 dark:bg-[#121c2a]/80 backdrop-blur-xl flex justify-between items-center px-8 py-4 max-w-full mx-auto">
+<div class="text-xl font-bold tracking-tight text-[#00236f] dark:text-white font-headline">
+        UC-Connect
+    </div>
+<div class="hidden md:flex items-center space-x-8">
+<a class="text-[#121c2a]/60 dark:text-[#eff4ff]/60 font-medium hover:text-[#00236f] transition-colors duration-200 font-body" href="/directory/home">Directory</a>
+<a class="text-[#00236f] dark:text-white font-bold border-b-2 border-[#00236f] pb-1 font-body" href="/community/forum">Community</a>
+<a class="text-[#121c2a]/60 dark:text-[#eff4ff]/60 font-medium hover:text-[#00236f] transition-colors duration-200 font-body" href="#">About</a>
+</div>
+<div class="flex items-center space-x-6">
+<button class="text-[#121c2a]/60 font-medium text-sm hover:text-[#00236f] transition-colors">EN/ID</button>
+<button class="bg-primary text-on-primary px-5 py-2 rounded-md font-medium text-sm scale-95 active:scale-98 transition-transform">Profile</button>
+</div>
+</nav>
+<main class="pt-28 pb-20 max-w-4xl mx-auto px-6">
+<!-- Breadcrumbs -->
+<nav class="mb-8">
+<a class="flex items-center gap-2 text-primary hover:gap-3 transition-all duration-300 group" href="#">
+<span class="material-symbols-outlined text-sm">arrow_back</span>
+<span class="font-medium text-sm">Kembali ke Forum</span>
+</a>
+</nav>
+<!-- Original Post (OP) -->
+<article class="bg-surface-container-lowest rounded-xl p-8 mb-12 shadow-sm border border-outline-variant/10">
+<header class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-4">
+<img alt="Avatar Ibu Anita" class="w-12 h-12 rounded-full object-cover border border-outline-variant/20" data-alt="Close-up portrait of a friendly Indonesian woman with a warm smile, natural lighting, professional and community-focused aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBrQG4J75z-NA6UtPqJnjnF4Tw35ag5xIFrHCzn_nhDcFnDhGuCi6zOSJSXgXQJfwuQFs-bUlncLRf2QGmTR1Z21u3MCOrGmMvV8YEELq8Fv6f77jbiKXDnZWhqMubUaF2nfzZtcvxrcWVaaKC-00jtFhVnIO4OZ0V0fjzhJz1kTmuPoqwSFHQOl5XVuckiX3NkamSNqVft5FU752KwwxlYV4k_QP2hMy0u4NkCjfKgAur4aZUp7kWY5hoXV7xrta-eoUuXK4Ky3rfu"/>
+<div>
+<div class="flex items-center gap-3">
+<h3 class="font-bold text-primary">Ibu Anita</h3>
+<span class="bg-surface-container-low text-primary px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Warga Graha Famili</span>
+</div>
+<p class="text-xs text-outline font-medium">Diposting 2 jam yang lalu</p>
+</div>
+</div>
+<button class="material-symbols-outlined text-outline hover:text-primary transition-colors">more_horiz</button>
+</header>
+<h1 class="text-2xl md:text-3xl font-headline font-bold text-primary mb-4 leading-tight">Mencari jasa dekorasi ulang tahun anak tema Safari, butuh H-3!</h1>
+<p class="text-on-surface-variant leading-relaxed mb-8">
+            Halo tetangga! Saya sedang butuh bantuan desain banner dan dekorasi untuk ultah anak minggu depan. Temanya Safari. Ada rekomendasi vendor lokal?
+        </p>
+<footer class="flex items-center justify-between pt-6 border-t border-outline-variant/10">
+<div class="flex items-center gap-6">
+<button class="flex items-center gap-2 group">
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors" data-weight="fill">thumb_up</span>
+<span class="text-sm font-semibold text-outline group-hover:text-primary">12</span>
+</button>
+<button class="flex items-center gap-2 group">
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors">chat_bubble</span>
+<span class="text-sm font-semibold text-outline group-hover:text-primary">3</span>
+</button>
+</div>
+<button class="flex items-center gap-2 text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined">share</span>
+<span class="text-sm font-semibold">Bagikan</span>
+</button>
+</footer>
+</article>
+<!-- Thread Section -->
+<section class="space-y-6">
+<h2 class="font-headline font-bold text-lg text-primary px-2 mb-4">Diskusi &amp; Rekomendasi</h2>
+<!-- Reply 1 (Vendor Pitch) -->
+<div class="bg-surface-container-low rounded-xl p-6 border-l-4 border-secondary shadow-sm relative">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-secondary scale-90" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span class="text-[10px] font-bold text-secondary uppercase tracking-widest">Verified Student Business</span>
+</div>
+<div class="flex items-start gap-4 mb-4">
+<img alt="Bite &amp; Bliss Logo" class="w-10 h-10 rounded-xl object-cover border border-outline-variant/30" data-alt="Elegant boutique bakery logo with minimalist typography and soft green accents, artistic and high-end student business branding" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5BSB2wWkkP-NsC19QTiU71ZGma7D5fYj7-PjXWaeyVFydV9zhC_jGTVAkMdCQ6Fzj3OKpLAPhFr84C9afkbgrpv9L4gCtV8qPX9EQHU9p62KhKKUC4m9cXXp5IBYhbmDHeLnEW7iIHhkSIxIvqgoR9DFVpUgQZpvniDPVDaN7LbbSPmqeLgAb2NQmvmxdbeMQ1SJeDzgWC2Uiak1N_hUZj0vdeoqYnSfsqLTuUtwxVEeWEzNWDWDDzpClybrYt59s0zg2PhOnZHvy"/>
+<div class="flex-1">
+<h4 class="font-bold text-primary">Bite &amp; Bliss Bakery</h4>
+<p class="text-on-surface-variant text-sm mt-1 leading-relaxed">
+                        Halo Ibu Anita! Kami dari mahasiswa UC menyediakan paket dessert table tema Safari. Bisa dadakan H-3. Silakan cek profil kami atau portofolio di bawah.
+                    </p>
+</div>
+</div>
+<div class="flex flex-wrap gap-3 mt-6">
+<button class="bg-primary text-on-primary px-5 py-2.5 rounded-md text-sm font-bold flex items-center gap-2 hover:bg-primary-container transition-colors shadow-sm">
+<span class="material-symbols-outlined text-sm">visibility</span>
+                    Lihat Profil Bisnis
+                </button>
+<button class="bg-secondary text-on-secondary px-5 py-2.5 rounded-md text-sm font-bold flex items-center gap-2 hover:opacity-90 transition-opacity shadow-sm">
+<span class="material-symbols-outlined text-sm">chat</span>
+                    Chat WhatsApp
+                </button>
+</div>
+</div>
+<!-- Reply 2 (Resident) -->
+<div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/10">
+<div class="flex items-start gap-4">
+<img alt="Avatar Pak Budi" class="w-10 h-10 rounded-full object-cover" data-alt="Portrait of a friendly middle-aged man with glasses, professional casual style, warm outdoor natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBinMUlEYOpENZ2nXFWDQ716RromBRoUD1NMEoUU6Vb-W8-w-kghSCBfEkGCeND6TUraZjquaucDHd9UOvNcar8u-dDRJpCG80Cq_3U7CH7p2rlWpO2CvRimTpEg-icKDItKgEaQuMAmlPxqGZ87oEQXddwEmZalfF0P_tg2r8pwdV9Fcgk1iLP5i4ZEpfw1gyDt9ouzbhjndysKLx9whOHCYtUhDBVRIXGt0GUL2WMRFWxqDDpqjRXw1u3lnL5hUhCe4R_tUzU4AWj"/>
+<div class="flex-1">
+<div class="flex items-center gap-3 mb-1">
+<h4 class="font-bold text-primary text-sm">Pak Budi</h4>
+<span class="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider">Warga Citraland</span>
+</div>
+<p class="text-on-surface-variant text-sm leading-relaxed">
+                        Wah, kebetulan saya juga lagi cari. Numpang nyimak ya Bu.
+                    </p>
+<div class="flex items-center gap-4 mt-3">
+<button class="text-[11px] font-bold text-outline hover:text-primary">Balas</button>
+<button class="text-[11px] font-bold text-outline hover:text-primary">Sukai</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Reply Input -->
+<section class="mt-12">
+<div class="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/10">
+<h3 class="font-headline font-bold text-primary mb-4 text-sm">Berikan Balasan</h3>
+<textarea class="w-full bg-surface-container-low border-none rounded-xl p-4 text-sm text-on-surface-variant focus:ring-1 focus:ring-primary h-32 resize-none placeholder:text-outline" placeholder="Tulis balasan Anda..."></textarea>
+<div class="flex justify-end mt-4">
+<button class="bg-primary text-on-primary px-8 py-3 rounded-md text-sm font-bold hover:scale-[0.98] transition-transform shadow-md">
+                    Kirim Balasan
+                </button>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer (Updated to match SCREEN_3) -->
+<footer class="w-full py-12 bg-[#eff4ff] dark:bg-[#121c2a] mt-20">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 px-8 max-w-7xl mx-auto">
+<div class="space-y-4">
+<div class="text-lg font-bold text-[#00236f] dark:text-white font-headline">UC-Connect</div>
+<p class="text-[#121c2a]/70 dark:text-[#eff4ff]/70 text-sm leading-relaxed max-w-xs font-body">
+                Platform direktori bisnis mahasiswa terkurasi untuk area Surabaya Barat. Menghubungkan talenta lokal dengan audiens tepat.
+            </p>
+</div>
+<div class="space-y-4">
+<h4 class="text-xs font-bold uppercase tracking-widest text-[#00236f] dark:text-white font-label">Platform</h4>
+<ul class="space-y-2">
+<li><a class="text-[#121c2a]/70 dark:text-[#eff4ff]/70 text-sm hover:text-[#00236f] transition-opacity font-body" href="#">Terms of Service</a></li>
+<li><a class="text-[#121c2a]/70 dark:text-[#eff4ff]/70 text-sm hover:text-[#00236f] transition-opacity font-body" href="#">Privacy Policy</a></li>
+<li><a class="text-[#121c2a]/70 dark:text-[#eff4ff]/70 text-sm hover:text-[#00236f] transition-opacity font-body" href="#">Contact Support</a></li>
+</ul>
+</div>
+<div class="space-y-4">
+<h4 class="text-xs font-bold uppercase tracking-widest text-[#00236f] dark:text-white font-label">Connect</h4>
+<div class="flex gap-4">
+<a class="text-[#121c2a]/70 dark:text-[#eff4ff]/70 text-sm hover:text-[#00236f] font-body" href="#">Instagram</a>
+<a class="text-[#121c2a]/70 dark:text-[#eff4ff]/70 text-sm hover:text-[#00236f] font-body" href="#">LinkedIn</a>
+</div>
+<p class="pt-4 text-[10px] text-[#121c2a]/50 dark:text-[#eff4ff]/50 uppercase tracking-widest font-label">
+                © 2024 UC-Connect. Curating Student Excellence.
+            </p>
+</div>
+</div>
+</footer>
+</body></html>
