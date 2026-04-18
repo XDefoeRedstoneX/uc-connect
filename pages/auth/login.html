@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>UC-Connect | Authentication</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/js/supabase-env.js"></script>
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/supabase-client.js"></script>
+<script src="/assets/js/utils.js"></script>
+<script src="/assets/js/api-client.js"></script>
+<script src="/assets/js/auth.js"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#d9e3f6",
+                        "surface-variant": "#d9e3f6",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-surface-variant": "#444651",
+                        "outline": "#757682",
+                        "on-tertiary-fixed": "#341100",
+                        "tertiary-container": "#6e2c00",
+                        "surface-dim": "#d0dbed",
+                        "error-container": "#ffdad6",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed": "#ffdbcb",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "secondary": "#2b6954",
+                        "tertiary-fixed-dim": "#ffb691",
+                        "outline-variant": "#c5c5d3",
+                        "on-primary-fixed": "#00164e",
+                        "secondary-container": "#adedd3",
+                        "surface-bright": "#f8f9ff",
+                        "primary-container": "#1e3a8a",
+                        "on-secondary-fixed-variant": "#0b513d",
+                        "on-secondary-fixed": "#002117",
+                        "on-error-container": "#93000a",
+                        "on-tertiary": "#ffffff",
+                        "inverse-surface": "#27313f",
+                        "surface-tint": "#4059aa",
+                        "surface-container-low": "#eff4ff",
+                        "on-primary-container": "#90a8ff",
+                        "surface-container": "#e6eeff",
+                        "on-surface": "#121c2a",
+                        "on-error": "#ffffff",
+                        "primary": "#00236f",
+                        "surface": "#f8f9ff",
+                        "secondary-fixed-dim": "#95d3ba",
+                        "background": "#f8f9ff",
+                        "inverse-primary": "#b6c4ff",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#121c2a",
+                        "on-primary-fixed-variant": "#264191",
+                        "secondary-fixed": "#b0f0d6",
+                        "on-tertiary-container": "#f39461",
+                        "error": "#ba1a1a",
+                        "tertiary": "#4b1c00",
+                        "on-primary": "#ffffff",
+                        "on-secondary-container": "#306d58",
+                        "surface-container-high": "#dee9fc",
+                        "primary-fixed": "#dce1ff",
+                        "on-tertiary-fixed-variant": "#773205"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .form-transition {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased overflow-hidden">
+<main class="flex min-h-screen w-full">
+<!-- Left Side: Immersive Visual -->
+<section class="hidden lg:flex w-1/2 relative flex-col justify-between p-12 overflow-hidden">
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover" data-alt="Modern cozy cafe interior in West Surabaya with minimalist furniture, warm ambient lighting, and large windows overlooking urban greenery" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjGLndGANzX2wfZTZyeXBZ5xtWW9vzl2N21HiAMEU2bJvQrw1tyi59K7r2OebHDcP55xkMJLesc5C-Zy7gAil0gKMinGc8YNqJx1mJH_wN3su9KDSkRisSgo_bX4QyD8lJVR05O7PWe0ct1v-bw6VcCtXcxJCEr71fhDugEJpk7TvsdrcfwuVdrRdyR-VstN_b2-78h3h0ebR4QU6b1bP-Tgynd05uy9oHYIl0Oy7hIE_4DjKmod-4wkL7-OijKR61GOb21IMU36B7"/>
+<div class="absolute inset-0 bg-gradient-to-br from-primary/80 via-primary/40 to-transparent"></div>
+</div>
+<div class="relative z-10">
+<h1 class="text-4xl font-headline font-extrabold text-white tracking-tighter">UC-Connect</h1>
+</div>
+<div class="relative z-10 max-w-md">
+<p class="text-2xl font-headline font-bold text-white leading-tight">
+                    Mendukung Ekonomi Lokal. Menghubungkan Komunitas.
+                </p>
+<div class="mt-6 h-1 w-12 bg-secondary-container"></div>
+</div>
+</section>
+<!-- Right Side: Interaction Shell -->
+<section class="w-full lg:w-1/2 bg-surface-container-lowest flex items-center justify-center p-6 sm:p-12 md:p-24 overflow-y-auto">
+<div class="w-full max-w-md">
+<!-- Branding Mobile Only -->
+<div class="lg:hidden mb-12 text-center">
+<h1 class="text-3xl font-headline font-extrabold text-primary tracking-tighter">UC-Connect</h1>
+</div>
+<!-- Toggle Switch -->
+<div class="flex p-1 bg-surface-container-low rounded-md mb-10 w-full relative">
+<button class="flex-1 py-2.5 text-sm font-headline font-semibold text-primary z-10 rounded-md transition-all" id="toggle-masuk">
+                        Masuk
+                    </button>
+<button class="flex-1 py-2.5 text-sm font-headline font-semibold text-on-surface-variant z-10 rounded-md transition-all" id="toggle-daftar">
+                        Daftar
+                    </button>
+<!-- Sliding Background Overlay (Simulated via active class logic in CSS/Layout) -->
+<div class="absolute inset-y-1 left-1 w-[calc(50%-4px)] bg-surface-container-lowest shadow-sm rounded-md transition-transform transform translate-x-0" id="toggle-indicator"></div>
+</div>
+<!-- Login View Container -->
+<div class="space-y-8 block" id="login-view">
+<header class="space-y-2">
+<h2 class="text-3xl font-headline font-extrabold text-on-surface tracking-tight">Selamat Datang Kembali</h2>
+<p class="text-on-surface-variant text-sm">Masuk untuk mengakses layanan eksklusif komunitas UC.</p>
+</header>
+<form class="space-y-6" id="login-form">
+<div id="login-error" class="p-3 bg-error/10 border border-error/30 rounded-md text-error text-sm hidden"></div>
+<div class="space-y-2">
+<label class="block text-xs font-label font-semibold tracking-wider uppercase text-on-surface-variant">Email</label>
+<input id="login-email" class="w-full px-0 py-3 bg-transparent border-b border-outline-variant focus:border-primary focus:ring-0 transition-colors placeholder:text-outline-variant text-on-surface font-medium" placeholder="nama@email.com" type="email" required/>
+</div>
+<div class="space-y-2 relative">
+<label class="block text-xs font-label font-semibold tracking-wider uppercase text-on-surface-variant">Kata Sandi</label>
+<input id="login-password" class="w-full px-0 py-3 bg-transparent border-b border-outline-variant focus:border-primary focus:ring-0 transition-colors placeholder:text-outline-variant text-on-surface font-medium" placeholder="••••••••" type="password" required/>
+<button id="toggle-password" class="absolute right-0 bottom-3 text-on-surface-variant hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+</button>
+</div>
+<div class="flex items-center justify-between">
+<label class="flex items-center gap-2 cursor-pointer group">
+<input id="remember-me" class="rounded-sm border-outline-variant text-primary focus:ring-primary/20" type="checkbox"/>
+<span class="text-xs text-on-surface-variant group-hover:text-on-surface transition-colors">Ingat saya</span>
+</label>
+<a class="text-xs font-semibold text-primary hover:text-primary-container transition-colors" href="#">Lupa kata sandi?</a>
+</div>
+<button id="login-submit" class="w-full bg-primary text-on-primary py-4 rounded-md font-headline font-bold text-sm tracking-wide shadow-lg shadow-primary/20 hover:scale-[0.98] transition-transform active:bg-primary-container" type="submit">
+                            Masuk ke Akun Saya
+                        </button>
+</form>
+<!-- Divider -->
+<div class="relative py-4">
+<div class="absolute inset-0 flex items-center">
+<div class="w-full border-t border-outline-variant/40"></div>
+</div>
+<div class="relative flex justify-center">
+<span class="bg-surface-container-lowest px-4 text-xs font-label font-medium text-on-surface-variant uppercase tracking-widest">atau lanjutkan dengan</span>
+</div>
+</div>
+<!-- Social Login -->
+<button class="w-full flex items-center justify-center gap-3 py-3 border border-outline-variant/40 rounded-md hover:bg-surface-container-low transition-colors group">
+<svg class="w-5 h-5" viewbox="0 0 24 24">
+<path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
+<path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
+<path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"></path>
+<path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 12-4.53z" fill="#EA4335"></path>
+</svg>
+<span class="text-sm font-semibold text-on-surface-variant group-hover:text-primary transition-colors">Masuk dengan Google</span>
+</button>
+</div>
+<!-- Registration View (Hidden by default, triggered by toggle) -->
+<div class="space-y-8 hidden" id="register-view">
+<header class="space-y-2">
+<h2 class="text-3xl font-headline font-extrabold text-on-surface tracking-tight">Buat Akun Baru</h2>
+<p class="text-on-surface-variant text-sm">Bergabunglah dengan ekosistem digital Universitas Ciputra.</p>
+</header>
+<form class="space-y-6" id="register-form">
+<div id="register-error" class="p-3 bg-error/10 border border-error/30 rounded-md text-error text-sm hidden"></div>
+<div class="space-y-2">
+<label class="block text-xs font-label font-semibold tracking-wider uppercase text-on-surface-variant">Nama Lengkap</label>
+<input id="register-name" class="w-full px-0 py-3 bg-transparent border-b border-outline-variant focus:border-primary focus:ring-0 transition-colors placeholder:text-outline-variant text-on-surface font-medium" placeholder="Contoh: Budi Santoso" type="text" required/>
+</div>
+<div class="space-y-2">
+<label class="block text-xs font-label font-semibold tracking-wider uppercase text-on-surface-variant">Email</label>
+<input id="register-email" class="w-full px-0 py-3 bg-transparent border-b border-outline-variant focus:border-primary focus:ring-0 transition-colors placeholder:text-outline-variant text-on-surface font-medium" placeholder="nama@student.ciputra.ac.id" type="email" required/>
+</div>
+<div class="space-y-2">
+<label class="block text-xs font-label font-semibold tracking-wider uppercase text-on-surface-variant">Kata Sandi</label>
+<input id="register-password" class="w-full px-0 py-3 bg-transparent border-b border-outline-variant focus:border-primary focus:ring-0 transition-colors placeholder:text-outline-variant text-on-surface font-medium" placeholder="Minimal 8 karakter" type="password" required/>
+</div>
+<button id="register-submit" class="w-full bg-primary text-on-primary py-4 rounded-md font-headline font-bold text-sm tracking-wide shadow-lg shadow-primary/20 hover:scale-[0.98] transition-transform active:bg-primary-container" type="submit">
+                            Daftar Sekarang
+                        </button>
+</form>
+<!-- Vendor Callout -->
+<div class="p-6 bg-secondary-container/30 rounded-xl border border-secondary-container/40">
+<div class="flex items-start gap-4">
+<div class="p-2 bg-secondary rounded-full text-white">
+<span class="material-symbols-outlined text-sm" data-icon="storefront">storefront</span>
+</div>
+<div class="space-y-1">
+<p class="text-sm font-medium text-on-secondary-container">Anda mahasiswa UC yang ingin berjualan?</p>
+<a class="text-xs font-bold text-secondary uppercase tracking-tight hover:underline" href="#">Daftar sebagai Vendor di sini.</a>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Links -->
+<footer class="mt-12 pt-8 border-t border-outline-variant/20 flex flex-wrap justify-center gap-6">
+<a class="text-[10px] font-label font-semibold tracking-widest uppercase text-on-surface-variant/60 hover:text-primary transition-colors" href="/privacy-policy">Privacy Policy</a>
+<a class="text-[10px] font-label font-semibold tracking-widest uppercase text-on-surface-variant/60 hover:text-primary transition-colors" href="/terms-of-service">Terms of Service</a>
+<a class="text-[10px] font-label font-semibold tracking-widest uppercase text-on-surface-variant/60 hover:text-primary transition-colors" href="/community/forum">Help Center</a>
+</footer>
+</div>
+</section>
+</main>
+<!-- Support Link Floating -->
+<div class="fixed top-8 right-8 z-50">
+<a class="flex items-center gap-2 px-5 py-2 bg-white/80 backdrop-blur-md rounded-full shadow-sm hover:shadow-md transition-all group" href="/community/forum" title="Support">
+<span class="material-symbols-outlined text-primary text-lg" data-icon="help_outline">help_outline</span>
+<span class="text-xs font-headline font-bold text-primary">Support</span>
+</a>
+</div>
+<script>
+// Authentication Page Logic
+const btnMasuk = document.getElementById('toggle-masuk');
+const btnDaftar = document.getElementById('toggle-daftar');
+const indicator = document.getElementById('toggle-indicator');
+const loginView = document.getElementById('login-view');
+const registerView = document.getElementById('register-view');
+const loginForm = document.getElementById('login-form');
+const registerForm = document.getElementById('register-form');
+const togglePasswordBtn = document.getElementById('toggle-password');
+const passwordInput = document.getElementById('login-password');
+const supabaseClient = window.supabaseClient;
+
+// Toggle between login and register views
+btnMasuk.addEventListener('click', () => {
+    indicator.style.transform = 'translateX(0)';
+    btnMasuk.classList.add('text-primary');
+    btnMasuk.classList.remove('text-on-surface-variant');
+    btnDaftar.classList.remove('text-primary');
+    btnDaftar.classList.add('text-on-surface-variant');
+    loginView.classList.remove('hidden');
+    registerView.classList.add('hidden');
+});
+
+btnDaftar.addEventListener('click', () => {
+    indicator.style.transform = 'translateX(100%)';
+    btnDaftar.classList.add('text-primary');
+    btnDaftar.classList.remove('text-on-surface-variant');
+    btnMasuk.classList.remove('text-primary');
+    btnMasuk.classList.add('text-on-surface-variant');
+    loginView.classList.add('hidden');
+    registerView.classList.remove('hidden');
+});
+
+// Toggle password visibility
+togglePasswordBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    const type = passwordInput.type === 'password' ? 'text' : 'password';
+    passwordInput.type = type;
+    const icon = togglePasswordBtn.querySelector('[data-icon]');
+    icon.textContent = type === 'password' ? 'visibility' : 'visibility_off';
+});
+
+// Handle login form submission
+loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const errorDiv = document.getElementById('login-error');
+    const submitBtn = document.getElementById('login-submit');
+    
+    try {
+        errorDiv.classList.add('hidden');
+        submitBtn.disabled = true;
+        submitBtn.classList.add('opacity-50');
+        
+        if (!email || !password) {
+            throw new Error('Email dan kata sandi wajib diisi');
+        }
+
+        if (!supabaseClient) {
+            throw new Error('Supabase belum dikonfigurasi. Isi SUPABASE_URL dan SUPABASE_ANON_KEY.');
+        }
+
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email,
+            password
+        });
+
+        if (error) {
+            throw error;
+        }
+
+        const user = data.user;
+        const session = data.session;
+
+        if (!session) {
+            throw new Error('Sesi login tidak ditemukan. Silakan coba lagi.');
+        }
+
+        window.authManager.setUser(window.authManager.normalizeSupabaseUser(user));
+        window.authManager.setToken(session.access_token);
+
+        // Show success and redirect
+        notifySuccess('Login berhasil! Mengalihkan...');
+        setTimeout(() => {
+            window.location.href = '/directory/home';
+        }, 1500);
+        
+    } catch (error) {
+        errorDiv.textContent = error.message || 'Login gagal. Periksa email dan password Anda.';
+        errorDiv.classList.remove('hidden');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-50');
+    }
+});
+
+// Handle register form submission
+registerForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('register-name').value;
+    const email = document.getElementById('register-email').value;
+    const password = document.getElementById('register-password').value;
+    const errorDiv = document.getElementById('register-error');
+    const submitBtn = document.getElementById('register-submit');
+    
+    try {
+        errorDiv.classList.add('hidden');
+        submitBtn.disabled = true;
+        submitBtn.classList.add('opacity-50');
+        
+        if (!name || !email || !password) {
+            throw new Error('Semua field harus diisi');
+        }
+        if (password.length < 8) {
+            throw new Error('Password minimal 8 karakter');
+        }
+
+        if (!supabaseClient) {
+            throw new Error('Supabase belum dikonfigurasi. Isi SUPABASE_URL dan SUPABASE_ANON_KEY.');
+        }
+
+        const { data, error } = await supabaseClient.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    name,
+                    role: 'customer'
+                }
+            }
+        });
+
+        if (error) {
+            throw error;
+        }
+
+        if (!data.session) {
+            notifySuccess('Pendaftaran berhasil! Silakan cek email untuk konfirmasi.');
+            return;
+        }
+
+        window.authManager.setUser(window.authManager.normalizeSupabaseUser(data.user));
+        window.authManager.setToken(data.session.access_token);
+
+        notifySuccess('Pendaftaran berhasil! Mengalihkan...');
+        setTimeout(() => {
+            window.location.href = '/directory/home';
+        }, 1500);
+        
+    } catch (error) {
+        errorDiv.textContent = error.message || 'Pendaftaran gagal. Silakan coba lagi.';
+        errorDiv.classList.remove('hidden');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-50');
+    }
+});
+
+function notifySuccess(message) {
+    if (window.UCUtils && window.UCUtils.showSuccess) {
+        window.UCUtils.showSuccess(message);
+        return;
+    }
+    const successDiv = document.createElement('div');
+    successDiv.className = 'fixed top-4 right-4 bg-secondary text-white px-4 py-3 rounded-lg shadow-lg max-w-sm';
+    successDiv.textContent = message;
+    document.body.appendChild(successDiv);
+    
+    setTimeout(() => {
+        successDiv.remove();
+    }, 5000);
+}
+</script>
+</body></html>
