@@ -1,16 +1,22 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 
-async function resolveUserIdFromBearer(token: string) {
+function trimToNull(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
+async function resolveUserFromBearer(token: string) {
   const supabase = getSupabaseServerClient();
   if (!supabase) return { userId: null, error: "Supabase environment variables are missing" };
 
   const { data, error } = await supabase.auth.getUser(token);
   if (error || !data.user) {
-    return { userId: null, error: error?.message ?? "Invalid token" };
+    return { userId: null, user: null, error: error?.message ?? "Invalid token" };
   }
 
-  return { userId: data.user.id, error: null };
+  return { userId: data.user.id, user: data.user, error: null };
 }
 
 function parseBearer(req: NextApiRequest) {
@@ -25,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ error: "Missing Bearer token" });
   }
 
-  const { userId, error: userError } = await resolveUserIdFromBearer(token);
+  const { userId, user, error: userError } = await resolveUserFromBearer(token);
   if (userError || !userId) {
     return res.status(401).json({ error: userError ?? "Unauthorized" });
   }
@@ -53,11 +59,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       const now = new Date().toISOString();
+
+      const meta = (user?.user_metadata ?? {}) as Record<string, unknown>;
+      const metaFullName = trimToNull(meta.full_name);
+      const metaPhone = trimToNull(meta.phone);
+
       const { data: created, error: createError } = await supabase
         .from("profiles")
         .upsert(
           {
             id: userId,
+            full_name: metaFullName,
+            phone: metaPhone,
             updated_at: now,
           },
           { onConflict: "id" },
@@ -78,13 +91,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === "PUT") {
     const { full_name, phone } = req.body ?? {};
 
+    const cleanFullName = trimToNull(full_name);
+    const cleanPhone = trimToNull(phone);
+
     const { data, error } = await supabase
       .from("profiles")
       .upsert(
         {
           id: userId,
-          full_name: typeof full_name === "string" ? full_name : null,
-          phone: typeof phone === "string" ? phone : null,
+          full_name: cleanFullName,
+          phone: cleanPhone,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "id" },

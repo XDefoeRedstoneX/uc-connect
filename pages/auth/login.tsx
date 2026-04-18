@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { FormEvent, useState } from "react";
 import SiteLayout from "@/components/SiteLayout";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -27,7 +29,8 @@ export default function LoginPage() {
       return;
     }
 
-    setMessage("Login successful. You can now open your profile.");
+    setMessage("Login successful. Redirecting...");
+    await router.replace("/directory/home");
   }
 
   return (

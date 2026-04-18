@@ -21,7 +21,7 @@ export default function Home() {
       <section className="card">
         <h1>UC Connect MVP</h1>
         <p>
-          This app is now an implementation baseline with real authentication/data wiring hooks.
+          masi progress, tolong tunggu update ;-;
         </p>
         <ul className="grid-links">
           {links.map((item) => (
