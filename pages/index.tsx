@@ -5,7 +5,6 @@ const links = [
   { href: "/auth/login", label: "Login" },
   { href: "/auth/register", label: "Register" },
   { href: "/auth/forgot-password", label: "Forgot Password" },
-  { href: "/auth/verify-otp", label: "Verify OTP" },
   { href: "/directory/home", label: "Directory Home" },
   { href: "/directory/explore", label: "Explore Vendors" },
   { href: "/customer/profile", label: "Customer Profile" },

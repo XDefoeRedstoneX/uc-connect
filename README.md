@@ -1,52 +1,38 @@
-# UC Connect Website (Vercel Ready)
+# UC Connect (Next.js + Supabase)
 
-This project has been reorganized into a cleaner, deployment-ready structure for Vercel.
+This repository is a Next.js (Pages Router) app wired to Supabase for auth and data.
 
-## Folder Structure
+## Run locally
 
-- `index.html`: main entry page with links to all screens
-- `pages/`: all website page templates
-  - `pages/auth/`: login and register pages
-  - `pages/customer/`: customer profile pages
-  - `pages/community/`: forum pages
-  - `pages/directory/`: homepage, explore, vendor detail pages
-  - `pages/vendor/`: vendor dashboard
-  - `pages/admin/`: super admin page
-- `docs/`: design documentation
-- `database/`: SQL files
-- `archive/legacy-folders/`: old folder names preserved (if any remained)
-- `vercel.json`: route mapping for clean URLs on Vercel
-
-## Local Run
-
-Because this is a static site, you can run with any static server.
-
-Example:
+1. Install deps:
 
 ```bash
-npx serve .
+npm install
 ```
 
-Then open the shown local URL.
+2. Create `.env.local` (do not commit) based on `.env.example`.
+
+3. Start dev server:
+
+```bash
+npm run dev
+```
+
+## Supabase setup
+
+- Create tables + RLS policies by running `supabase/schema.sql` in the Supabase SQL Editor.
+- Add at least one row to `public.vendors` to see results on `/directory/explore`.
+
+Env vars used by the app:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` (server-only; required for API routes / SSR in this project)
+
+Note: `assets/js/supabase-env.js` is for legacy static HTML pages and is not used by the Next.js app.
 
 ## Deploy to Vercel
 
-1. Push this repository to GitHub.
-2. Import the repository in Vercel.
-3. Keep default framework preset as `Other` (static project).
-4. Deploy.
-
-### Routes Available
-
-- `/`
-- `/auth/login`
-- `/auth/register`
-- `/customer/profile`
-- `/customer/edit-profile`
-- `/community/forum`
-- `/community/thread-detail`
-- `/directory/home`
-- `/directory/explore`
-- `/directory/vendor-detail`
-- `/vendor/dashboard`
-- `/admin/super-admin`
+1. Import the repo into Vercel (Framework preset should auto-detect as Next.js).
+2. Add the env vars above in Vercel Project Settings → Environment Variables.
+3. Redeploy so the deployment picks up the new env vars.

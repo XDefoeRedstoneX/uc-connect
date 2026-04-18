@@ -42,7 +42,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq("id", userId)
       .single();
 
-    if (error) return res.status(404).json({ error: error.message });
+    if (error) {
+      const errorCode = (error as unknown as { code?: string }).code;
+      const isMissingRow =
+        errorCode === "PGRST116" ||
+        (typeof error.message === "string" && /0 rows|No rows/i.test(error.message));
+
+      if (!isMissingRow) {
+        return res.status(500).json({ error: error.message });
+      }
+
+      const now = new Date().toISOString();
+      const { data: created, error: createError } = await supabase
+        .from("profiles")
+        .upsert(
+          {
+            id: userId,
+            updated_at: now,
+          },
+          { onConflict: "id" },
+        )
+        .select("id,full_name,phone,avatar_url,role,updated_at")
+        .single();
+
+      if (createError) {
+        return res.status(500).json({ error: createError.message });
+      }
+
+      return res.status(200).json({ profile: created });
+    }
 
     return res.status(200).json({ profile: data });
   }

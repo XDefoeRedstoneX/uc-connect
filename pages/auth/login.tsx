@@ -30,20 +30,6 @@ export default function LoginPage() {
     setMessage("Login successful. You can now open your profile.");
   }
 
-  async function onGoogleLogin() {
-    setError(null);
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) {
-      setError("Supabase env is missing.");
-      return;
-    }
-
-    const { error: oauthError } = await supabase.auth.signInWithOAuth({ provider: "google" });
-    if (oauthError) {
-      setError(oauthError.message);
-    }
-  }
-
   return (
     <SiteLayout title="Login | UC Connect">
       <section className="card">
@@ -61,7 +47,6 @@ export default function LoginPage() {
         </form>
 
         <div className="row-gap">
-          <button type="button" onClick={onGoogleLogin} className="secondary">Continue with Google</button>
           <Link href="/auth/forgot-password">Forgot password?</Link>
           <Link href="/auth/register">Create account</Link>
         </div>
