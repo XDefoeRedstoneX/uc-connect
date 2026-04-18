@@ -1,52 +1,22 @@
-# UC Connect Website (Vercel Ready)
+# UC Connect
 
-This project has been reorganized into a cleaner, deployment-ready structure for Vercel.
+Production Next.js app for UC Connect, prepared to deploy from the repository root on Vercel.
 
-## Folder Structure
+## Setup
 
-- `index.html`: main entry page with links to all screens
-- `pages/`: all website page templates
-  - `pages/auth/`: login and register pages
-  - `pages/customer/`: customer profile pages
-  - `pages/community/`: forum pages
-  - `pages/directory/`: homepage, explore, vendor detail pages
-  - `pages/vendor/`: vendor dashboard
-  - `pages/admin/`: super admin page
-- `docs/`: design documentation
-- `database/`: SQL files
-- `archive/legacy-folders/`: old folder names preserved (if any remained)
-- `vercel.json`: route mapping for clean URLs on Vercel
+1. Copy `.env.example` to `.env.local`.
+2. Fill in the Supabase values.
+3. Run `npm install`.
+4. Start the app with `npm run dev`.
 
-## Local Run
+## Deployment
 
-Because this is a static site, you can run with any static server.
+The root of this repository is the deploy target. Vercel should detect the Next.js app automatically from `package.json`.
 
-Example:
+## Structure
 
-```bash
-npx serve .
-```
-
-Then open the shown local URL.
-
-## Deploy to Vercel
-
-1. Push this repository to GitHub.
-2. Import the repository in Vercel.
-3. Keep default framework preset as `Other` (static project).
-4. Deploy.
-
-### Routes Available
-
-- `/`
-- `/auth/login`
-- `/auth/register`
-- `/customer/profile`
-- `/customer/edit-profile`
-- `/community/forum`
-- `/community/thread-detail`
-- `/directory/home`
-- `/directory/explore`
-- `/directory/vendor-detail`
-- `/vendor/dashboard`
-- `/admin/super-admin`
+- `pages/`: application routes and API routes
+- `components/`: shared UI shell
+- `lib/`: Supabase clients
+- `supabase/`: schema and RLS starter SQL
+- `archive/static-root/`: legacy static prototype files kept for reference
