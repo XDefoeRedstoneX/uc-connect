@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>UC-Connect | Super Admin Panel</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "secondary-fixed-dim": "#95d3ba",
+                "inverse-surface": "#27313f",
+                "tertiary-container": "#6e2c00",
+                "secondary": "#2b6954",
+                "on-tertiary-container": "#f39461",
+                "on-error": "#ffffff",
+                "surface-container-high": "#dee9fc",
+                "on-secondary": "#ffffff",
+                "surface-tint": "#4059aa",
+                "background": "#f8f9ff",
+                "inverse-primary": "#b6c4ff",
+                "surface-dim": "#d0dbed",
+                "on-primary-fixed-variant": "#264191",
+                "on-secondary-fixed-variant": "#0b513d",
+                "error-container": "#ffdad6",
+                "on-tertiary": "#ffffff",
+                "tertiary": "#4b1c00",
+                "on-primary": "#ffffff",
+                "secondary-fixed": "#b0f0d6",
+                "on-tertiary-fixed-variant": "#773205",
+                "outline-variant": "#c5c5d3",
+                "on-secondary-container": "#306d58",
+                "surface-bright": "#f8f9ff",
+                "on-error-container": "#93000a",
+                "outline": "#757682",
+                "surface-variant": "#d9e3f6",
+                "primary-fixed": "#dce1ff",
+                "on-primary-container": "#90a8ff",
+                "surface-container-highest": "#d9e3f6",
+                "on-background": "#121c2a",
+                "primary-container": "#1e3a8a",
+                "tertiary-fixed-dim": "#ffb691",
+                "surface-container": "#e6eeff",
+                "inverse-on-surface": "#eaf1ff",
+                "surface": "#f8f9ff",
+                "surface-container-lowest": "#ffffff",
+                "on-surface": "#121c2a",
+                "on-tertiary-fixed": "#341100",
+                "on-surface-variant": "#444651",
+                "tertiary-fixed": "#ffdbcb",
+                "surface-container-low": "#eff4ff",
+                "primary-fixed-dim": "#b6c4ff",
+                "on-secondary-fixed": "#002117",
+                "on-primary-fixed": "#00164e",
+                "secondary-container": "#adedd3",
+                "primary": "#00236f",
+                "error": "#ba1a1a"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+            },
+            "fontFamily": {
+                "headline": ["Manrope"],
+                "body": ["Inter"],
+                "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9ff;
+        }
+        h1, h2, h3, .brand-text {
+            font-family: 'Manrope', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- Sidebar Navigation -->
+<aside class="h-screen w-72 flex flex-col fixed left-0 top-0 z-50 bg-[#f8f9ff] border-r border-[#c5c5d3]/20 p-6 gap-2">
+<div class="mb-8 px-4">
+<span class="text-lg font-black tracking-tighter text-[#00236f] dark:text-[#ffffff]">Admin Panel</span>
+<p class="text-[10px] uppercase tracking-[0.1em] text-outline mt-1">System Controller</p>
+</div>
+<nav class="flex flex-col gap-1 flex-grow">
+<!-- Overview (Active) -->
+<a class="bg-[#eff4ff] text-[#00236f] font-bold rounded-md px-4 py-3 flex items-center gap-3 transition-all scale-x-105 origin-left duration-300" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="dashboard">dashboard</span>
+<span class="font-medium text-sm">Overview</span>
+</a>
+<a class="text-[#121c2a]/70 px-4 py-3 flex items-center gap-3 hover:bg-[#eff4ff]/50 transition-all" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="verified_user">verified_user</span>
+<span class="font-medium text-sm">Verifikasi Vendor</span>
+</a>
+<a class="text-[#121c2a]/70 px-4 py-3 flex items-center gap-3 hover:bg-[#eff4ff]/50 transition-all" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="group">group</span>
+<span class="font-medium text-sm">Manajemen Pengguna</span>
+</a>
+<a class="text-[#121c2a]/70 px-4 py-3 flex items-center gap-3 hover:bg-[#eff4ff]/50 transition-all" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="forum">forum</span>
+<span class="font-medium text-sm">Moderasi Forum</span>
+</a>
+<a class="text-[#121c2a]/70 px-4 py-3 flex items-center gap-3 hover:bg-[#eff4ff]/50 transition-all" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="payments">payments</span>
+<span class="font-medium text-sm">Laporan Keuangan</span>
+</a>
+</nav>
+<div class="pt-6 border-t border-[#c5c5d3]/20 flex flex-col gap-1">
+<button class="w-full bg-primary text-on-primary font-bold rounded-md px-4 py-3 text-sm mb-4 active:scale-95 duration-200">
+                Generate Report
+            </button>
+<a class="text-[#121c2a]/70 px-4 py-2 flex items-center gap-3 text-sm hover:bg-[#eff4ff]/50 transition-all" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="help">help</span>
+<span>Support</span>
+</a>
+<a class="text-error px-4 py-2 flex items-center gap-3 text-sm hover:bg-error-container/20 transition-all" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="logout">logout</span>
+<span>Sign Out</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-72 min-h-screen">
+<!-- Top App Bar -->
+<header class="w-full sticky top-0 z-40 bg-[#f8f9ff]/80 backdrop-blur-xl shadow-sm h-16 px-8 flex justify-between items-center">
+<div class="flex items-center gap-4">
+<h1 class="text-xl font-bold text-[#00236f] tracking-tight font-manrope">Super Admin</h1>
+<div class="h-6 w-[1px] bg-outline-variant/40 mx-2"></div>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline text-sm" data-icon="search">search</span>
+<input class="bg-surface-container-low border-none rounded-md pl-10 pr-4 py-2 text-sm w-80 focus:ring-1 focus:ring-primary" placeholder="Cari data vendor atau user..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-full hover:bg-surface-container-low transition-colors relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</div>
+<div class="flex items-center gap-3 pl-4 border-l border-outline-variant/40">
+<div class="text-right">
+<p class="text-xs font-bold text-on-surface">Admin Utama</p>
+<p class="text-[10px] text-outline">UC-CONNECT-01</p>
+</div>
+<img alt="Administrator Profile" class="w-9 h-9 rounded-full object-cover border-2 border-primary-container/20" data-alt="professional portrait of a confident male executive in a sharp navy suit with clean studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB1Zj5mmkSG4uWYiYmpm-s5fHvcpCxc9WqAI7ZYtxmgUyrewnznOAzz1_xrFXcWq-cJLjmx1NYrkeNY_ezh9Exij84lNx1_13ZLnu7xMdLWpcnTIsLGqVqImMZlBCj3hGAmlTWt_95yRJPNhhc1B5Vp_zIwGLq86JHVDzNVKgtEqXnaNoyel9FKHB0OdS4cj7DxFOiKqQ7l09KHriTMmogWNhMMGylgK7gw67Y1wEMxRrlva4UIyXmQczmeoJkJIISirOCDbJKBzxu5"/>
+</div>
+</div>
+</header>
+<!-- Dashboard Canvas -->
+<div class="p-8 space-y-8">
+<!-- KPI Cards Row -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+<p class="text-xs font-semibold text-outline uppercase tracking-wider mb-2">Total Vendor Aktif</p>
+<div class="flex items-end justify-between">
+<h2 class="text-3xl font-black text-primary font-manrope">45</h2>
+<span class="text-secondary text-xs font-bold bg-secondary-container px-2 py-1 rounded flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="trending_up">trending_up</span>
+                            +5%
+                        </span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border-l-4 border-error">
+<p class="text-xs font-semibold text-outline uppercase tracking-wider mb-2">Menunggu Verifikasi</p>
+<div class="flex items-end justify-between">
+<h2 class="text-3xl font-black text-on-surface font-manrope">12</h2>
+<span class="text-error text-xs font-bold flex items-center gap-1 animate-pulse">
+<span class="material-symbols-outlined text-xs" data-icon="priority_high">priority_high</span>
+                            Action Required
+                        </span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+<p class="text-xs font-semibold text-outline uppercase tracking-wider mb-2">Pengguna Pembeli</p>
+<div class="flex items-end justify-between">
+<h2 class="text-3xl font-black text-on-surface font-manrope">210</h2>
+<span class="text-primary text-xs font-bold bg-primary-fixed px-2 py-1 rounded">Growth</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+<p class="text-xs font-semibold text-outline uppercase tracking-wider mb-2">Revenue Premium</p>
+<div class="flex items-end justify-between">
+<h2 class="text-3xl font-black text-primary font-manrope">Rp 1.5M</h2>
+<div class="w-10 h-10 bg-secondary-container/30 rounded-full flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Verification Queue Table Section -->
+<section class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
+<div class="p-6 border-b border-outline-variant/10 flex justify-between items-center">
+<div>
+<h3 class="text-lg font-bold text-on-surface font-manrope">Antrean Verifikasi KTM</h3>
+<p class="text-xs text-outline mt-1">Review vendor yang mendaftar hari ini menggunakan Kartu Tanda Mahasiswa</p>
+</div>
+<button class="text-sm font-bold text-primary flex items-center gap-2 hover:underline">
+                        Lihat Semua <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-surface-container-low text-[10px] uppercase tracking-widest text-outline">
+<tr>
+<th class="px-6 py-4 font-bold">Nama Pemilik</th>
+<th class="px-6 py-4 font-bold">Nama Bisnis</th>
+<th class="px-6 py-4 font-bold">File KTM</th>
+<th class="px-6 py-4 font-bold">Tanggal Daftar</th>
+<th class="px-6 py-4 font-bold text-center">Aksi</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container/30 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-container text-white flex items-center justify-center text-xs font-bold">AN</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Aditya Nugraha</p>
+<p class="text-xs text-outline">aditya.n@student.univ.ac.id</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-sm font-medium">Warmindo Bahagia</td>
+<td class="px-6 py-4">
+<button class="flex items-center gap-2 text-primary bg-primary-fixed/50 px-3 py-1.5 rounded-md hover:bg-primary-fixed transition-colors text-xs font-bold">
+<span class="material-symbols-outlined text-sm" data-icon="description">description</span>
+                                        Lihat Foto
+                                    </button>
+</td>
+<td class="px-6 py-4 text-sm text-outline">24 Okt 2023, 10:20</td>
+<td class="px-6 py-4">
+<div class="flex justify-center gap-2">
+<button class="px-4 py-2 bg-secondary text-white text-xs font-bold rounded-md hover:opacity-90 active:scale-95 transition-all">Setujui &amp; Verifikasi</button>
+<button class="px-4 py-2 border border-error text-error text-xs font-bold rounded-md hover:bg-error/5 active:scale-95 transition-all">Tolak</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container/30 transition-colors">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary text-white flex items-center justify-center text-xs font-bold">SP</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Siska Putri</p>
+<p class="text-xs text-outline">siska.p@student.univ.ac.id</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 text-sm font-medium">Hijab Chic Store</td>
+<td class="px-6 py-4">
+<button class="flex items-center gap-2 text-primary bg-primary-fixed/50 px-3 py-1.5 rounded-md hover:bg-primary-fixed transition-colors text-xs font-bold">
+<span class="material-symbols-outlined text-sm" data-icon="description">description</span>
+                                        Lihat Foto
+                                    </button>
+</td>
+<td class="px-6 py-4 text-sm text-outline">24 Okt 2023, 09:45</td>
+<td class="px-6 py-4">
+<div class="flex justify-center gap-2">
+<button class="px-4 py-2 bg-secondary text-white text-xs font-bold rounded-md hover:opacity-90 active:scale-95 transition-all">Setujui &amp; Verifikasi</button>
+<button class="px-4 py-2 border border-error text-error text-xs font-bold rounded-md hover:bg-error/5 active:scale-95 transition-all">Tolak</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Moderation & Bento Section -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Moderation Section -->
+<div class="lg:col-span-2 bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10">
+<div class="p-6 border-b border-outline-variant/10 flex items-center gap-2">
+<span class="material-symbols-outlined text-error" data-icon="forum">forum</span>
+<h3 class="text-lg font-bold text-on-surface font-manrope">Recent Forum Reports</h3>
+</div>
+<div class="p-6 space-y-4">
+<!-- Flagged Post 1 -->
+<div class="p-4 bg-surface-container-low rounded-lg border-l-4 border-error/50">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-2">
+<p class="text-sm font-bold text-on-surface">User: BudiSantoso_99</p>
+<span class="text-[10px] px-2 py-0.5 bg-error-container text-on-error-container rounded-full font-bold uppercase">Spam / Iklan</span>
+</div>
+<p class="text-xs text-outline">2 jam yang lalu</p>
+</div>
+<p class="text-sm text-on-surface-variant italic mb-4">"Cek link profil saya untuk pinjaman online tanpa jaminan, bunga rendah proses cepat 5 menit cair..."</p>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 bg-error text-on-error px-4 py-2 rounded-md text-xs font-bold hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-sm" data-icon="delete">delete</span>
+                                    Hapus Postingan
+                                </button>
+<button class="text-on-surface-variant px-4 py-2 rounded-md text-xs font-bold border border-outline-variant/30 hover:bg-surface-container-high transition-colors">
+                                    Abaikan Laporan
+                                </button>
+</div>
+</div>
+<!-- Flagged Post 2 -->
+<div class="p-4 bg-surface-container-low rounded-lg border-l-4 border-error/50">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-2">
+<p class="text-sm font-bold text-on-surface">User: Anonymous_X</p>
+<span class="text-[10px] px-2 py-0.5 bg-error-container text-on-error-container rounded-full font-bold uppercase">Hate Speech</span>
+</div>
+<p class="text-xs text-outline">5 jam yang lalu</p>
+</div>
+<p class="text-sm text-on-surface-variant italic mb-4">"Vendor ini penipu, layanannya sangat buruk, jangan pernah beli disini..."</p>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 bg-error text-on-error px-4 py-2 rounded-md text-xs font-bold hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-sm" data-icon="delete">delete</span>
+                                    Hapus Postingan
+                                </button>
+<button class="text-on-surface-variant px-4 py-2 rounded-md text-xs font-bold border border-outline-variant/30 hover:bg-surface-container-high transition-colors">
+                                    Review Detail
+                                </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Admin Activity / Sidebar Widget -->
+<div class="bg-primary-container text-on-primary-container rounded-xl p-8 flex flex-col justify-between overflow-hidden relative">
+<div class="absolute top-0 right-0 p-8 opacity-10">
+<span class="material-symbols-outlined text-[120px]" data-icon="security">security</span>
+</div>
+<div>
+<h4 class="text-2xl font-bold font-manrope leading-tight mb-4">Secure Control Center</h4>
+<p class="text-sm opacity-80 mb-8 font-light">Seluruh log aktivitas admin dicatat secara otomatis untuk menjaga integritas sistem UC-Connect.</p>
+<div class="space-y-4">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-secondary animate-pulse"></div>
+<p class="text-xs font-medium">Server Status: Optimal (99.9% Up)</p>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+<p class="text-xs font-medium">SSL Encryption: Active</p>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-secondary"></div>
+<p class="text-xs font-medium">Daily Backups: Completed</p>
+</div>
+</div>
+</div>
+<button class="mt-12 bg-white/10 backdrop-blur-md border border-white/20 py-3 rounded-md text-sm font-bold hover:bg-white/20 transition-all">
+                        View System Logs
+                    </button>
+</div>
+</section>
+</div>
+</main>
+</body></html>
