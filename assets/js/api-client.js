@@ -1,9 +1,10 @@
 // API Client for backend communication
-class APIClient {
-  constructor(baseUrl = '/api') {
-    this.baseUrl = baseUrl;
-    this.token = this.getToken();
-  }
+(function () {
+  class APIClient {
+    constructor(baseUrl = "/api") {
+      this.baseUrl = baseUrl;
+      this.token = this.getToken();
+    }
 
   getToken() {
     return localStorage.getItem('uc_connect_token');
@@ -64,15 +65,15 @@ class APIClient {
 
   // Auth endpoints
   async login(email, password) {
-    return this.request('/auth/login', {
-      method: 'POST',
+    return this.request("/auth/login", {
+      method: "POST",
       body: JSON.stringify({ email, password }),
     });
   }
 
-  async register(email, password, name, role = 'customer') {
-    return this.request('/auth/register', {
-      method: 'POST',
+  async register(email, password, name, role = "customer") {
+    return this.request("/auth/register", {
+      method: "POST",
       body: JSON.stringify({ email, password, name, role }),
     });
   }
@@ -84,12 +85,12 @@ class APIClient {
 
   // User endpoints
   async getUser() {
-    return this.request('/users/me');
+    return this.request("/users/me");
   }
 
   async updateProfile(data) {
-    return this.request('/users/profile', {
-      method: 'PUT',
+    return this.request("/users/profile", {
+      method: "PUT",
       body: JSON.stringify(data),
     });
   }
@@ -120,12 +121,12 @@ class APIClient {
 
   // Admin endpoints
   async getVendorsForVerification() {
-    return this.request('/admin/vendors/pending');
+    return this.request("/admin/vendors/pending");
   }
 
   async verifyVendor(vendorId, approved = true) {
     return this.request(`/admin/vendors/${vendorId}/verify`, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify({ approved }),
     });
   }
@@ -137,7 +138,7 @@ class APIClient {
 
   async deleteForumPost(postId) {
     return this.request(`/forum/posts/${postId}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   }
 
@@ -147,11 +148,11 @@ class APIClient {
   }
 
   async getAdminStats() {
-    return this.request('/admin/stats');
+    return this.request("/admin/stats");
   }
-}
+  }
 
-// Create global instance
-window.apiClient = new APIClient();
-
-export default APIClient;
+  const baseUrl = (window.APP_CONFIG && window.APP_CONFIG.apiBaseUrl) || "/api";
+  window.APIClient = APIClient;
+  window.apiClient = new APIClient(baseUrl);
+})();

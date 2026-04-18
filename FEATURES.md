@@ -46,6 +46,12 @@
 - requireRole() - Enforce role-based access
 ```
 
+### Supabase Integration (`/assets/js/supabase-client.js`)
+- Initializes Supabase client using client-safe keys
+- Uses UMD build: `supabase.min.js`
+- Exposes `window.supabaseClient` for auth flows
+- Requires setting `window.SUPABASE_URL` and `window.SUPABASE_ANON_KEY`
+
 ## ✅ Admin Panel Features
 
 ### Super Admin Page (`/pages/admin/super-admin.html`)

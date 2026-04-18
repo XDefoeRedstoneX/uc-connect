@@ -15,6 +15,8 @@ This is a **working prototype** of the UC-Connect platform, a university-based l
 - ✅ `assets/js/auth.js` - Authentication manager
 - ✅ `assets/js/utils.js` - Form validation, DOM helpers, UI utilities
 - ✅ `assets/js/config.js` - Configuration management
+- ✅ `assets/js/supabase-env.js` - Client-safe Supabase keys
+- ✅ `assets/js/supabase-client.js` - Supabase initialization
 
 ### 3. **Authentication System**
 - ✅ Login page with working form validation
@@ -22,6 +24,7 @@ This is a **working prototype** of the UC-Connect platform, a university-based l
 - ✅ Password visibility toggle
 - ✅ Session management with localStorage
 - ✅ Authentication guards for admin pages
+- ✅ Supabase Auth integration (sign-in + sign-up)
 
 ### 4. **Admin Panel (Super Admin)**
 - ✅ Sidebar navigation with active state tracking
