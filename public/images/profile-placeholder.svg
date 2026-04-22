@@ -1,0 +1,6 @@
+<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>Default profile photo placeholder</title>
+  <rect width="240" height="240" rx="24" fill="#EFF4FF"/>
+  <circle cx="120" cy="92" r="38" fill="#C9D8F2"/>
+  <path d="M48 202C48 165.549 77.5492 136 114 136H126C162.451 136 192 165.549 192 202V208H48V202Z" fill="#B4C7EA"/>
+</svg>

@@ -1,0 +1,15 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>UC Connect Icon</title>
+  <defs>
+    <linearGradient id="gBlue" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0D5EA1"/>
+      <stop offset="1" stop-color="#00236F"/>
+    </linearGradient>
+    <linearGradient id="gGold" x1="8" y1="56" x2="56" y2="8" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F2A400"/>
+      <stop offset="1" stop-color="#F6B11A"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="24" stroke="url(#gBlue)" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="112 32"/>
+  <circle cx="32" cy="32" r="16" stroke="url(#gGold)" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="75 25" transform="rotate(28 32 32)"/>
+</svg>

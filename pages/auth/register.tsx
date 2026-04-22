@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
+import AuthSplitLayout from "@/components/AuthSplitLayout";
+import AuthTabs from "@/components/AuthTabs";
+import FormField from "@/components/FormField";
 import SiteLayout from "@/components/SiteLayout";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
@@ -9,6 +12,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [phone, setPhone] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,27 +53,32 @@ export default function RegisterPage() {
     e.preventDefault();
     setMessage(null);
     setError(null);
+    setSubmitting(true);
 
     const normalizedFullName = fullName.trim();
     if (!normalizedFullName) {
       setError("Full name is required.");
+      setSubmitting(false);
       return;
     }
 
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
+      setSubmitting(false);
       return;
     }
 
     const normalizedPhone = normalizeIndonesianPhoneToLocal(phone);
     if (normalizedPhone.error) {
       setError(normalizedPhone.error);
+      setSubmitting(false);
       return;
     }
 
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
       setError("Supabase env is missing.");
+      setSubmitting(false);
       return;
     }
 
@@ -83,55 +92,94 @@ export default function RegisterPage() {
 
     if (authError) {
       setError(authError.message);
+      setSubmitting(false);
       return;
     }
 
     setMessage("Registration successful. Check your email for verification.");
+    setSubmitting(false);
   }
 
   return (
     <SiteLayout title="Register | UC Connect">
-      <section className="card">
-        <h1>Register</h1>
-        <form onSubmit={onRegister} className="stack">
-          <label>
-            Full name
-            <input value={fullName} onChange={(e) => setFullName(e.target.value)} required />
-          </label>
-          <label>
-            Email
-            <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
-          </label>
-          <label>
-            Password
-            <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required minLength={8} />
-          </label>
-          <label>
-            Confirm password
-            <input
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              type="password"
-              required
-              minLength={8}
-            />
-          </label>
-          <label>
-            Phone
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" placeholder="0812… / +62812…" />
-          </label>
-          {phone && phonePreview.error && <p className="err">{phonePreview.error}</p>}
-          {phoneInternational && !phonePreview.error && <p>International format: {phoneInternational}</p>}
-          <button type="submit">Create account</button>
+      <AuthSplitLayout
+        labelledBy="register-title"
+        visualPanel={
+          <>
+            <span className="badge gold">ID + EN Friendly Experience</span>
+            <h2>Mulai Etalase Bisnis Kampus Anda</h2>
+            <p>
+              Daftar sekarang untuk menjual produk, menerima pesanan, dan membangun reputasi sebagai vendor terpercaya.
+            </p>
+            <p className="inline-note">Data nomor telepon akan dipakai untuk kontak WhatsApp vendor/pelanggan.</p>
+          </>
+        }
+      >
+        <AuthTabs currentPage="register" />
+
+        <h1 id="register-title">Buat Akun UC Connect</h1>
+        <p className="muted">Daftar sebagai pelanggan atau calon vendor untuk mulai membangun jaringan bisnis kampus.</p>
+
+        <form onSubmit={onRegister} className="stack" aria-label="Register form">
+          <FormField
+            id="register-full-name"
+            label="Nama Lengkap / Full Name"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            required
+            placeholder="Nama sesuai identitas"
+          />
+          <FormField
+            id="register-email"
+            label="Email / Email Address"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            placeholder="nama@kampus.ac.id"
+          />
+          <FormField
+            id="register-password"
+            label="Kata Sandi / Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={8}
+            placeholder="Minimal 8 karakter"
+          />
+          <FormField
+            id="register-confirm-password"
+            label="Konfirmasi Password / Confirm Password"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            minLength={8}
+            placeholder="Ulangi kata sandi"
+          />
+          <FormField
+            id="register-phone"
+            label="No. WhatsApp / Phone (Optional)"
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="0812... / +62812..."
+            error={phone && phonePreview.error ? phonePreview.error : null}
+            helpText={phoneInternational && !phonePreview.error ? `International format: ${phoneInternational}` : null}
+          />
+          <button type="submit" disabled={submitting}>
+            {submitting ? "Memproses..." : "Buat Akun / Create Account"}
+          </button>
         </form>
 
         <div className="row-gap">
-          <Link href="/auth/login">Already have an account?</Link>
+          <Link href="/auth/login">Sudah punya akun? / Already have an account?</Link>
         </div>
 
         {message && <p className="ok">{message}</p>}
         {error && <p className="err">{error}</p>}
-      </section>
+      </AuthSplitLayout>
     </SiteLayout>
   );
 }

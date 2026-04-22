@@ -1,0 +1,14 @@
+<svg width="1200" height="300" viewBox="0 0 1200 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>Default vendor banner placeholder</title>
+  <defs>
+    <linearGradient id="bg" x1="120" y1="0" x2="1080" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E9F1FF"/>
+      <stop offset="1" stop-color="#F8FAFF"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="300" fill="url(#bg)"/>
+  <circle cx="140" cy="220" r="170" fill="#D9E7FD"/>
+  <circle cx="1110" cy="-10" r="210" fill="#D3E2FB"/>
+  <rect x="70" y="180" width="460" height="22" rx="11" fill="#BFD2F0"/>
+  <rect x="70" y="214" width="360" height="18" rx="9" fill="#CADAF3"/>
+</svg>

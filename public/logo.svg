@@ -1,0 +1,21 @@
+<svg width="220" height="80" viewBox="0 0 220 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>UC Connect Logo</title>
+  <defs>
+    <linearGradient id="gBlue" x1="10" y1="10" x2="70" y2="70" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0D5EA1"/>
+      <stop offset="1" stop-color="#00236F"/>
+    </linearGradient>
+    <linearGradient id="gGold" x1="10" y1="70" x2="70" y2="10" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F2A400"/>
+      <stop offset="1" stop-color="#F6B11A"/>
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(6,8)">
+    <circle cx="32" cy="32" r="30" stroke="url(#gBlue)" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="138 42"/>
+    <circle cx="32" cy="32" r="20" stroke="url(#gGold)" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="94 31" transform="rotate(28 32 32)"/>
+  </g>
+
+  <text x="84" y="34" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700" fill="#00236F">UC Connect</text>
+  <text x="84" y="53" font-family="Segoe UI, Arial, sans-serif" font-size="11" letter-spacing="1.4" fill="#556176">UNIVERSITY COMMUNITY MARKETPLACE</text>
+</svg>

@@ -8,11 +8,11 @@ type Props = {
 };
 
 const navItems = [
-  { href: "/", label: "Home" },
-  { href: "/directory/home", label: "Directory" },
-  { href: "/directory/explore", label: "Explore" },
-  { href: "/customer/profile", label: "Profile" },
-  { href: "/auth/login", label: "Login" },
+  { href: "/", label: "Beranda / Home" },
+  { href: "/directory/home", label: "Direktori / Directory" },
+  { href: "/directory/explore", label: "Eksplorasi / Explore" },
+  { href: "/customer/profile", label: "Profil / Profile" },
+  { href: "/auth/login", label: "Masuk / Login" },
 ];
 
 export default function SiteLayout({ title, children }: Props) {
@@ -24,20 +24,34 @@ export default function SiteLayout({ title, children }: Props) {
       </Head>
       <div className="site-shell">
         <header className="topbar">
-          <div className="brand">UC Connect</div>
-          <nav className="topnav">
-            {navItems.map((item) => (
-              <Link key={item.href} href={item.href} className="nav-link">
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+          <div className="topbar-inner">
+            <Link href="/" className="brand" aria-label="UC Connect homepage">
+              <img src="/logo-icon.svg" alt="UC Connect icon" className="brand-mark" />
+              <span className="brand-text">
+                <span className="brand-title">UC Connect</span>
+                <span className="brand-sub">University Community Marketplace</span>
+              </span>
+            </Link>
+
+            <nav className="topnav" aria-label="Primary navigation">
+              {navItems.map((item) => (
+                <Link key={item.href} href={item.href} className="nav-link">
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
         </header>
         <main className="content">{children}</main>
         <footer className="footer">
-          <Link href="/legal/privacy">Privacy</Link>
-          <Link href="/legal/terms">Terms</Link>
-          <Link href="/support">Support</Link>
+          <div className="footer-inner">
+            <p className="footer-note">UC Connect • Kampus x Mahasiswa x UMKM</p>
+            <div className="footer-links">
+              <Link href="/legal/privacy">Privacy</Link>
+              <Link href="/legal/terms">Terms</Link>
+              <Link href="/support">Support</Link>
+            </div>
+          </div>
         </footer>
       </div>
     </>
