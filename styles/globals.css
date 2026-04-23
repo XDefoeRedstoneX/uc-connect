@@ -366,6 +366,11 @@ button:disabled,
   margin-top: 1rem;
 }
 
+.hero-logo {
+  width: 220px;
+  max-width: 70vw;
+}
+
 .chip {
   display: inline-flex;
   align-items: center;

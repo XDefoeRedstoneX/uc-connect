@@ -1,6 +1,7 @@
 import { GetServerSideProps } from "next";
-import Link from "next/link";
 import { FormEvent, useState } from "react";
+import HeroSection from "@/components/HeroSection";
+import VendorCard from "@/components/VendorCard";
 import SiteLayout from "@/components/SiteLayout";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 import { Vendor } from "@/types/domain";
@@ -43,9 +44,13 @@ export default function ExplorePage({ initialVendors, initialError }: Props) {
 
   return (
     <SiteLayout title="Explore Vendors | UC Connect">
-      <section className="hero" aria-labelledby="explore-title">
-        <h1 id="explore-title">Eksplorasi Vendor Kampus / Explore Campus Vendors</h1>
-        <p>Cari vendor berdasarkan nama, kategori, atau deskripsi untuk menemukan mitra terbaik.</p>
+      <HeroSection
+        title="Eksplorasi Vendor Kampus / Explore Campus Vendors"
+        titleId="explore-title"
+        description="Cari vendor berdasarkan nama, kategori, atau deskripsi untuk menemukan mitra terbaik."
+        chips={["Semua / All", "Makanan / Food", "Jasa Kreatif / Creative", "Kebutuhan Harian / Essentials"]}
+        chipsAriaLabel="Quick filters"
+      >
         <form onSubmit={onSearch} className="row" aria-label="Search vendors">
           <input
             value={q}
@@ -54,13 +59,7 @@ export default function ExplorePage({ initialVendors, initialError }: Props) {
           />
           <button type="submit">Cari / Search</button>
         </form>
-        <div className="row-wrap" aria-label="Quick filters">
-          <span className="chip">Semua / All</span>
-          <span className="chip">Makanan / Food</span>
-          <span className="chip">Jasa Kreatif / Creative</span>
-          <span className="chip">Kebutuhan Harian / Essentials</span>
-        </div>
-      </section>
+      </HeroSection>
 
       <section className="card compact-top" aria-label="Vendor results">
         {loading && <p>Memuat vendor... / Loading vendors...</p>}
@@ -72,25 +71,20 @@ export default function ExplorePage({ initialVendors, initialError }: Props) {
 
         <ul className="vendor-grid">
           {vendors.map((vendor) => (
-            <li key={vendor.id} className="vendor-card">
-              <img
-                className="vendor-cover"
-                src="/images/vendor-placeholder.svg"
-                alt={`Placeholder image for ${vendor.name}`}
-              />
-              <div className="vendor-body">
-                <div className="row-wrap">
-                  {vendor.is_verified && <span className="badge success">Verified Vendor</span>}
-                  <span className="badge gold">Campus Business</span>
-                </div>
-                <h3>{vendor.name}</h3>
-                <p className="vendor-meta">{vendor.category ?? "Uncategorized"} · {vendor.city ?? "Unknown city"}</p>
-                <p>{vendor.description ?? "No description yet."}</p>
-                <div className="vendor-actions">
-                  <Link className="btn" href={`/directory/vendor/${vendor.id}`}>Lihat Detail / View Detail</Link>
-                </div>
-              </div>
-            </li>
+            <VendorCard
+              key={vendor.id}
+              title={vendor.name}
+              meta={`${vendor.category ?? "Uncategorized"} · ${vendor.city ?? "Unknown city"}`}
+              href={`/directory/vendor/${vendor.id}`}
+              imageSrc="/images/vendor-placeholder.svg"
+              imageAlt={`Placeholder image for ${vendor.name}`}
+              description={vendor.description ?? "No description yet."}
+              badges={[
+                ...(vendor.is_verified ? [{ tone: "success" as const, text: "Verified Vendor" }] : []),
+                { tone: "gold" as const, text: "Campus Business" },
+              ]}
+              ctaLabel="Lihat Detail / View Detail"
+            />
           ))}
         </ul>
       </section>

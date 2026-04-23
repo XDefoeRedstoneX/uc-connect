@@ -1,5 +1,6 @@
-import Link from "next/link";
+import HeroSection from "@/components/HeroSection";
 import SiteLayout from "@/components/SiteLayout";
+import VendorCard from "@/components/VendorCard";
 
 const links = [
   { href: "/auth/login", label: "Masuk / Login" },
@@ -13,33 +14,28 @@ const links = [
 export default function Home() {
   return (
     <SiteLayout title="UC Connect">
-      <section className="hero" aria-labelledby="landing-title">
-        <span className="badge gold">UC Connect 2026 UI Refresh</span>
-        <h1 id="landing-title">Marketplace Komunitas Kampus yang Lebih Modern</h1>
-        <p>
-          Desain baru mengikuti referensi archive dengan alur yang lebih jelas: login, eksplorasi vendor,
-          dan konversi ke WhatsApp dalam pengalaman bilingual.
-        </p>
+      <HeroSection
+        title="Marketplace Komunitas Kampus yang Lebih Modern"
+        titleId="landing-title"
+        description="Desain baru mengikuti referensi archive dengan alur yang lebih jelas: login, eksplorasi vendor, dan konversi ke WhatsApp dalam pengalaman bilingual."
+        badge="UC Connect 2026 UI Refresh"
+      >
         <div className="row-wrap">
-          <img src="/logo.svg" alt="UC Connect logo" style={{ width: "220px", maxWidth: "70vw" }} />
+          <img className="hero-logo" src="/logo.svg" alt="UC Connect logo" />
         </div>
-      </section>
+      </HeroSection>
 
       <section className="card compact-top" aria-label="Quick access links">
         <h2>Jalur Utama / Main Routes</h2>
         <ul className="vendor-grid">
           {links.map((item) => (
-            <li key={item.href} className="vendor-card">
-              <div className="vendor-body">
-                <h3>{item.label}</h3>
-                <p className="vendor-meta">Route: {item.href}</p>
-                <div className="vendor-actions">
-                  <Link className="btn" href={item.href}>
-                    Buka Halaman / Open
-                  </Link>
-                </div>
-              </div>
-            </li>
+            <VendorCard
+              key={item.href}
+              title={item.label}
+              meta={`Route: ${item.href}`}
+              href={item.href}
+              ctaLabel="Buka Halaman / Open"
+            />
           ))}
         </ul>
       </section>

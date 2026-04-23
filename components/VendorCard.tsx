@@ -24,7 +24,7 @@ export default function VendorCard({
   imageAlt,
   description,
   badges,
-  ctaLabel = "Lihat Detail / View Detail",
+  ctaLabel,
 }: VendorCardProps) {
   return (
     <li className="vendor-card">
@@ -42,11 +42,13 @@ export default function VendorCard({
         <h3>{title}</h3>
         <p className="vendor-meta">{meta}</p>
         {description && <p>{description}</p>}
-        <div className="vendor-actions">
-          <Link className="btn" href={href}>
-            {ctaLabel}
-          </Link>
-        </div>
+        {ctaLabel && (
+          <div className="vendor-actions">
+            <Link className="btn" href={href}>
+              {ctaLabel}
+            </Link>
+          </div>
+        )}
       </div>
     </li>
   );

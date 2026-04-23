@@ -1,6 +1,7 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import SiteLayout from "@/components/SiteLayout";
+import VendorCard from "@/components/VendorCard";
 import { Vendor } from "@/types/domain";
 
 export default function VendorDetailPage() {
@@ -101,20 +102,20 @@ export default function VendorDetailPage() {
 
               <h3 className="section-title">Menu dan Layanan / Menu & Services</h3>
               <ul className="vendor-grid">
-                <li className="vendor-card">
-                  <img className="vendor-cover" src="/images/vendor-placeholder.svg" alt="Product placeholder one" />
-                  <div className="vendor-body">
-                    <h3>Paket Promo Kampus</h3>
-                    <p className="vendor-meta">Mulai dari Rp35.000</p>
-                  </div>
-                </li>
-                <li className="vendor-card">
-                  <img className="vendor-cover" src="/images/vendor-placeholder.svg" alt="Product placeholder two" />
-                  <div className="vendor-body">
-                    <h3>Layanan Event Mini</h3>
-                    <p className="vendor-meta">Mulai dari Rp120.000</p>
-                  </div>
-                </li>
+                <VendorCard
+                  title="Paket Promo Kampus"
+                  meta="Mulai dari Rp35.000"
+                  href="#"
+                  imageSrc="/images/vendor-placeholder.svg"
+                  imageAlt="Product placeholder one"
+                />
+                <VendorCard
+                  title="Layanan Event Mini"
+                  meta="Mulai dari Rp120.000"
+                  href="#"
+                  imageSrc="/images/vendor-placeholder.svg"
+                  imageAlt="Product placeholder two"
+                />
               </ul>
             </article>
 
