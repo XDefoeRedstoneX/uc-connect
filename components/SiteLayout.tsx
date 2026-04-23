@@ -1,21 +1,25 @@
 import Head from "next/head";
 import Link from "next/link";
 import { ReactNode } from "react";
+import { useLanguage } from "@/lib/language-context";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 type Props = {
   title: string;
   children: ReactNode;
 };
 
-const navItems = [
-  { href: "/", label: "Beranda / Home" },
-  { href: "/directory/home", label: "Direktori / Directory" },
-  { href: "/directory/explore", label: "Eksplorasi / Explore" },
-  { href: "/customer/profile", label: "Profil / Profile" },
-  { href: "/auth/login", label: "Masuk / Login" },
-];
+function SiteLayoutContent({ title, children }: Props) {
+  const { t } = useLanguage();
 
-export default function SiteLayout({ title, children }: Props) {
+  const navItems = [
+    { href: "/", label: t("nav.home") },
+    { href: "/directory/home", label: t("nav.directory") },
+    { href: "/directory/explore", label: t("nav.explore") },
+    { href: "/customer/profile", label: t("nav.profile") },
+    { href: "/auth/login", label: t("nav.login") },
+  ];
+
   return (
     <>
       <Head>
@@ -40,20 +44,26 @@ export default function SiteLayout({ title, children }: Props) {
                 </Link>
               ))}
             </nav>
+
+            <LanguageSwitcher />
           </div>
         </header>
         <main className="content">{children}</main>
         <footer className="footer">
           <div className="footer-inner">
-            <p className="footer-note">UC Connect • Kampus x Mahasiswa x UMKM</p>
+            <p className="footer-note">{t("footer.tagline")}</p>
             <div className="footer-links">
-              <Link href="/legal/privacy">Privacy</Link>
-              <Link href="/legal/terms">Terms</Link>
-              <Link href="/support">Support</Link>
+              <Link href="/legal/privacy">{t("footer.privacy")}</Link>
+              <Link href="/legal/terms">{t("footer.terms")}</Link>
+              <Link href="/support">{t("footer.support")}</Link>
             </div>
           </div>
         </footer>
       </div>
     </>
   );
+}
+
+export default function SiteLayout(props: Props) {
+  return <SiteLayoutContent {...props} />;
 }

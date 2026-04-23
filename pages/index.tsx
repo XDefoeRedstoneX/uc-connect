@@ -1,36 +1,39 @@
 import HeroSection from "@/components/HeroSection";
 import SiteLayout from "@/components/SiteLayout";
 import VendorCard from "@/components/VendorCard";
+import { useLanguage } from "@/lib/language-context";
 
-const entryCards = [
-  {
-    href: "/directory/explore",
-    label: "Eksplorasi Vendor Kampus / Explore Vendors",
-    meta: "Temukan UMKM mahasiswa terverifikasi berdasarkan kategori dan lokasi.",
-    ctaLabel: "Mulai Eksplorasi / Start Exploring",
-  },
-  {
-    href: "/auth/login",
-    label: "Masuk ke Akun Anda / Sign In",
-    meta: "Kelola profil, simpan vendor favorit, dan lanjutkan percakapan bisnis.",
-    ctaLabel: "Masuk / Sign In",
-  },
-  {
-    href: "/auth/register",
-    label: "Gabung UC Connect / Create Account",
-    meta: "Daftar sebagai pelanggan atau calon vendor untuk memperluas jaringan kampus.",
-    ctaLabel: "Daftar Sekarang / Register",
-  },
-];
+function HomeContent() {
+  const { t } = useLanguage();
 
-export default function Home() {
+  const entryCards = [
+    {
+      href: "/directory/explore",
+      label: t("pages.homepage.exploreVendors"),
+      meta: t("pages.homepage.exploreDesc"),
+      ctaLabel: t("pages.homepage.exploreBtn"),
+    },
+    {
+      href: "/auth/login",
+      label: t("pages.homepage.signIn"),
+      meta: t("pages.homepage.signInDesc"),
+      ctaLabel: t("pages.homepage.signInBtn"),
+    },
+    {
+      href: "/auth/register",
+      label: t("pages.homepage.createAccount"),
+      meta: t("pages.homepage.createDesc"),
+      ctaLabel: t("pages.homepage.createBtn"),
+    },
+  ];
+
   return (
     <SiteLayout title="UC Connect">
       <HeroSection
-        title="Marketplace Komunitas Kampus yang Lebih Modern"
+        title={t("pages.homepage.title")}
         titleId="landing-title"
-        description="Desain baru mengikuti referensi archive dengan alur yang lebih jelas: login, eksplorasi vendor, dan konversi ke WhatsApp dalam pengalaman bilingual."
-        badge="UC Connect 2026 UI Refresh"
+        description={t("pages.homepage.description")}
+        badge="UC Connect"
       >
         <div className="row-wrap">
           <img className="hero-logo" src="/logo.svg" alt="UC Connect logo" />
@@ -38,7 +41,7 @@ export default function Home() {
       </HeroSection>
 
       <section className="card compact-top" aria-label="Main user entry points">
-        <h2>Mulai dari Sini / Start Here</h2>
+        <h2>{t("pages.homepage.startHere")}</h2>
         <ul className="vendor-grid">
           {entryCards.map((item) => (
             <VendorCard
@@ -53,4 +56,8 @@ export default function Home() {
       </section>
     </SiteLayout>
   );
+}
+
+export default function Home() {
+  return <HomeContent />;
 }

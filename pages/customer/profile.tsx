@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/lib/language-context";
 import { toPublicPageErrorMessage } from "@/lib/public-errors";
 import SiteLayout from "@/components/SiteLayout";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { UserProfile } from "@/types/domain";
 
 export default function CustomerProfilePage() {
+  const { t } = useLanguage();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +19,7 @@ export default function CustomerProfilePage() {
 
       const supabase = getSupabaseBrowserClient();
       if (!supabase) {
-        setError("Layanan sedang tidak tersedia. Silakan coba beberapa saat lagi.");
+        setError(t("errors.serviceUnavailable"));
         setLoading(false);
         return;
       }
@@ -26,7 +28,7 @@ export default function CustomerProfilePage() {
       const token = sessionData.session?.access_token;
 
       if (!token) {
-        setError("Sesi tidak ditemukan. Silakan masuk kembali.");
+        setError(t("errors.sessionExpired"));
         setLoading(false);
         return;
       }
@@ -47,7 +49,7 @@ export default function CustomerProfilePage() {
     };
 
     void load();
-  }, []);
+  }, [t]);
 
   async function logout() {
     const supabase = getSupabaseBrowserClient();
@@ -59,18 +61,18 @@ export default function CustomerProfilePage() {
   return (
     <SiteLayout title="Customer Profile | UC Connect">
       <section className="card">
-        <h1>Customer Profile</h1>
+        <h1>{t("pages.profile.title")}</h1>
 
-        {loading && <p>Loading profile...</p>}
+        {loading && <p>{t("pages.profile.loading")}</p>}
         {error && <p className="err">{error}</p>}
 
         {profile && (
           <div className="stack compact-top">
-            <p>Name: {profile.full_name ?? "Not set"}</p>
-            <p>Phone: {profile.phone ?? "Not set"}</p>
-            <p>Role: {profile.role}</p>
-            <Link className="btn" href="/customer/edit-profile">Edit profile</Link>
-            <button type="button" className="secondary" onClick={logout}>Logout</button>
+            <p>{t("pages.profile.name")} {profile.full_name ?? t("pages.profile.notSet")}</p>
+            <p>{t("pages.profile.phone")} {profile.phone ?? t("pages.profile.notSet")}</p>
+            <p>{t("pages.profile.role")} {profile.role}</p>
+            <Link className="btn" href="/customer/edit-profile">{t("pages.profile.editProfile")}</Link>
+            <button type="button" className="secondary" onClick={logout}>{t("pages.profile.logout")}</button>
           </div>
         )}
       </section>

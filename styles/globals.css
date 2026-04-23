@@ -131,6 +131,43 @@ img {
   background: #fff;
 }
 
+.language-switcher {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  margin-left: auto;
+}
+
+.lang-btn {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lang-btn:hover {
+  color: var(--accent);
+  border-color: #c4d4f3;
+  background: #fff;
+}
+
+.lang-btn.active {
+  color: var(--accent);
+  background: #eef4ff;
+  border-color: #d3dbeb;
+  font-weight: 700;
+}
+
+.lang-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .content {
   flex: 1;
   width: min(1160px, 100%);

@@ -4,10 +4,12 @@ import AuthSplitLayout from "@/components/AuthSplitLayout";
 import AuthTabs from "@/components/AuthTabs";
 import FormField from "@/components/FormField";
 import SiteLayout from "@/components/SiteLayout";
+import { useLanguage } from "@/lib/language-context";
 import { toPublicAuthErrorMessage } from "@/lib/public-errors";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export default function RegisterPage() {
+  const { t } = useLanguage();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,7 +27,7 @@ export default function RegisterPage() {
     cleaned = cleaned.replace(/[^0-9+]/g, "");
     if (cleaned.startsWith("+")) {
       if (!cleaned.startsWith("+62")) {
-        return { phone: null, error: "Phone must start with +62 for international format." };
+        return { phone: null, error: t("pages.register.errors.phoneRequired") };
       }
       cleaned = `0${cleaned.slice(3)}`;
     } else if (cleaned.startsWith("62")) {
@@ -33,15 +35,15 @@ export default function RegisterPage() {
     } else if (cleaned.startsWith("8")) {
       cleaned = `0${cleaned}`;
     } else if (!cleaned.startsWith("0")) {
-      return { phone: null, error: "Use format 08…, 8…, +62…, or 62…." };
+      return { phone: null, error: t("pages.register.errors.phoneInvalidFormat") };
     }
 
     if (!/^\d+$/.test(cleaned)) {
-      return { phone: null, error: "Phone must contain digits only." };
+      return { phone: null, error: t("pages.register.errors.phoneOnlyDigits") };
     }
 
     if (cleaned.length < 10 || cleaned.length > 13) {
-      return { phone: null, error: "Phone number length looks invalid." };
+      return { phone: null, error: t("pages.register.errors.phoneInvalidLength") };
     }
 
     return { phone: cleaned, error: null };
@@ -58,13 +60,13 @@ export default function RegisterPage() {
 
     const normalizedFullName = fullName.trim();
     if (!normalizedFullName) {
-      setError("Full name is required.");
+      setError(t("pages.register.errors.fullNameRequired"));
       setSubmitting(false);
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      setError(t("pages.register.errors.passwordsMismatch"));
       setSubmitting(false);
       return;
     }
@@ -78,7 +80,7 @@ export default function RegisterPage() {
 
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      setError("Layanan sedang tidak tersedia. Silakan coba beberapa saat lagi.");
+      setError(t("errors.serviceUnavailable"));
       setSubmitting(false);
       return;
     }
@@ -97,7 +99,7 @@ export default function RegisterPage() {
       return;
     }
 
-    setMessage("Registrasi berhasil. Silakan cek email untuk verifikasi akun.");
+    setMessage(t("pages.register.successMsg"));
     setSubmitting(false);
   }
 
@@ -107,24 +109,21 @@ export default function RegisterPage() {
         labelledBy="register-title"
         visualPanel={
           <>
-            <span className="badge gold">ID + EN Friendly Experience</span>
-            <h2>Mulai Etalase Bisnis Kampus Anda</h2>
-            <p>
-              Daftar sekarang untuk menjual produk, menerima pesanan, dan membangun reputasi sebagai vendor terpercaya.
-            </p>
-            <p className="inline-note">Data nomor telepon akan dipakai untuk kontak WhatsApp vendor/pelanggan.</p>
+            <span className="badge gold">{t("pages.register.panelBadge")}</span>
+            <h2>{t("pages.register.panelTitle")}</h2>
+            <p>{t("pages.register.panelDesc")}</p>
           </>
         }
       >
         <AuthTabs currentPage="register" />
 
-        <h1 id="register-title">Buat Akun UC Connect</h1>
-        <p className="muted">Daftar sebagai pelanggan atau calon vendor untuk mulai membangun jaringan bisnis kampus.</p>
+        <h1 id="register-title">{t("pages.register.title")}</h1>
+        <p className="muted">{t("pages.register.subtitle")}</p>
 
         <form onSubmit={onRegister} className="stack" aria-label="Register form">
           <FormField
             id="register-full-name"
-            label="Nama Lengkap / Full Name"
+            label={t("pages.register.fullName")}
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             required
@@ -132,7 +131,7 @@ export default function RegisterPage() {
           />
           <FormField
             id="register-email"
-            label="Email / Email Address"
+            label={t("pages.register.email")}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -141,7 +140,7 @@ export default function RegisterPage() {
           />
           <FormField
             id="register-password"
-            label="Kata Sandi / Password"
+            label={t("pages.register.password")}
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -151,7 +150,7 @@ export default function RegisterPage() {
           />
           <FormField
             id="register-confirm-password"
-            label="Konfirmasi Password / Confirm Password"
+            label={t("pages.register.confirmPassword")}
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
@@ -161,21 +160,21 @@ export default function RegisterPage() {
           />
           <FormField
             id="register-phone"
-            label="No. WhatsApp / Phone (Optional)"
+            label={t("pages.register.phone")}
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="0812... / +62812..."
             error={phone && phonePreview.error ? phonePreview.error : null}
-            helpText={phoneInternational && !phonePreview.error ? `International format: ${phoneInternational}` : null}
+            helpText={phoneInternational && !phonePreview.error ? `${t("pages.register.internationalFormat")} ${phoneInternational}` : null}
           />
           <button type="submit" disabled={submitting}>
-            {submitting ? "Memproses..." : "Buat Akun / Create Account"}
+            {submitting ? "Memproses..." : t("pages.register.submitBtn")}
           </button>
         </form>
 
         <div className="row-gap">
-          <Link href="/auth/login">Sudah punya akun? / Already have an account?</Link>
+          <Link href="/auth/login">{t("pages.register.haveAccount")}</Link>
         </div>
 
         {message && <p className="ok">{message}</p>}

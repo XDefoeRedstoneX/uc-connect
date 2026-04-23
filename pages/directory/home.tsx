@@ -1,6 +1,7 @@
 import HeroSection from "@/components/HeroSection";
 import SiteLayout from "@/components/SiteLayout";
 import VendorCard from "@/components/VendorCard";
+import { useLanguage } from "@/lib/language-context";
 
 const featuredCards = [
   {
@@ -21,22 +22,24 @@ const featuredCards = [
 ];
 
 export default function DirectoryHomePage() {
+  const { t } = useLanguage();
+
   return (
     <SiteLayout title="Directory Home | UC Connect">
       <HeroSection
-        title="Eksplorasi Bisnis Mahasiswa / Explore Student Businesses"
+        title={t("pages.directoryHome.title")}
         titleId="directory-home-title"
-        description="Platform komunitas kampus untuk menemukan vendor terpercaya, memesan layanan, dan membangun jejaring UMKM mahasiswa."
+        description={t("pages.directoryHome.subtitle")}
         chips={["Food & Beverage", "Creative Services", "Event Needs", "Daily Essentials"]}
         chipsAriaLabel="Business categories"
         actions={[
-          { href: "/directory/explore", label: "Mulai Eksplorasi / Start Exploring" },
-          { href: "/customer/profile", label: "Buka Profil / Open Profile", variant: "secondary" },
+          { href: "/directory/explore", label: t("pages.directoryHome.startExploring") },
+          { href: "/customer/profile", label: t("pages.directoryHome.openProfile"), variant: "secondary" },
         ]}
       />
 
       <section className="card compact-top" aria-labelledby="featured-vendor-title">
-        <h2 id="featured-vendor-title" className="section-title">Vendor Pilihan Minggu Ini / Featured Vendors</h2>
+        <h2 id="featured-vendor-title" className="section-title">{t("pages.directoryHome.featuredTitle")}</h2>
         <ul className="vendor-grid">
           {featuredCards.map((item) => (
             <VendorCard
@@ -46,17 +49,17 @@ export default function DirectoryHomePage() {
               href={item.href}
               imageSrc="/images/vendor-placeholder.svg"
               imageAlt={`Placeholder image for ${item.title}`}
-              badges={[{ tone: "success", text: "Terverifikasi / Verified" }]}
-              ctaLabel="Lihat Vendor / View Vendor"
+              badges={[{ tone: "success", text: t("pages.directoryHome.verified") }]}
+              ctaLabel={t("pages.explore.viewDetail")}
             />
           ))}
         </ul>
       </section>
 
       <section className="card compact-top" aria-label="Trust message">
-        <span className="badge gold">Aman & Terpercaya / Secure & Trusted</span>
+        <span className="badge gold">{t("pages.directoryHome.trustBadge")}</span>
         <p className="compact-top">
-          Semua akun vendor akan melalui proses validasi profil sebelum mendapatkan badge verifikasi di halaman eksplorasi.
+          {t("pages.directoryHome.trustText")}
         </p>
       </section>
     </SiteLayout>

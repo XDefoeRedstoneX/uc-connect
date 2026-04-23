@@ -2,11 +2,13 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import SiteLayout from "@/components/SiteLayout";
 import VendorCard from "@/components/VendorCard";
+import { useLanguage } from "@/lib/language-context";
 import { toPublicPageErrorMessage } from "@/lib/public-errors";
 import { Vendor } from "@/types/domain";
 
 export default function VendorDetailPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const { id } = router.query;
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,21 +41,21 @@ export default function VendorDetailPage() {
     <SiteLayout title="Vendor Detail | UC Connect">
       {loading && (
         <section className="card">
-          <h1>Loading vendor details...</h1>
+          <h1>{t("pages.vendorDetail.loading")}</h1>
         </section>
       )}
 
       {!loading && error && (
         <section className="card">
-          <h1>Unable to load vendor</h1>
+          <h1>{t("pages.vendorDetail.notFound")}</h1>
           <p className="err">{error}</p>
         </section>
       )}
 
       {!loading && !error && !vendor && (
         <section className="card">
-          <h1>Vendor not found</h1>
-          <p>Vendor yang Anda cari belum tersedia atau sudah dihapus.</p>
+          <h1>{t("pages.vendorDetail.notFound")}</h1>
+          <p>{t("pages.vendorDetail.notFoundText")}</p>
         </section>
       )}
 
@@ -64,7 +66,7 @@ export default function VendorDetailPage() {
             <div className="detail-header">
               <div>
                 <div className="row-wrap">
-                  {vendor.is_verified && <span className="badge success">Vendor Terverifikasi / Verified</span>}
+                  {vendor.is_verified && <span className="badge success">{t("pages.explore.verifiedBadge")}</span>}
                   <span className="badge gold">{vendor.category ?? "Uncategorized"}</span>
                 </div>
                 <h1 id="vendor-name-title">{vendor.name}</h1>
@@ -73,35 +75,35 @@ export default function VendorDetailPage() {
 
               {vendor.whatsapp ? (
                 <a className="btn" href={`https://wa.me/${vendor.whatsapp.replace(/[^\d]/g, "")}`} target="_blank" rel="noreferrer">
-                  Hubungi WhatsApp / Contact WhatsApp
+                  {t("pages.vendorDetail.contactWhatsApp")}
                 </a>
               ) : (
-                <button type="button" disabled>Nomor WhatsApp belum tersedia</button>
+                <button type="button" disabled>{t("pages.vendorDetail.unavailableWhatsApp")}</button>
               )}
             </div>
           </section>
 
           <section className="detail-layout" aria-label="Vendor information layout">
             <article className="detail-card">
-              <h2>Tentang Vendor / About This Vendor</h2>
-              <p>{vendor.description ?? "Vendor ini belum menambahkan deskripsi bisnis."}</p>
+              <h2>{t("pages.vendorDetail.about")}</h2>
+              <p>{vendor.description ?? t("pages.vendorDetail.notFoundText")}</p>
 
               <div className="stat-grid">
                 <div className="stat-tile">
                   <p className="stat-value">4.8</p>
-                  <p className="stat-label">Sample Rating</p>
+                  <p className="stat-label">{t("pages.vendorDetail.sampleRating")}</p>
                 </div>
                 <div className="stat-tile">
                   <p className="stat-value">95%</p>
-                  <p className="stat-label">Response Rate</p>
+                  <p className="stat-label">{t("pages.vendorDetail.responseRate")}</p>
                 </div>
                 <div className="stat-tile">
                   <p className="stat-value">24h</p>
-                  <p className="stat-label">Avg Reply Time</p>
+                  <p className="stat-label">{t("pages.vendorDetail.avgReplyTime")}</p>
                 </div>
               </div>
 
-              <h3 className="section-title">Menu dan Layanan / Menu & Services</h3>
+              <h3 className="section-title">{t("pages.vendorDetail.menu")}</h3>
               <ul className="vendor-grid">
                 <VendorCard
                   title="Paket Promo Kampus"
@@ -121,17 +123,17 @@ export default function VendorDetailPage() {
             </article>
 
             <aside className="detail-card">
-              <h2>Ketersediaan / Availability</h2>
+              <h2>{t("pages.vendorDetail.availability")}</h2>
               <p>Senin - Jumat: 08.00 - 20.00</p>
               <p>Sabtu - Minggu: 09.00 - 17.00</p>
               <div className="stack compact-top">
-                <span className="badge success">Respon Cepat / Fast Response</span>
+                <span className="badge success">{t("pages.vendorDetail.fastResponse")}</span>
                 {vendor.whatsapp ? (
                   <a className="btn" href={`https://wa.me/${vendor.whatsapp.replace(/[^\d]/g, "")}`} target="_blank" rel="noreferrer">
-                    Chat Sekarang / Chat Now
+                    {t("pages.vendorDetail.chatNow")}
                   </a>
                 ) : (
-                  <button type="button" disabled>Contact unavailable</button>
+                  <button type="button" disabled>{t("pages.vendorDetail.unavailableWhatsApp")}</button>
                 )}
               </div>
             </aside>

@@ -1,9 +1,11 @@
 import { FormEvent, useState } from "react";
 import SiteLayout from "@/components/SiteLayout";
+import { useLanguage } from "@/lib/language-context";
 import { toPublicAuthErrorMessage } from "@/lib/public-errors";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export default function ForgotPasswordPage() {
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -15,7 +17,7 @@ export default function ForgotPasswordPage() {
 
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      setError("Layanan sedang tidak tersedia. Silakan coba beberapa saat lagi.");
+      setError(t("errors.serviceUnavailable"));
       return;
     }
 
@@ -28,19 +30,20 @@ export default function ForgotPasswordPage() {
       return;
     }
 
-    setMessage("Email reset password telah dikirim. Silakan cek inbox Anda.");
+    setMessage(t("pages.forgotPassword.successMsg"));
   }
 
   return (
     <SiteLayout title="Forgot Password | UC Connect">
       <section className="card">
-        <h1>Forgot Password</h1>
+        <h1>{t("pages.forgotPassword.title")}</h1>
+        <p>{t("pages.forgotPassword.subtitle")}</p>
         <form onSubmit={onSubmit} className="stack">
           <label>
-            Email
+            {t("pages.forgotPassword.email")}
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </label>
-          <button type="submit">Send reset link</button>
+          <button type="submit">{t("pages.forgotPassword.submitBtn")}</button>
         </form>
         {message && <p className="ok">{message}</p>}
         {error && <p className="err">{error}</p>}
