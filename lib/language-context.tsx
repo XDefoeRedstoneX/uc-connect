@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode } from "react";
 import type { Language } from "@/lib/translations";
 import { translations } from "@/lib/translations";
 
@@ -11,26 +11,23 @@ type LanguageContextType = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<{ mounted: boolean; language: Language }>({
-    mounted: false,
-    language: "id",
+  const [language, setLanguageState] = useState<Language>(() => {
+    if (typeof window === "undefined") {
+      return "id";
+    }
+
+    const stored = localStorage.getItem("language") as Language | null;
+    return stored === "en" || stored === "id" ? stored : "id";
   });
 
-  useEffect(() => {
-    const stored = localStorage.getItem("language") as Language | null;
-    const language = stored === "en" || stored === "id" ? stored : "id";
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setState({ mounted: true, language });
-  }, []);
-
   const setLanguage = (lang: Language) => {
-    setState((prev) => ({ ...prev, language: lang }));
+    setLanguageState(lang);
     localStorage.setItem("language", lang);
   };
 
   const t = (path: string): string => {
     const parts = path.split(".");
-    let current: unknown = translations[state.language];
+    let current: unknown = translations[language];
     for (const part of parts) {
       if (current && typeof current === "object" && part in current) {
         current = (current as Record<string, unknown>)[part];
@@ -41,12 +38,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     return typeof current === "string" ? current : path;
   };
 
-  if (!state.mounted) {
-    return <>{children}</>;
-  }
-
   return (
-    <LanguageContext.Provider value={{ language: state.language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
       {children}
     </LanguageContext.Provider>
   );

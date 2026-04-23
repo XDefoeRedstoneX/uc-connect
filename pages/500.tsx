@@ -1,11 +1,12 @@
 import Link from "next/link";
+import Head from "next/head";
 
 export default function ServerErrorPage() {
   return (
     <>
-      <head>
+      <Head>
         <title>500 | UC Connect</title>
-      </head>
+      </Head>
       <section className="card">
         <h1>Server error</h1>
         <p>Something went wrong while processing your request.</p>
