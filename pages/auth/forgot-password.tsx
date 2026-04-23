@@ -1,5 +1,6 @@
 import { FormEvent, useState } from "react";
 import SiteLayout from "@/components/SiteLayout";
+import { toPublicAuthErrorMessage } from "@/lib/public-errors";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export default function ForgotPasswordPage() {
@@ -14,7 +15,7 @@ export default function ForgotPasswordPage() {
 
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      setError("Supabase env is missing.");
+      setError("Layanan sedang tidak tersedia. Silakan coba beberapa saat lagi.");
       return;
     }
 
@@ -23,11 +24,11 @@ export default function ForgotPasswordPage() {
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
 
     if (resetError) {
-      setError(resetError.message);
+      setError(toPublicAuthErrorMessage(resetError.message, "forgot"));
       return;
     }
 
-    setMessage("Reset email sent. Check your inbox.");
+    setMessage("Email reset password telah dikirim. Silakan cek inbox Anda.");
   }
 
   return (

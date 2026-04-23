@@ -3,6 +3,7 @@ import { FormEvent, useState } from "react";
 import HeroSection from "@/components/HeroSection";
 import VendorCard from "@/components/VendorCard";
 import SiteLayout from "@/components/SiteLayout";
+import { toPublicPageErrorMessage } from "@/lib/public-errors";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 import { Vendor } from "@/types/domain";
 
@@ -28,7 +29,7 @@ export default function ExplorePage({ initialVendors, initialError }: Props) {
     const data = await response.json();
 
     if (!response.ok) {
-      setError(data.error ?? "Failed to fetch vendors");
+      setError(toPublicPageErrorMessage(data.error));
       setLoading(false);
       return;
     }
@@ -66,7 +67,7 @@ export default function ExplorePage({ initialVendors, initialError }: Props) {
         {error && <p className="err">{error}</p>}
 
         {!loading && !error && vendors.length === 0 && (
-          <p>Belum ada vendor. Tambahkan data vendor di database lalu muat ulang halaman.</p>
+          <p>Belum ada vendor yang cocok. Coba kata kunci lain atau periksa kembali nanti.</p>
         )}
 
         <ul className="vendor-grid">
@@ -99,7 +100,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async () => {
     return {
       props: {
         initialVendors: [],
-        initialError: "Supabase environment variables are missing",
+        initialError: "Layanan vendor sementara tidak tersedia.",
       },
     };
   }
@@ -113,7 +114,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async () => {
   return {
     props: {
       initialVendors: (data ?? []) as Vendor[],
-      initialError: error?.message ?? null,
+      initialError: error ? "Tidak dapat memuat daftar vendor saat ini." : null,
     },
   };
 };

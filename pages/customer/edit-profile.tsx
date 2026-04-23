@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import SiteLayout from "@/components/SiteLayout";
+import { toPublicPageErrorMessage } from "@/lib/public-errors";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export default function EditProfilePage() {
@@ -47,14 +48,14 @@ export default function EditProfilePage() {
       setError(null);
       const supabase = getSupabaseBrowserClient();
       if (!supabase) {
-        setError("Supabase env is missing.");
+        setError("Layanan sedang tidak tersedia. Silakan coba beberapa saat lagi.");
         return;
       }
 
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
       if (!token) {
-        setError("Please login first.");
+        setError("Sesi tidak ditemukan. Silakan masuk kembali.");
         return;
       }
 
@@ -63,7 +64,7 @@ export default function EditProfilePage() {
       });
       const data = await response.json();
       if (!response.ok) {
-        setError(data.error ?? "Failed to load profile");
+        setError(toPublicPageErrorMessage(data.error));
         return;
       }
 
@@ -87,14 +88,14 @@ export default function EditProfilePage() {
 
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      setError("Supabase env is missing.");
+      setError("Layanan sedang tidak tersedia. Silakan coba beberapa saat lagi.");
       return;
     }
 
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
     if (!token) {
-      setError("Please login first.");
+      setError("Sesi tidak ditemukan. Silakan masuk kembali.");
       return;
     }
 
@@ -109,11 +110,11 @@ export default function EditProfilePage() {
 
     const data = await response.json();
     if (!response.ok) {
-      setError(data.error ?? "Failed to save profile");
+      setError(toPublicPageErrorMessage(data.error));
       return;
     }
 
-    setMessage("Profile updated successfully.");
+    setMessage("Profil berhasil diperbarui.");
   }
 
   return (

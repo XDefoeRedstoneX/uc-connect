@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { toPublicPageErrorMessage } from "@/lib/public-errors";
 import SiteLayout from "@/components/SiteLayout";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { UserProfile } from "@/types/domain";
@@ -16,7 +17,7 @@ export default function CustomerProfilePage() {
 
       const supabase = getSupabaseBrowserClient();
       if (!supabase) {
-        setError("Supabase env is missing.");
+        setError("Layanan sedang tidak tersedia. Silakan coba beberapa saat lagi.");
         setLoading(false);
         return;
       }
@@ -25,7 +26,7 @@ export default function CustomerProfilePage() {
       const token = sessionData.session?.access_token;
 
       if (!token) {
-        setError("Please login first.");
+        setError("Sesi tidak ditemukan. Silakan masuk kembali.");
         setLoading(false);
         return;
       }
@@ -36,7 +37,7 @@ export default function CustomerProfilePage() {
 
       const json = await response.json();
       if (!response.ok) {
-        setError(json.error ?? "Failed to load profile");
+        setError(toPublicPageErrorMessage(json.error));
         setLoading(false);
         return;
       }

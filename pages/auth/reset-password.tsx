@@ -1,5 +1,6 @@
 import { FormEvent, useState } from "react";
 import SiteLayout from "@/components/SiteLayout";
+import { toPublicAuthErrorMessage } from "@/lib/public-errors";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export default function ResetPasswordPage() {
@@ -14,18 +15,18 @@ export default function ResetPasswordPage() {
 
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      setError("Supabase env is missing.");
+      setError("Layanan sedang tidak tersedia. Silakan coba beberapa saat lagi.");
       return;
     }
 
     const { error: updateError } = await supabase.auth.updateUser({ password });
 
     if (updateError) {
-      setError(updateError.message);
+      setError(toPublicAuthErrorMessage(updateError.message, "reset"));
       return;
     }
 
-    setMessage("Password updated successfully.");
+    setMessage("Kata sandi berhasil diperbarui.");
   }
 
   return (

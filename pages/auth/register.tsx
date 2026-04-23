@@ -4,6 +4,7 @@ import AuthSplitLayout from "@/components/AuthSplitLayout";
 import AuthTabs from "@/components/AuthTabs";
 import FormField from "@/components/FormField";
 import SiteLayout from "@/components/SiteLayout";
+import { toPublicAuthErrorMessage } from "@/lib/public-errors";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export default function RegisterPage() {
@@ -77,7 +78,7 @@ export default function RegisterPage() {
 
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      setError("Supabase env is missing.");
+      setError("Layanan sedang tidak tersedia. Silakan coba beberapa saat lagi.");
       setSubmitting(false);
       return;
     }
@@ -91,12 +92,12 @@ export default function RegisterPage() {
     });
 
     if (authError) {
-      setError(authError.message);
+      setError(toPublicAuthErrorMessage(authError.message, "register"));
       setSubmitting(false);
       return;
     }
 
-    setMessage("Registration successful. Check your email for verification.");
+    setMessage("Registrasi berhasil. Silakan cek email untuk verifikasi akun.");
     setSubmitting(false);
   }
 

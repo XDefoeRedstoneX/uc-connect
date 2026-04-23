@@ -1,15 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { sendMethodNotAllowed, sendServiceUnavailable } from "@/lib/api-response";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
-    res.setHeader("Allow", "GET");
-    return res.status(405).json({ error: "Method not allowed" });
+    return sendMethodNotAllowed(res, "GET");
   }
 
   const supabase = getSupabaseServerClient();
   if (!supabase) {
-    return res.status(500).json({ error: "Supabase environment variables are missing" });
+    return sendServiceUnavailable(res);
   }
 
   const { id } = req.query;

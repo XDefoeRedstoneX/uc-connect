@@ -2,6 +2,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import SiteLayout from "@/components/SiteLayout";
 import VendorCard from "@/components/VendorCard";
+import { toPublicPageErrorMessage } from "@/lib/public-errors";
 import { Vendor } from "@/types/domain";
 
 export default function VendorDetailPage() {
@@ -22,7 +23,7 @@ export default function VendorDetailPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error ?? "Failed to load vendor");
+        setError(toPublicPageErrorMessage(data.error));
         setLoading(false);
         return;
       }

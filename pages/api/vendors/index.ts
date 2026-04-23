@@ -1,15 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { sendInternalServerError, sendMethodNotAllowed, sendServiceUnavailable } from "@/lib/api-response";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
-    res.setHeader("Allow", "GET");
-    return res.status(405).json({ error: "Method not allowed" });
+    return sendMethodNotAllowed(res, "GET");
   }
 
   const supabase = getSupabaseServerClient();
   if (!supabase) {
-    return res.status(500).json({ error: "Supabase environment variables are missing" });
+    return sendServiceUnavailable(res);
   }
 
   const { q = "", category = "" } = req.query;
@@ -31,7 +31,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { data, error } = await query;
 
   if (error) {
-    return res.status(500).json({ error: error.message });
+    console.error("[api/vendors] query failed", error);
+    return sendInternalServerError(res, "Unable to load vendors");
   }
 
   return res.status(200).json({ vendors: data ?? [] });

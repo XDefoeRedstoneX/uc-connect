@@ -5,6 +5,7 @@ import AuthSplitLayout from "@/components/AuthSplitLayout";
 import AuthTabs from "@/components/AuthTabs";
 import FormField from "@/components/FormField";
 import SiteLayout from "@/components/SiteLayout";
+import { toPublicAuthErrorMessage } from "@/lib/public-errors";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export default function LoginPage() {
@@ -23,19 +24,19 @@ export default function LoginPage() {
 
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      setError("Supabase env is missing. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.");
+      setError("Layanan sedang tidak tersedia. Silakan coba beberapa saat lagi.");
       setSubmitting(false);
       return;
     }
 
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
     if (authError) {
-      setError(authError.message);
+      setError(toPublicAuthErrorMessage(authError.message, "login"));
       setSubmitting(false);
       return;
     }
 
-    setMessage("Login successful. Redirecting...");
+    setMessage("Login berhasil. Mengarahkan ke beranda direktori...");
     await router.replace("/directory/home");
     setSubmitting(false);
   }

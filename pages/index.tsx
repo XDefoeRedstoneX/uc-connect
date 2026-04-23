@@ -2,13 +2,25 @@ import HeroSection from "@/components/HeroSection";
 import SiteLayout from "@/components/SiteLayout";
 import VendorCard from "@/components/VendorCard";
 
-const links = [
-  { href: "/auth/login", label: "Masuk / Login" },
-  { href: "/auth/register", label: "Daftar / Register" },
-  { href: "/directory/home", label: "Direktori / Directory" },
-  { href: "/directory/explore", label: "Eksplorasi Vendor / Explore Vendors" },
-  { href: "/customer/profile", label: "Profil Customer / Customer Profile" },
-  { href: "/support", label: "Bantuan / Support" },
+const entryCards = [
+  {
+    href: "/directory/explore",
+    label: "Eksplorasi Vendor Kampus / Explore Vendors",
+    meta: "Temukan UMKM mahasiswa terverifikasi berdasarkan kategori dan lokasi.",
+    ctaLabel: "Mulai Eksplorasi / Start Exploring",
+  },
+  {
+    href: "/auth/login",
+    label: "Masuk ke Akun Anda / Sign In",
+    meta: "Kelola profil, simpan vendor favorit, dan lanjutkan percakapan bisnis.",
+    ctaLabel: "Masuk / Sign In",
+  },
+  {
+    href: "/auth/register",
+    label: "Gabung UC Connect / Create Account",
+    meta: "Daftar sebagai pelanggan atau calon vendor untuk memperluas jaringan kampus.",
+    ctaLabel: "Daftar Sekarang / Register",
+  },
 ];
 
 export default function Home() {
@@ -25,16 +37,16 @@ export default function Home() {
         </div>
       </HeroSection>
 
-      <section className="card compact-top" aria-label="Quick access links">
-        <h2>Jalur Utama / Main Routes</h2>
+      <section className="card compact-top" aria-label="Main user entry points">
+        <h2>Mulai dari Sini / Start Here</h2>
         <ul className="vendor-grid">
-          {links.map((item) => (
+          {entryCards.map((item) => (
             <VendorCard
               key={item.href}
               title={item.label}
-              meta={`Route: ${item.href}`}
+              meta={item.meta}
               href={item.href}
-              ctaLabel="Buka Halaman / Open"
+              ctaLabel={item.ctaLabel}
             />
           ))}
         </ul>

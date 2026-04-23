@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { sendInternalServerError, sendMethodNotAllowed, sendServiceUnavailable } from "@/lib/api-response";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 
 function trimToNull(value: unknown): string | null {
@@ -9,7 +10,7 @@ function trimToNull(value: unknown): string | null {
 
 async function resolveUserFromBearer(token: string) {
   const supabase = getSupabaseServerClient();
-  if (!supabase) return { userId: null, error: "Supabase environment variables are missing" };
+  if (!supabase) return { userId: null, user: null, error: "Service unavailable" };
 
   const { data, error } = await supabase.auth.getUser(token);
   if (error || !data.user) {
@@ -33,12 +34,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const { userId, user, error: userError } = await resolveUserFromBearer(token);
   if (userError || !userId) {
-    return res.status(401).json({ error: userError ?? "Unauthorized" });
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   const supabase = getSupabaseServerClient();
   if (!supabase) {
-    return res.status(500).json({ error: "Supabase environment variables are missing" });
+    return sendServiceUnavailable(res);
   }
 
   if (req.method === "GET") {
@@ -55,7 +56,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         (typeof error.message === "string" && /0 rows|No rows/i.test(error.message));
 
       if (!isMissingRow) {
-        return res.status(500).json({ error: error.message });
+        console.error("[api/profile] failed to fetch profile", error);
+        return sendInternalServerError(res, "Unable to load profile");
       }
 
       const now = new Date().toISOString();
@@ -79,7 +81,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .single();
 
       if (createError) {
-        return res.status(500).json({ error: createError.message });
+        console.error("[api/profile] failed to create profile", createError);
+        return sendInternalServerError(res, "Unable to save profile");
       }
 
       return res.status(200).json({ profile: created });
@@ -108,11 +111,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .select("id,full_name,phone,avatar_url,role,updated_at")
       .single();
 
-    if (error) return res.status(500).json({ error: error.message });
+    if (error) {
+      console.error("[api/profile] failed to update profile", error);
+      return sendInternalServerError(res, "Unable to save profile");
+    }
 
     return res.status(200).json({ profile: data });
   }
 
-  res.setHeader("Allow", "GET, PUT");
-  return res.status(405).json({ error: "Method not allowed" });
+  return sendMethodNotAllowed(res, "GET, PUT");
 }
