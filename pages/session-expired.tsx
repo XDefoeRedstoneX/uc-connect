@@ -1,5 +1,6 @@
 import Link from "next/link";
 import SiteLayout from "@/components/SiteLayout";
+import { GetServerSideProps } from "next";
 
 export default function SessionExpiredPage() {
   return (
@@ -12,3 +13,7 @@ export default function SessionExpiredPage() {
     </SiteLayout>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  return { props: {} };
+};

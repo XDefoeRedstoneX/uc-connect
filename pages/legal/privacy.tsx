@@ -1,4 +1,5 @@
 import SiteLayout from "@/components/SiteLayout";
+import { GetServerSideProps } from "next";
 
 export default function PrivacyPage() {
   return (
@@ -11,3 +12,7 @@ export default function PrivacyPage() {
     </SiteLayout>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  return { props: {} };
+};

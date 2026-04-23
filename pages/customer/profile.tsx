@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { GetServerSideProps } from "next";
 import { useLanguage } from "@/lib/language-context";
 import { toPublicPageErrorMessage } from "@/lib/public-errors";
 import SiteLayout from "@/components/SiteLayout";
@@ -79,3 +80,7 @@ export default function CustomerProfilePage() {
     </SiteLayout>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  return { props: {} };
+};

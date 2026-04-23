@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
+import { GetServerSideProps } from "next";
 import AuthSplitLayout from "@/components/AuthSplitLayout";
 import AuthTabs from "@/components/AuthTabs";
 import FormField from "@/components/FormField";
@@ -183,3 +184,7 @@ export default function RegisterPage() {
     </SiteLayout>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  return { props: {} };
+};

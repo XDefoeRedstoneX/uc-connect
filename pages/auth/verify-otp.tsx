@@ -1,5 +1,6 @@
 import Link from "next/link";
 import SiteLayout from "@/components/SiteLayout";
+import { GetServerSideProps } from "next";
 
 export default function VerifyOtpPage() {
   return (
@@ -17,3 +18,7 @@ export default function VerifyOtpPage() {
     </SiteLayout>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  return { props: {} };
+};

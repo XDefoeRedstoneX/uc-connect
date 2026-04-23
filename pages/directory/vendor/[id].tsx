@@ -1,5 +1,6 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import VendorCard from "@/components/VendorCard";
 import { useLanguage } from "@/lib/language-context";
@@ -143,3 +144,7 @@ export default function VendorDetailPage() {
     </SiteLayout>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  return { props: {} };
+};

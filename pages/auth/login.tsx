@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { FormEvent, useState } from "react";
+import { GetServerSideProps } from "next";
 import AuthSplitLayout from "@/components/AuthSplitLayout";
 import AuthTabs from "@/components/AuthTabs";
 import FormField from "@/components/FormField";
@@ -95,3 +96,7 @@ export default function LoginPage() {
     </SiteLayout>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  return { props: {} };
+};

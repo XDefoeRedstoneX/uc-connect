@@ -1,5 +1,6 @@
 import { FormEvent, useState } from "react";
 import SiteLayout from "@/components/SiteLayout";
+import { GetServerSideProps } from "next";
 
 export default function SupportPage() {
   const [email, setEmail] = useState("");
@@ -34,3 +35,7 @@ export default function SupportPage() {
     </SiteLayout>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  return { props: {} };
+};

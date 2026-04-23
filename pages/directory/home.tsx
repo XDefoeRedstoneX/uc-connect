@@ -2,6 +2,7 @@ import HeroSection from "@/components/HeroSection";
 import SiteLayout from "@/components/SiteLayout";
 import VendorCard from "@/components/VendorCard";
 import { useLanguage } from "@/lib/language-context";
+import { GetServerSideProps } from "next";
 
 const featuredCards = [
   {
@@ -65,3 +66,7 @@ export default function DirectoryHomePage() {
     </SiteLayout>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  return { props: {} };
+};

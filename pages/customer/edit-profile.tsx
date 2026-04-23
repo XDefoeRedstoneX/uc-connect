@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
+import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import { useLanguage } from "@/lib/language-context";
 import { toPublicPageErrorMessage } from "@/lib/public-errors";
@@ -143,3 +144,7 @@ export default function EditProfilePage() {
     </SiteLayout>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  return { props: {} };
+};

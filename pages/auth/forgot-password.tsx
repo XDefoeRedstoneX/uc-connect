@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import { useLanguage } from "@/lib/language-context";
 import { toPublicAuthErrorMessage } from "@/lib/public-errors";
@@ -51,3 +52,7 @@ export default function ForgotPasswordPage() {
     </SiteLayout>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  return { props: {} };
+};

@@ -1,4 +1,5 @@
 import SiteLayout from "@/components/SiteLayout";
+import { GetServerSideProps } from "next";
 
 export default function TermsPage() {
   return (
@@ -11,3 +12,7 @@ export default function TermsPage() {
     </SiteLayout>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  return { props: {} };
+};
