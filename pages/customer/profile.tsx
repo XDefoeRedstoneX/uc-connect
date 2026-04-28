@@ -20,8 +20,7 @@ export default function CustomerProfilePage() {
 
       const supabase = getSupabaseBrowserClient();
       if (!supabase) {
-        setError(t("errors.serviceUnavailable"));
-        setLoading(false);
+        window.location.href = "/auth/login";
         return;
       }
 
@@ -29,8 +28,7 @@ export default function CustomerProfilePage() {
       const token = sessionData.session?.access_token;
 
       if (!token) {
-        setError(t("errors.sessionExpired"));
-        setLoading(false);
+        window.location.href = "/auth/login";
         return;
       }
 
@@ -39,9 +37,8 @@ export default function CustomerProfilePage() {
       });
 
       const json = await response.json();
-      if (!response.ok) {
-        setError(toPublicPageErrorMessage(json.error));
-        setLoading(false);
+      if (!response.ok || !json.profile) {
+        window.location.href = "/auth/login";
         return;
       }
 

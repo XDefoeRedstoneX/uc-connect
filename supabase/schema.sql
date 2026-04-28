@@ -1,3 +1,6 @@
+drop table if exists public.forum_replies cascade;
+drop table if exists public.forum_threads cascade;
+drop table if exists public.forum_categories cascade;
 drop table if exists public.favorites cascade;
 drop table if exists public.vendor_items cascade;
 drop table if exists public.vendor_hours cascade;
@@ -84,6 +87,33 @@ create table public.favorites (
   primary key (user_id, vendor_id)
 );
 
+create table public.forum_categories (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  slug text not null unique,
+  description text,
+  created_at timestamptz not null default now()
+);
+
+create table public.forum_threads (
+  id uuid primary key default gen_random_uuid(),
+  category_id uuid not null references public.forum_categories(id) on delete cascade,
+  author_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  content text not null,
+  view_count integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table public.forum_replies (
+  id uuid primary key default gen_random_uuid(),
+  thread_id uuid not null references public.forum_threads(id) on delete cascade,
+  author_id uuid not null references auth.users(id) on delete cascade,
+  content text not null,
+  created_at timestamptz not null default now()
+);
+
 drop trigger if exists touch_profiles_updated_at on public.profiles;
 create trigger touch_profiles_updated_at
 before update on public.profiles
@@ -102,12 +132,21 @@ before update on public.vendor_metrics
 for each row
 execute function public.touch_updated_at();
 
+drop trigger if exists touch_forum_threads_updated_at on public.forum_threads;
+create trigger touch_forum_threads_updated_at
+before update on public.forum_threads
+for each row
+execute function public.touch_updated_at();
+
 alter table public.profiles enable row level security;
 alter table public.vendors enable row level security;
 alter table public.vendor_metrics enable row level security;
 alter table public.vendor_hours enable row level security;
 alter table public.vendor_items enable row level security;
 alter table public.favorites enable row level security;
+alter table public.forum_categories enable row level security;
+alter table public.forum_threads enable row level security;
+alter table public.forum_replies enable row level security;
 
 drop policy if exists "profiles_read_own" on public.profiles;
 create policy "profiles_read_own"
@@ -155,7 +194,34 @@ create policy "favorites_delete_own"
   on public.favorites for delete
   using (auth.uid() = user_id);
 
+drop policy if exists "forum_categories_public_read" on public.forum_categories;
+create policy "forum_categories_public_read"
+  on public.forum_categories for select
+  using (true);
+
+drop policy if exists "forum_threads_public_read" on public.forum_threads;
+create policy "forum_threads_public_read"
+  on public.forum_threads for select
+  using (true);
+
+drop policy if exists "forum_threads_insert_auth" on public.forum_threads;
+create policy "forum_threads_insert_auth"
+  on public.forum_threads for insert
+  with check (auth.uid() = author_id);
+
+drop policy if exists "forum_replies_public_read" on public.forum_replies;
+create policy "forum_replies_public_read"
+  on public.forum_replies for select
+  using (true);
+
+drop policy if exists "forum_replies_insert_auth" on public.forum_replies;
+create policy "forum_replies_insert_auth"
+  on public.forum_replies for insert
+  with check (auth.uid() = author_id);
+
 create index if not exists vendors_category_idx on public.vendors (category);
 create index if not exists vendors_city_idx on public.vendors (city);
 create index if not exists vendor_items_vendor_sort_idx on public.vendor_items (vendor_id, sort_order, created_at);
 create index if not exists vendor_hours_vendor_idx on public.vendor_hours (vendor_id, day_of_week);
+create index if not exists forum_threads_category_idx on public.forum_threads(category_id);
+create index if not exists forum_replies_thread_idx on public.forum_replies(thread_id);

@@ -62,3 +62,30 @@ export type UserProfile = {
   role: "customer" | "vendor" | "admin";
   updated_at: string;
 };
+
+export type ForumCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  created_at: string;
+};
+
+export type ForumThread = {
+  id: string;
+  category_id: string;
+  author_id: string;
+  title: string;
+  content: string;
+  view_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ForumReply = {
+  id: string;
+  thread_id: string;
+  author_id: string;
+  content: string;
+  created_at: string;
+};

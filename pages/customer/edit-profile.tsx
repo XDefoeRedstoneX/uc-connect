@@ -51,14 +51,14 @@ export default function EditProfilePage() {
       setError(null);
       const supabase = getSupabaseBrowserClient();
       if (!supabase) {
-        setError(t("errors.serviceUnavailable"));
+        window.location.href = "/auth/login";
         return;
       }
 
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
       if (!token) {
-        setError(t("errors.sessionExpired"));
+        window.location.href = "/auth/login";
         return;
       }
 
@@ -66,8 +66,8 @@ export default function EditProfilePage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
-      if (!response.ok) {
-        setError(toPublicPageErrorMessage(data.error));
+      if (!response.ok || !data.profile) {
+        window.location.href = "/auth/login";
         return;
       }
 
@@ -91,14 +91,14 @@ export default function EditProfilePage() {
 
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      setError(t("errors.serviceUnavailable"));
+      window.location.href = "/auth/login";
       return;
     }
 
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
     if (!token) {
-      setError(t("errors.sessionExpired"));
+      window.location.href = "/auth/login";
       return;
     }
 

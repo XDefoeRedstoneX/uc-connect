@@ -2,7 +2,6 @@ import Head from "next/head";
 import Link from "next/link";
 import { ReactNode } from "react";
 import { useLanguage } from "@/lib/language-context";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 type Props = {
   title: string;
@@ -14,9 +13,8 @@ function SiteLayoutContent({ title, children }: Props) {
 
   const navItems = [
     { href: "/", label: t("nav.home") },
+    { href: "/community", label: "Komunitas" },
     { href: "/directory/explore", label: t("nav.explore") },
-    { href: "/customer/profile", label: t("nav.profile") },
-    { href: "/auth/login", label: t("nav.login") },
   ];
 
   return (
@@ -35,15 +33,19 @@ function SiteLayoutContent({ title, children }: Props) {
               </span>
             </Link>
 
-            <nav className="topnav" aria-label="Primary navigation">
+            <nav className="topnav" aria-label="Primary navigation" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               {navItems.map((item) => (
                 <Link key={item.href} href={item.href} className="nav-link">
                   {item.label}
                 </Link>
               ))}
+              <Link href="/customer/profile" aria-label="User Profile" style={{ display: 'flex', alignItems: 'center', color: '#1f2937' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </Link>
             </nav>
-
-            <LanguageSwitcher />
           </div>
         </header>
         <main className="content">{children}</main>
