@@ -16,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   let query = supabase
     .from("vendors")
-    .select("id,name,category,city,is_verified,description,whatsapp,created_at")
+    .select("id,slug,name,tagline,category,city,is_verified,description,whatsapp,website_url,hero_image_url,created_at")
     .order("created_at", { ascending: false })
     .limit(50);
 

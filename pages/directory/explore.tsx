@@ -77,9 +77,9 @@ export default function ExplorePage({ initialVendors, initialError }: Props) {
             <VendorCard
               key={vendor.id}
               title={vendor.name}
-              meta={`${vendor.category ?? "Uncategorized"} · ${vendor.city ?? "Unknown city"}`}
+              meta={vendor.tagline ?? `${vendor.category ?? "Uncategorized"} · ${vendor.city ?? "Unknown city"}`}
               href={`/directory/vendor/${vendor.id}`}
-              imageSrc="/images/vendor-placeholder.svg"
+              imageSrc={vendor.hero_image_url ?? "/images/vendor-placeholder.svg"}
               imageAlt={`Placeholder image for ${vendor.name}`}
               description={vendor.description ?? "No description yet."}
               badges={[

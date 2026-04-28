@@ -5,13 +5,35 @@ import SiteLayout from "@/components/SiteLayout";
 import VendorCard from "@/components/VendorCard";
 import { useLanguage } from "@/lib/language-context";
 import { toPublicPageErrorMessage } from "@/lib/public-errors";
-import { Vendor } from "@/types/domain";
+import { VendorDetail } from "@/types/domain";
+
+const weekdayLabels = {
+  en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+  id: ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"],
+} as const;
+
+function formatCurrency(value: number, currency: string) {
+  const resolvedCurrency = currency || "IDR";
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: resolvedCurrency,
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function formatTimeRange(opensAt: string | null, closesAt: string | null) {
+  if (!opensAt || !closesAt) {
+    return "-";
+  }
+
+  return `${opensAt.slice(0, 5)} - ${closesAt.slice(0, 5)}`;
+}
 
 export default function VendorDetailPage() {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { id } = router.query;
-  const [vendor, setVendor] = useState<Vendor | null>(null);
+  const [vendor, setVendor] = useState<VendorDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,7 +85,7 @@ export default function VendorDetailPage() {
       {!loading && !error && vendor && (
         <>
           <section className="detail-hero" aria-labelledby="vendor-name-title">
-            <img className="detail-banner" src="/images/banner-placeholder.svg" alt={`Banner placeholder for ${vendor.name}`} />
+            <img className="detail-banner" src={vendor.hero_image_url ?? "/images/banner-placeholder.svg"} alt={`Banner for ${vendor.name}`} />
             <div className="detail-header">
               <div>
                 <div className="row-wrap">
@@ -71,7 +93,7 @@ export default function VendorDetailPage() {
                   <span className="badge gold">{vendor.category ?? "Uncategorized"}</span>
                 </div>
                 <h1 id="vendor-name-title">{vendor.name}</h1>
-                <p>{vendor.city ?? "Unknown city"} • UC Connect Directory</p>
+                <p>{vendor.tagline ?? `${vendor.city ?? "Unknown city"} • UC Connect Directory`}</p>
               </div>
 
               {vendor.whatsapp ? (
@@ -91,44 +113,51 @@ export default function VendorDetailPage() {
 
               <div className="stat-grid">
                 <div className="stat-tile">
-                  <p className="stat-value">4.8</p>
+                  <p className="stat-value">{vendor.metrics ? vendor.metrics.sample_rating.toFixed(1) : "-"}</p>
                   <p className="stat-label">{t("pages.vendorDetail.sampleRating")}</p>
+                  {vendor.metrics && <p className="muted">{vendor.metrics.review_count} reviews</p>}
                 </div>
                 <div className="stat-tile">
-                  <p className="stat-value">95%</p>
+                  <p className="stat-value">{vendor.metrics ? `${vendor.metrics.response_rate.toFixed(0)}%` : "-"}</p>
                   <p className="stat-label">{t("pages.vendorDetail.responseRate")}</p>
                 </div>
                 <div className="stat-tile">
-                  <p className="stat-value">24h</p>
+                  <p className="stat-value">{vendor.metrics?.avg_reply_time ?? "-"}</p>
                   <p className="stat-label">{t("pages.vendorDetail.avgReplyTime")}</p>
                 </div>
               </div>
 
               <h3 className="section-title">{t("pages.vendorDetail.menu")}</h3>
+              {vendor.items.length === 0 && <p className="muted">No menu or service items yet.</p>}
               <ul className="vendor-grid">
-                <VendorCard
-                  title="Paket Promo Kampus"
-                  meta="Mulai dari Rp35.000"
-                  href="#"
-                  imageSrc="/images/vendor-placeholder.svg"
-                  imageAlt="Product placeholder one"
-                />
-                <VendorCard
-                  title="Layanan Event Mini"
-                  meta="Mulai dari Rp120.000"
-                  href="#"
-                  imageSrc="/images/vendor-placeholder.svg"
-                  imageAlt="Product placeholder two"
-                />
+                {vendor.items.map((item) => (
+                  <VendorCard
+                    key={item.id}
+                    title={item.name}
+                    meta={`${item.item_type.toUpperCase()} · ${formatCurrency(item.price, item.currency)}`}
+                    href="#"
+                    imageSrc={item.image_url ?? "/images/vendor-placeholder.svg"}
+                    imageAlt={`Image for ${item.name}`}
+                    description={item.description ?? undefined}
+                  />
+                ))}
               </ul>
             </article>
 
             <aside className="detail-card">
               <h2>{t("pages.vendorDetail.availability")}</h2>
-              <p>Senin - Jumat: 08.00 - 20.00</p>
-              <p>Sabtu - Minggu: 09.00 - 17.00</p>
               <div className="stack compact-top">
-                <span className="badge success">{t("pages.vendorDetail.fastResponse")}</span>
+                {vendor.hours.map((hour) => (
+                  <p key={hour.id}>
+                    {weekdayLabels[language][hour.day_of_week]}: {hour.is_closed ? "Closed" : formatTimeRange(hour.opens_at, hour.closes_at)}
+                    {hour.notes ? ` (${hour.notes})` : ""}
+                  </p>
+                ))}
+              </div>
+              <div className="stack compact-top">
+                <span className="badge success">
+                  {vendor.metrics ? `${vendor.metrics.response_rate.toFixed(0)}% ${t("pages.vendorDetail.fastResponse")}` : t("pages.vendorDetail.fastResponse")}
+                </span>
                 {vendor.whatsapp ? (
                   <a className="btn" href={`https://wa.me/${vendor.whatsapp.replace(/[^\d]/g, "")}`} target="_blank" rel="noreferrer">
                     {t("pages.vendorDetail.chatNow")}

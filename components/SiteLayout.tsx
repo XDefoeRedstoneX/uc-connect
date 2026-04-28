@@ -14,7 +14,6 @@ function SiteLayoutContent({ title, children }: Props) {
 
   const navItems = [
     { href: "/", label: t("nav.home") },
-    { href: "/directory/home", label: t("nav.directory") },
     { href: "/directory/explore", label: t("nav.explore") },
     { href: "/customer/profile", label: t("nav.profile") },
     { href: "/auth/login", label: t("nav.login") },
@@ -33,7 +32,6 @@ function SiteLayoutContent({ title, children }: Props) {
               <img src="/logo-icon.svg" alt="UC Connect icon" className="brand-mark" />
               <span className="brand-text">
                 <span className="brand-title">UC Connect</span>
-                <span className="brand-sub">University Community Marketplace</span>
               </span>
             </Link>
 

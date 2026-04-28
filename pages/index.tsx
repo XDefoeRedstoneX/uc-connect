@@ -3,30 +3,16 @@ import SiteLayout from "@/components/SiteLayout";
 import VendorCard from "@/components/VendorCard";
 import { useLanguage } from "@/lib/language-context";
 import { GetServerSideProps } from "next";
+import { getSupabaseServerClient } from "@/lib/supabase-server";
+import { Vendor } from "@/types/domain";
+import Link from "next/link";
 
-function HomeContent() {
+type HomeProps = {
+  featuredVendors: Vendor[];
+};
+
+function HomeContent({ featuredVendors }: HomeProps) {
   const { t } = useLanguage();
-
-  const entryCards = [
-    {
-      href: "/directory/explore",
-      label: t("pages.homepage.exploreVendors"),
-      meta: t("pages.homepage.exploreDesc"),
-      ctaLabel: t("pages.homepage.exploreBtn"),
-    },
-    {
-      href: "/auth/login",
-      label: t("pages.homepage.signIn"),
-      meta: t("pages.homepage.signInDesc"),
-      ctaLabel: t("pages.homepage.signInBtn"),
-    },
-    {
-      href: "/auth/register",
-      label: t("pages.homepage.createAccount"),
-      meta: t("pages.homepage.createDesc"),
-      ctaLabel: t("pages.homepage.createBtn"),
-    },
-  ];
 
   return (
     <SiteLayout title="UC Connect">
@@ -34,35 +20,62 @@ function HomeContent() {
         title={t("pages.homepage.title")}
         titleId="landing-title"
         description={t("pages.homepage.description")}
-        badge="UC Connect"
       >
         <div className="row-wrap">
           <img className="hero-logo" src="/logo.svg" alt="UC Connect logo" />
         </div>
       </HeroSection>
 
-      <section className="card compact-top" aria-label="Main user entry points">
-        <h2>{t("pages.homepage.startHere")}</h2>
+      <section className="card compact-top" aria-label="Featured vendors">
+        <h2 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>Featured Connect Vendors</h2>
         <ul className="vendor-grid">
-          {entryCards.map((item) => (
+          {featuredVendors.map((vendor) => (
             <VendorCard
-              key={item.href}
-              title={item.label}
-              meta={item.meta}
-              href={item.href}
-              ctaLabel={item.ctaLabel}
+              key={vendor.id}
+              title={vendor.name}
+              meta={`${vendor.category || "General"} ${
+                vendor.city ? `• ${vendor.city}` : ""
+              }`}
+              description={vendor.tagline || undefined}
+              href={`/directory/vendor/${vendor.slug || vendor.id}`}
+              imageSrc={vendor.hero_image_url || undefined}
+              imageAlt={`${vendor.name} exterior`}
+              badges={
+                vendor.is_verified ? [{ text: "Verified", tone: "success" }] : []
+              }
             />
           ))}
         </ul>
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>
+           <Link href="/directory/explore" className="btn btn-primary">
+             {t("pages.homepage.exploreBtn")}
+           </Link>
+        </div>
       </section>
     </SiteLayout>
   );
 }
 
-export default function Home() {
-  return <HomeContent />;
+export default function Home({ featuredVendors }: HomeProps) {
+  return <HomeContent featuredVendors={featuredVendors} />;
 }
 
-export const getServerSideProps: GetServerSideProps = async () => {
-  return { props: {} };
+export const getServerSideProps: GetServerSideProps<HomeProps> = async () => {
+  const supabase = getSupabaseServerClient();
+
+  if (!supabase) {
+    return { props: { featuredVendors: [] } };
+  }
+
+  const { data } = await supabase
+    .from("vendors")
+    .select("id,slug,name,tagline,category,city,is_verified,hero_image_url")
+    .eq("is_verified", true)
+    .limit(3);
+
+  return {
+    props: {
+      featuredVendors: (data ?? []) as Vendor[],
+    },
+  };
 };

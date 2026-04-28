@@ -21,7 +21,8 @@ npm run dev
 ## Supabase setup
 
 - Create tables + RLS policies by running `supabase/schema.sql` in the Supabase SQL Editor.
-- Add at least one row to `public.vendors` to see results on `/directory/explore`.
+- After that, run `supabase/seed.sql` to load demo vendors, hours, metrics, and menu/service items.
+- The seeded data powers the directory listings and vendor detail page.
 
 Env vars used by the app:
 
