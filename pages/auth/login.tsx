@@ -40,7 +40,7 @@ export default function LoginPage() {
     }
 
     setMessage(t("pages.login.successMsg"));
-    await router.replace("/directory/home");
+    await router.replace("/");
     setSubmitting(false);
   }
 
