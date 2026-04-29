@@ -19,20 +19,13 @@ export default function CommunityPage({ categories }: Props) {
           {categories.length > 0 ? (
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '1rem' }}>
               {categories.map((cat) => (
-                <li key={cat.id} style={{ 
-                  border: '1px solid #e5e7eb', 
-                  borderRadius: '8px', 
-                  padding: '1.5rem',
-                  transition: 'box-shadow 0.2s'
-                }}>
-                  <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#111827' }}>
-                    <Link href={`/community/${cat.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                      {cat.name}
-                    </Link>
-                  </h2>
-                  {cat.description && (
-                    <p style={{ margin: '0.5rem 0 0', color: '#4b5563' }}>{cat.description}</p>
-                  )}
+                <li key={cat.id}>
+                  <Link href={`/community/${cat.slug}`} className="forum-category-card" style={{ textDecoration: 'none' }}>
+                    <h2 className="forum-category-title">{cat.name}</h2>
+                    {cat.description && (
+                      <p className="forum-category-desc">{cat.description}</p>
+                    )}
+                  </Link>
                 </li>
               ))}
             </ul>

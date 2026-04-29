@@ -11,7 +11,7 @@ type HomeProps = {
   featuredVendors: Vendor[];
 };
 
-function HomeContent({ featuredVendors }: HomeProps) {
+export default function Home({ featuredVendors }: HomeProps) {
   const { t } = useLanguage();
 
   return (
@@ -54,10 +54,6 @@ function HomeContent({ featuredVendors }: HomeProps) {
       </section>
     </SiteLayout>
   );
-}
-
-export default function Home({ featuredVendors }: HomeProps) {
-  return <HomeContent featuredVendors={featuredVendors} />;
 }
 
 export const getServerSideProps: GetServerSideProps<HomeProps> = async () => {

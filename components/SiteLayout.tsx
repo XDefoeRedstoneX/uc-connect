@@ -8,7 +8,7 @@ type Props = {
   children: ReactNode;
 };
 
-function SiteLayoutContent({ title, children }: Props) {
+export default function SiteLayout({ title, children }: Props) {
   const { t } = useLanguage();
 
   const navItems = [
@@ -62,8 +62,4 @@ function SiteLayoutContent({ title, children }: Props) {
       </div>
     </>
   );
-}
-
-export default function SiteLayout(props: Props) {
-  return <SiteLayoutContent {...props} />;
 }
