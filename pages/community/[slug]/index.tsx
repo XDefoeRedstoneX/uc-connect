@@ -54,7 +54,7 @@ export default function CategoryPage({ category, threads }: Props) {
                     </Link>
                   </h2>
                   <p style={{ margin: 0, color: '#6b7280', fontSize: '0.875rem' }}>
-                    {thread.view_count} views • {new Date(thread.created_at).toLocaleDateString('id-ID')}
+                    {thread.forum_replies?.[0]?.count ?? 0} Komentar • {new Date(thread.created_at).toLocaleDateString('id-ID')}
                   </p>
                 </li>
               ))}
@@ -87,10 +87,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
     return { notFound: true };
   }
 
-  // Fetch all threads within that category
+  // Fetch all threads within that category, include replies count
   const { data: threadsData } = await supabase
     .from("forum_threads")
-    .select("*")
+    .select("*, forum_replies(count)")
     .eq("category_id", categoryData.id)
     .order("created_at", { ascending: false });
 

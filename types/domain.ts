@@ -80,6 +80,7 @@ export type ForumThread = {
   view_count: number;
   created_at: string;
   updated_at: string;
+  forum_replies?: { count: number }[];
 };
 
 export type ForumReply = {
