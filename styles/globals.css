@@ -1,3 +1,10 @@
+@import "tailwindcss";
+
+/* Source all component directories */
+@source "../pages";
+@source "../components";
+@source "../app";
+
 :root {
   --bg: #f8f9ff;
   --panel: #ffffff;
@@ -14,6 +21,8 @@
   --shadow-md: 0 8px 24px rgba(13, 34, 77, 0.1);
   --radius-md: 12px;
   --radius-lg: 18px;
+  --brand-orange: #f97316;
+  --brand-orange-hover: #ea580c;
 }
 
 * {
@@ -34,7 +43,7 @@ body {
     radial-gradient(circle at 84% 100%, #f7f0de 0, #f8f9ff 30%),
     linear-gradient(180deg, #f8f9ff, #eef3ff);
   color: var(--text);
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: var(--font-plus-jakarta, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
   line-height: 1.45;
 }
 
@@ -330,21 +339,22 @@ button,
 .btn {
   display: inline-block;
   border: none;
-  background: var(--accent);
+  background: var(--brand-orange);
   color: #fff;
   border-radius: 10px;
   padding: 0.6rem 0.84rem;
   cursor: pointer;
   font-size: 0.92rem;
-  font-weight: 600;
+  font-weight: 700;
   text-align: center;
-  transition: transform 0.16s ease, filter 0.16s ease;
+  transition: transform 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
 }
 
 button:hover,
 .btn:hover {
-  filter: brightness(1.08);
-  transform: translateY(-1px);
+  background: var(--brand-orange-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
 }
 
 button.secondary,
@@ -389,8 +399,9 @@ button:disabled,
 }
 
 .badge.success {
-  background: var(--success-soft);
+  background: #dcf5e8;
   color: #1f7350;
+  font-weight: 700;
 }
 
 .badge.gold {
@@ -421,23 +432,46 @@ button:disabled,
   overflow: hidden;
   border: 1px solid #cfe0fb;
   border-radius: 22px;
-  background: linear-gradient(135deg, #e8f1ff, #fdf6e8);
+  background: 
+    linear-gradient(135deg, #e8f1ff, #fdf6e8),
+    radial-gradient(circle, rgba(15, 96, 162, 0.06) 1px, transparent 1px);
+  background-size: auto, 25px 25px;
+  background-position: 0 0, 0 0;
   box-shadow: var(--shadow-md);
   padding: 2rem 1.35rem;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  bottom: -80px;
+  right: -80px;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(243, 171, 15, 0.15), rgba(15, 96, 162, 0.08));
+  pointer-events: none;
+  z-index: 0;
 }
 
 .hero h1 {
   font-size: clamp(1.6rem, 3.2vw, 2.4rem);
   color: var(--accent);
   margin-bottom: 0.45rem;
+  position: relative;
+  z-index: 1;
 }
 
 .hero p {
   max-width: 56ch;
+  position: relative;
+  z-index: 1;
 }
 
 .hero .row-wrap {
   margin-top: 1rem;
+  position: relative;
+  z-index: 1;
 }
 
 .hero-logo {
@@ -521,22 +555,47 @@ button:disabled,
 }
 
 .auth-visual-panel {
-  background: linear-gradient(160deg, #062f8f 0%, #0f60a2 54%, #f3ab0f 160%);
+  background: linear-gradient(160deg, #062f8f 0%, #0f60a2 54%, #f3ab0f 160%),
+    radial-gradient(circle, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: auto, 30px 30px;
+  background-position: 0 0, 0 0;
   color: #fff;
   padding: 1.6rem 1.3rem;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: center;
+  align-items: center;
   gap: 0.7rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-visual-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 35px,
+    rgba(255, 255, 255, 0.03) 35px,
+    rgba(255, 255, 255, 0.03) 70px
+  );
+  pointer-events: none;
+  z-index: 1;
 }
 
 .auth-visual-panel h2 {
   color: #fff;
   font-size: clamp(1.25rem, 2.5vw, 1.7rem);
+  position: relative;
+  z-index: 2;
 }
 
 .auth-visual-panel p {
   color: rgba(255, 255, 255, 0.9);
+  position: relative;
+  z-index: 2;
 }
 
 .auth-tabs {
@@ -573,14 +632,33 @@ button:disabled,
   overflow: hidden;
   border-radius: 20px;
   border: 1px solid #cfe0fb;
-  background: #fff;
+  background: 
+    #fff,
+    radial-gradient(circle, rgba(15, 96, 162, 0.04) 1px, transparent 1px);
+  background-size: auto, 28px 28px;
+  background-position: 0 0, 0 0;
   box-shadow: var(--shadow-sm);
+}
+
+.detail-hero::after {
+  content: "";
+  position: absolute;
+  bottom: -100px;
+  right: -100px;
+  width: 350px;
+  height: 350px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(243, 171, 15, 0.12), rgba(15, 96, 162, 0.06));
+  pointer-events: none;
+  z-index: 0;
 }
 
 .detail-banner {
   width: 100%;
   height: 220px;
   object-fit: cover;
+  position: relative;
+  z-index: 1;
 }
 
 .detail-header {
@@ -590,6 +668,8 @@ button:disabled,
   align-items: center;
   gap: 0.8rem;
   flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
 }
 
 .detail-layout {

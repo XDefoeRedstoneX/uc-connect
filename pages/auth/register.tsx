@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { FormEvent, useState } from "react";
 import { GetServerSideProps } from "next";
 import AuthSplitLayout from "@/components/AuthSplitLayout";
@@ -10,6 +11,7 @@ import { toPublicAuthErrorMessage } from "@/lib/public-errors";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const { t } = useLanguage();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -176,6 +178,15 @@ export default function RegisterPage() {
 
         <div className="row-gap">
           <Link href="/auth/login">{t("pages.register.haveAccount")}</Link>
+        </div>
+
+        <div className="row-gap">
+          <button
+            type="button"
+            onClick={() => router.push("/auth/login?next=/vendor/onboarding&role=vendor")}
+          >
+            Daftar Sebagai Vendor
+          </button>
         </div>
 
         {message && <p className="ok">{message}</p>}

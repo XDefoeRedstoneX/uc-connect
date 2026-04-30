@@ -92,7 +92,7 @@ export default function VendorDetailPage() {
                   {vendor.is_verified && <span className="badge success">{t("pages.explore.verifiedBadge")}</span>}
                   <span className="badge gold">{vendor.category ?? "Uncategorized"}</span>
                 </div>
-                <h1 id="vendor-name-title">{vendor.name}</h1>
+                <h1 id="vendor-name-title" className="text-4xl font-extrabold tracking-tight text-slate-900">{vendor.name}</h1>
                 <p>{vendor.tagline ?? `${vendor.city ?? "Unknown city"} • UC Connect Directory`}</p>
               </div>
 
@@ -146,12 +146,15 @@ export default function VendorDetailPage() {
 
             <aside className="detail-card">
               <h2>{t("pages.vendorDetail.availability")}</h2>
-              <div className="stack compact-top">
+              <div className="space-y-0">
                 {vendor.hours.map((hour) => (
-                  <p key={hour.id}>
-                    {weekdayLabels[language][hour.day_of_week]}: {hour.is_closed ? "Closed" : formatTimeRange(hour.opens_at, hour.closes_at)}
-                    {hour.notes ? ` (${hour.notes})` : ""}
-                  </p>
+                  <div key={hour.id} className="flex justify-between py-3 border-b border-slate-100">
+                    <span className="font-medium text-slate-700">{weekdayLabels[language][hour.day_of_week]}</span>
+                    <span className="text-slate-500">
+                      {hour.is_closed ? "Closed" : formatTimeRange(hour.opens_at, hour.closes_at)}
+                      {hour.notes ? ` (${hour.notes})` : ""}
+                    </span>
+                  </div>
                 ))}
               </div>
               <div className="stack compact-top">

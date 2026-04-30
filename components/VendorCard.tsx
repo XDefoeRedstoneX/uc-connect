@@ -16,6 +16,7 @@ type VendorCardProps = {
   ctaLabel?: string;
 };
 
+
 export default function VendorCard({
   title,
   meta,
@@ -27,29 +28,41 @@ export default function VendorCard({
   ctaLabel,
 }: VendorCardProps) {
   return (
-    <li className="vendor-card">
-      {imageSrc && <img className="vendor-cover" src={imageSrc} alt={imageAlt ?? `Image for ${title}`} />}
-      <div className="vendor-body">
+    <Link href={href} className="vendor-card transition-transform duration-200 hover:-translate-y-1">
+      {imageSrc && (
+        <img 
+          className="vendor-cover w-full" 
+          src={imageSrc} 
+          alt={imageAlt ?? `Image for ${title}`} 
+        />
+      )}
+      <div className="vendor-body p-5">
         {badges && badges.length > 0 && (
-          <div className="row-wrap">
+          <div className="row-wrap gap-2 mb-2">
             {badges.map((badge) => (
-              <span key={`${badge.tone}-${badge.text}`} className={`badge ${badge.tone}`}>
+              <span 
+                key={`${badge.tone}-${badge.text}`} 
+                className={`badge ${badge.tone}`}
+              >
                 {badge.text}
               </span>
             ))}
           </div>
         )}
-        <h3>{title}</h3>
+        
+        <h3 className="font-bold text-[var(--accent)]">{title}</h3>
         <p className="vendor-meta">{meta}</p>
-        {description && <p>{description}</p>}
+        
+        {description && <p className="text-sm text-gray-600 mt-1 line-clamp-2">{description}</p>}
+        
         {ctaLabel && (
-          <div className="vendor-actions">
-            <Link className="btn" href={href}>
+          <div className="vendor-actions w-full mt-3">
+            <span className="btn w-full text-center font-bold text-xs">
               {ctaLabel}
-            </Link>
+            </span>
           </div>
         )}
       </div>
-    </li>
+    </Link>
   );
 }

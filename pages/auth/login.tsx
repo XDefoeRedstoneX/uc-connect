@@ -19,6 +19,10 @@ export default function LoginPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const nextPath = typeof router.query.next === "string" && router.query.next.startsWith("/")
+    ? router.query.next
+    : "/";
+
   async function onLogin(e: FormEvent) {
     e.preventDefault();
     setMessage(null);
@@ -40,7 +44,7 @@ export default function LoginPage() {
     }
 
     setMessage(t("pages.login.successMsg"));
-    await router.replace("/");
+    await router.replace(nextPath);
     setSubmitting(false);
   }
 

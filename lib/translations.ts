@@ -159,7 +159,7 @@ export const translations = {
       login: "Masuk",
     },
     footer: {
-      tagline: "UC Connect • Kampus x Mahasiswa x UMKM",
+      tagline: "UC Connect @2026",
       privacy: "Privasi",
       terms: "Syarat",
       support: "Dukungan",

@@ -128,19 +128,42 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
     return { notFound: true };
   }
 
+  // Check if user is authenticated by looking for session in cookies
+  const cookies = context.req.headers.cookie || '';
+  const hasSession = cookies.includes('sb-') && cookies.includes('auth-token');
+  
+  if (!hasSession) {
+    return {
+      redirect: {
+        destination: `/auth/login?redirect=/community/${slug}/${thread_id}`,
+        permanent: false,
+      },
+    };
+  }
+
   const supabase = getSupabaseServerClient();
   if (!supabase) return { props: { category: null, thread: null, replies: [] } };
 
-  const { data: categoryData } = await supabase.from('forum_categories').select('*').eq('slug', slug).single();
-  if (!categoryData) return { notFound: true };
+  const { data: categoryData, error: categoryError } = await supabase.from('forum_categories').select('*').eq('slug', slug).single();
+  if (categoryError) {
+    console.error('Category query error:', categoryError, 'slug:', slug);
+    return { notFound: true };
+  }
+  if (!categoryData) {
+    console.error('Category not found for slug:', slug);
+    return { notFound: true };
+  }
 
-  const { data: threadData } = await supabase
+  const { data: threadData, error: threadError } = await supabase
     .from('forum_threads')
     .select('*, profiles!author_id(id,full_name,avatar_url)')
     .eq('id', thread_id)
     .eq('category_id', categoryData.id)
     .single();
 
+  if (threadError) {
+    console.error('Thread query error:', threadError, 'thread_id:', thread_id, 'category_id:', categoryData.id);
+  }
   if (!threadData) {
     return {
       props: {

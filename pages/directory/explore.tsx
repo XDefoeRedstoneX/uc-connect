@@ -1,5 +1,6 @@
 import { GetServerSideProps } from "next";
 import { FormEvent, useState } from "react";
+import BottomCTA from "@/components/BottomCTA";
 import HeroSection from "@/components/HeroSection";
 import VendorCard from "@/components/VendorCard";
 import SiteLayout from "@/components/SiteLayout";
@@ -91,6 +92,8 @@ export default function ExplorePage({ initialVendors, initialError }: Props) {
           ))}
         </ul>
       </section>
+
+      <BottomCTA />
     </SiteLayout>
   );
 }

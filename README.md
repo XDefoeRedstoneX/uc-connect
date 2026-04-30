@@ -10,12 +10,27 @@ This repository is a Next.js (Pages Router) app wired to Supabase for auth and d
 npm install
 ```
 
-2. Create `.env.local` (do not commit) based on `.env.example`.
+2. Bootstrap `.env.local` (do not commit):
+
+```bash
+npm run setup:env
+```
+
+Then fill in your hosted Supabase values.
 
 3. Start dev server:
 
 ```bash
 npm run dev
+```
+
+If you want a quick preflight check before starting or building, use:
+
+```bash
+npm run setup:env
+npm run check:env
+npm run dev:ready
+npm run build:ready
 ```
 
 ## Supabase setup
@@ -29,6 +44,8 @@ Env vars used by the app:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY` (server-only; required for API routes / SSR in this project)
+
+The `check:env` script verifies these are present in `.env.local` before local dev or build starts.
 
 Note: `assets/js/supabase-env.js` is for legacy static HTML pages and is not used by the Next.js app.
 
