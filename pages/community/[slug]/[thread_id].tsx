@@ -123,7 +123,11 @@ export default function ThreadPage({ category, thread, replies: initialReplies }
 }
 
 export const getServerSideProps: GetServerSideProps<Props> = async (context) => {
-  const { slug, thread_id } = context.params as { slug: string; thread_id: string };
+  const { slug, thread_id } = context.params as { slug?: string; thread_id?: string };
+  if (!slug || !thread_id) {
+    return { notFound: true };
+  }
+
   const supabase = getSupabaseServerClient();
   if (!supabase) return { props: { category: null, thread: null, replies: [] } };
 
@@ -134,9 +138,18 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
     .from('forum_threads')
     .select('*, profiles!author_id(id,full_name,avatar_url)')
     .eq('id', thread_id)
+    .eq('category_id', categoryData.id)
     .single();
 
-  if (!threadData) return { notFound: true };
+  if (!threadData) {
+    return {
+      props: {
+        category: categoryData as ForumCategory,
+        thread: null,
+        replies: [],
+      },
+    };
+  }
 
   const { data: repliesData } = await supabase
     .from('forum_replies')
