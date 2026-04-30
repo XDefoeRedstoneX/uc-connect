@@ -34,6 +34,9 @@ export default function ThreadPage({ category, thread, replies: initialReplies }
     );
   }
 
+  const threadId = thread.id;
+  const categorySlug = category.slug;
+
   async function submitReply(e: FormEvent) {
     e.preventDefault();
     if (!newReply.trim()) return;
@@ -46,16 +49,17 @@ export default function ThreadPage({ category, thread, replies: initialReplies }
       return;
     }
 
-    const { data: userData, error: userErr } = await supabase.auth.getUser();
+    const { data: userData } = await supabase.auth.getUser();
     const user = userData?.user;
     if (!user) {
-      window.location.href = `/auth/login?redirect=/community/${category?.slug ?? ''}/${thread!.id}`;
+      window.location.href = `/auth/login?redirect=/community/${categorySlug}/${threadId}`;
+      setSubmitting(false);
       return;
     }
 
     const { data, error } = await supabase
       .from("forum_replies")
-      .insert({ thread_id: thread.id, author_id: user.id, content: newReply.trim() })
+      .insert({ thread_id: threadId, author_id: user.id, content: newReply.trim() })
       .select("*, profiles!author_id(id,full_name,avatar_url)")
       .single();
 
