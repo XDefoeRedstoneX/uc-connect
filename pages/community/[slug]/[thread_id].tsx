@@ -49,7 +49,7 @@ export default function ThreadPage({ category, thread, replies: initialReplies }
     const { data: userData, error: userErr } = await supabase.auth.getUser();
     const user = userData?.user;
     if (!user) {
-      window.location.href = `/auth/login?redirect=/community/${category?.slug ?? ''}/${thread.id}`;
+      window.location.href = `/auth/login?redirect=/community/${category?.slug ?? ''}/${thread!.id}`;
       return;
     }
 
