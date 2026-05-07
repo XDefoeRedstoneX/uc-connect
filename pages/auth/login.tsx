@@ -23,6 +23,8 @@ export default function LoginPage() {
     ? router.query.next
     : "/";
 
+  const setUsernamePath = `/auth/set-username?next=${encodeURIComponent(nextPath)}`;
+
   async function onLogin(e: FormEvent) {
     e.preventDefault();
     setMessage(null);
@@ -39,6 +41,26 @@ export default function LoginPage() {
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
     if (authError) {
       setError(toPublicAuthErrorMessage(authError.message, "login"));
+      setSubmitting(false);
+      return;
+    }
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+
+    if (!token) {
+      setError(t("errors.sessionExpired"));
+      setSubmitting(false);
+      return;
+    }
+
+    const profileResponse = await fetch("/api/profile", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const profileJson = await profileResponse.json();
+    if (profileResponse.ok && profileJson.profile && !profileJson.profile.username) {
+      await router.replace(setUsernamePath);
       setSubmitting(false);
       return;
     }

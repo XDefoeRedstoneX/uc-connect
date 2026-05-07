@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { sendInternalServerError, sendMethodNotAllowed, sendServiceUnavailable } from "@/lib/api-response";
-import { getSupabaseServerClient } from "@/lib/supabase-server";
+import { resolveAuthedUser } from "@/lib/api-auth";
 
 function trimToNull(value: unknown): string | null {
   if (typeof value !== "string") return null;
@@ -8,44 +8,21 @@ function trimToNull(value: unknown): string | null {
   return trimmed ? trimmed : null;
 }
 
-async function resolveUserFromBearer(token: string) {
-  const supabase = getSupabaseServerClient();
-  if (!supabase) return { userId: null, user: null, error: "Service unavailable" };
-
-  const { data, error } = await supabase.auth.getUser(token);
-  if (error || !data.user) {
-    return { userId: null, user: null, error: error?.message ?? "Invalid token" };
-  }
-
-  return { userId: data.user.id, user: data.user, error: null };
-}
-
-function parseBearer(req: NextApiRequest) {
-  const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith("Bearer ")) return null;
-  return auth.slice("Bearer ".length);
-}
-
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const token = parseBearer(req);
-  if (!token) {
-    return res.status(401).json({ error: "Missing Bearer token" });
-  }
-
-  const { userId, user, error: userError } = await resolveUserFromBearer(token);
-  if (userError || !userId) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
-  const supabase = getSupabaseServerClient();
-  if (!supabase) {
+  const authContext = await resolveAuthedUser(req);
+  if (authContext.status === 503) {
     return sendServiceUnavailable(res);
   }
+  if (authContext.status !== 200 || !authContext.supabase || !authContext.userId) {
+    return res.status(authContext.status).json({ error: authContext.error ?? "Unauthorized" });
+  }
+
+  const { supabase, userId, user } = authContext;
 
   if (req.method === "GET") {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id,full_name,phone,avatar_url,role,updated_at")
+      .select("id,username,full_name,phone,avatar_url,role,updated_at")
       .eq("id", userId)
       .single();
 
@@ -63,6 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const now = new Date().toISOString();
 
       const meta = (user?.user_metadata ?? {}) as Record<string, unknown>;
+      const metaUsername = trimToNull(meta.username);
       const metaFullName = trimToNull(meta.full_name);
       const metaPhone = trimToNull(meta.phone);
 
@@ -71,13 +49,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .upsert(
           {
             id: userId,
+            username: metaUsername,
             full_name: metaFullName,
             phone: metaPhone,
             updated_at: now,
           },
           { onConflict: "id" },
         )
-        .select("id,full_name,phone,avatar_url,role,updated_at")
+        .select("id,username,full_name,phone,avatar_url,role,updated_at")
         .single();
 
       if (createError) {
@@ -92,23 +71,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === "PUT") {
-    const { full_name, phone } = req.body ?? {};
+    const { username, full_name, phone, avatar_url } = req.body ?? {};
 
+    const cleanUsername = trimToNull(username);
     const cleanFullName = trimToNull(full_name);
     const cleanPhone = trimToNull(phone);
+    const cleanAvatarUrl = trimToNull(avatar_url);
 
     const { data, error } = await supabase
       .from("profiles")
       .upsert(
         {
           id: userId,
+          username: cleanUsername,
           full_name: cleanFullName,
           phone: cleanPhone,
+          avatar_url: cleanAvatarUrl,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "id" },
       )
-      .select("id,full_name,phone,avatar_url,role,updated_at")
+      .select("id,username,full_name,phone,avatar_url,role,updated_at")
       .single();
 
     if (error) {

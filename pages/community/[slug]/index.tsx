@@ -37,7 +37,7 @@ export default function CategoryPage({ category, threads }: Props) {
           </div>
           
           <Link href={`/community/${category.slug}/new`} className="button" style={{ 
-            backgroundColor: "#2563eb", color: "white", padding: "0.75rem 1.5rem", borderRadius: "8px", textDecoration: "none", fontWeight: "bold", whiteSpace: "nowrap"
+            backgroundColor: "var(--brand-orange)", color: "white", padding: "0.75rem 1.5rem", borderRadius: "8px", textDecoration: "none", fontWeight: "bold", whiteSpace: "nowrap"
           }}>
             + Tambah Diskusi
           </Link>

@@ -4,13 +4,7 @@ import {
   sendMethodNotAllowed,
   sendServiceUnavailable,
 } from "@/lib/api-response";
-import { getSupabaseServerClient } from "@/lib/supabase-server";
-
-function parseBearer(req: NextApiRequest) {
-  const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith("Bearer ")) return null;
-  return auth.slice("Bearer ".length);
-}
+import { resolveAuthedUser } from "@/lib/api-auth";
 
 function slugify(value: string) {
   return value
@@ -25,22 +19,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return sendMethodNotAllowed(res, "POST");
   }
 
-  const token = parseBearer(req);
-  if (!token) {
-    return res.status(401).json({ error: "Missing Bearer token" });
-  }
-
-  const supabase = getSupabaseServerClient();
-  if (!supabase) {
+  const authContext = await resolveAuthedUser(req);
+  if (authContext.status === 503) {
     return sendServiceUnavailable(res);
   }
-
-  const { data: userData, error: userError } = await supabase.auth.getUser(token);
-  if (userError || !userData.user) {
-    return res.status(401).json({ error: "Unauthorized" });
+  if (authContext.status !== 200 || !authContext.supabase || !authContext.userId) {
+    return res.status(authContext.status).json({ error: authContext.error ?? "Unauthorized" });
   }
 
-  const userId = userData.user.id;
+  const { supabase, userId } = authContext;
   const body = (req.body ?? {}) as Record<string, unknown>;
 
   const fullName = typeof body.fullName === "string" ? body.fullName.trim() : "";

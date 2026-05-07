@@ -113,7 +113,7 @@ export default function NewDiscussion() {
               type="submit"
               disabled={loading || !title || !content}
               style={{
-                padding: "0.75rem 2rem", backgroundColor: "#2563eb", color: "white", border: "none", borderRadius: "8px", 
+                padding: "0.75rem 2rem", backgroundColor: "var(--brand-orange)", color: "white", border: "none", borderRadius: "8px", 
                 fontWeight: "bold", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1
               }}
             >

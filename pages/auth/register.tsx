@@ -180,15 +180,6 @@ export default function RegisterPage() {
           <Link href="/auth/login">{t("pages.register.haveAccount")}</Link>
         </div>
 
-        <div className="row-gap">
-          <button
-            type="button"
-            onClick={() => router.push("/auth/login?next=/vendor/onboarding&role=vendor")}
-          >
-            Daftar Sebagai Vendor
-          </button>
-        </div>
-
         {message && <p className="ok">{message}</p>}
         {error && <p className="err">{error}</p>}
       </AuthSplitLayout>

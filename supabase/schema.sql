@@ -22,12 +22,36 @@ $$;
 
 create table public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
+  username text,
   full_name text,
   phone text,
   avatar_url text,
   role text not null default 'customer' check (role in ('customer', 'vendor', 'admin')),
   updated_at timestamptz not null default now()
 );
+
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  meta_username text;
+  meta_full_name text;
+  meta_phone text;
+begin
+  meta_username := nullif(btrim(coalesce(new.raw_user_meta_data->>'username', '')), '');
+  meta_full_name := nullif(btrim(coalesce(new.raw_user_meta_data->>'full_name', '')), '');
+  meta_phone := nullif(btrim(coalesce(new.raw_user_meta_data->>'phone', '')), '');
+
+  insert into public.profiles (id, username, full_name, phone, role, updated_at)
+  values (new.id, meta_username, meta_full_name, meta_phone, 'customer', now())
+  on conflict (id) do nothing;
+
+  return new;
+end;
+$$;
 
 create table public.vendors (
   id uuid primary key default gen_random_uuid(),
@@ -119,6 +143,12 @@ create trigger touch_profiles_updated_at
 before update on public.profiles
 for each row
 execute function public.touch_updated_at();
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+after insert on auth.users
+for each row
+execute function public.handle_new_user();
 
 drop trigger if exists touch_vendors_updated_at on public.vendors;
 create trigger touch_vendors_updated_at
@@ -225,3 +255,15 @@ create index if not exists vendor_items_vendor_sort_idx on public.vendor_items (
 create index if not exists vendor_hours_vendor_idx on public.vendor_hours (vendor_id, day_of_week);
 create index if not exists forum_threads_category_idx on public.forum_threads(category_id);
 create index if not exists forum_replies_thread_idx on public.forum_replies(thread_id);
+
+insert into public.profiles (id, username, full_name, phone, role, updated_at)
+select
+  u.id,
+  nullif(btrim(coalesce(u.raw_user_meta_data->>'username', '')), ''),
+  nullif(btrim(coalesce(u.raw_user_meta_data->>'full_name', '')), ''),
+  nullif(btrim(coalesce(u.raw_user_meta_data->>'phone', '')), ''),
+  'customer',
+  now() 
+from auth.users u
+left join public.profiles p on p.id = u.id
+where p.id is null;

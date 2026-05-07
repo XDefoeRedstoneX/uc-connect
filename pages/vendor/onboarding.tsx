@@ -4,12 +4,14 @@ import { useRouter } from "next/router";
 import SiteLayout from "@/components/SiteLayout";
 import VendorOnboardingWizard from "@/components/VendorOnboardingWizard";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { clearVendorRegistrationDraft, loadVendorRegistrationDraft, VendorRegistrationDraft } from "@/lib/vendor-registration-draft";
 
 export default function VendorOnboardingPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [draft, setDraft] = useState<VendorRegistrationDraft | null>(null);
 
   useEffect(() => {
     const loadSession = async () => {
@@ -37,11 +39,15 @@ export default function VendorOnboardingPage() {
       }
 
       if (json.profile.role === "vendor") {
+        clearVendorRegistrationDraft();
         router.replace("/");
         return;
       }
 
       setToken(sessionToken);
+
+      const savedDraft = await loadVendorRegistrationDraft();
+      setDraft(savedDraft);
       setLoading(false);
     };
 
@@ -70,7 +76,8 @@ export default function VendorOnboardingPage() {
       return;
     }
 
-    router.replace("/");
+    clearVendorRegistrationDraft();
+    router.replace("/vendor/dashboard");
   }
 
   return (
@@ -82,7 +89,13 @@ export default function VendorOnboardingPage() {
         {loading && <p>Memuat sesi...</p>}
         {error && <p className="err">{error}</p>}
 
-        {!loading && <VendorOnboardingWizard onComplete={handleComplete} />}
+        {!loading && (
+          <VendorOnboardingWizard
+            initialStep={draft ? 2 : 1}
+            initialValues={draft ?? undefined}
+            onComplete={handleComplete}
+          />
+        )}
       </section>
     </SiteLayout>
   );

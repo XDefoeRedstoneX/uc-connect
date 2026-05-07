@@ -56,6 +56,7 @@ export type VendorDetail = Vendor & {
 
 export type UserProfile = {
   id: string;
+  username: string | null;
   full_name: string | null;
   phone: string | null;
   avatar_url: string | null;

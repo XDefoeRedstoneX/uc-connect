@@ -27,6 +27,9 @@
 
 * {
   box-sizing: border-box;
+}
+
+html, body, h1, h2, h3, h4, h5, h6, p, ol, ul, li, dl, dt, dd, blockquote, figure, form, fieldset, legend {
   margin: 0;
   padding: 0;
 }
@@ -67,8 +70,8 @@ img {
   position: sticky;
   top: 0;
   z-index: 20;
-  border-bottom: 1px solid var(--border);
-  background: rgba(248, 249, 255, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(90deg, #f97316 0%, #fb923c 48%, #fdba74 100%);
   backdrop-filter: blur(8px);
 }
 
@@ -105,13 +108,13 @@ img {
 .brand-title {
   font-size: 1.04rem;
   font-weight: 800;
-  color: var(--accent);
+  color: #fff;
   letter-spacing: 0.015em;
 }
 
 .brand-sub {
   font-size: 0.68rem;
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.8);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -124,19 +127,20 @@ img {
 }
 
 .nav-link {
-  color: var(--muted);
+  color: var(--brand-orange);
   font-size: 0.84rem;
   font-weight: 600;
   padding: 0.5rem 0.7rem;
   border-radius: 999px;
-  border: 1px solid transparent;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   transition: all 0.2s ease;
 }
 
 .nav-link:hover,
 .nav-link:focus-visible {
-  color: var(--accent);
-  border-color: #c4d4f3;
+  color: #c2410c;
+  border-color: #fff;
   background: #fff;
 }
 
@@ -503,6 +507,22 @@ button:disabled,
   gap: 0.95rem;
   list-style: none;
   margin-top: 0.8rem;
+}
+
+.vendor-grid--explore {
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+}
+
+@media (min-width: 1200px) {
+  .vendor-grid--explore {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+.vendor-grid--explore > li {
+  max-width: 240px;
+  width: 100%;
+  justify-self: start;
 }
 
 .vendor-card {

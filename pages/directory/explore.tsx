@@ -73,7 +73,7 @@ export default function ExplorePage({ initialVendors, initialError }: Props) {
           <p>{t("pages.explore.noResults")}</p>
         )}
 
-        <ul className="vendor-grid">
+        <ul className="vendor-grid vendor-grid--explore">
           {vendors.map((vendor) => (
             <VendorCard
               key={vendor.id}

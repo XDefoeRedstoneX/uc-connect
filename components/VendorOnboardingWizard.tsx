@@ -4,9 +4,16 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { compressImage, formatFileSize } from "@/lib/image-compression";
 
 const salesSystemOptions = ["ready-stock", "pre-order"] as const;
 const deliveryMethodOptions = ["cod-kampus", "digital-delivery"] as const;
+const allowedKtmMimeTypes = ["image/png", "image/jpeg"] as const;
+const maxKtmFileSizeBytes = 1 * 1024 * 1024;
+
+function isFileList(value: unknown): value is FileList {
+  return typeof FileList !== "undefined" && value instanceof FileList;
+}
 
 const vendorOnboardingSchema = z.object({
   fullName: z.string().min(2, "Nama lengkap wajib diisi").max(100, "Nama terlalu panjang"),
@@ -17,8 +24,11 @@ const vendorOnboardingSchema = z.object({
     .max(20, "Nomor WhatsApp terlalu panjang")
     .regex(/^[0-9+()\-\s]+$/, "Nomor WhatsApp tidak valid"),
   ktmFile: z
-    .any()
-    .refine((value) => value instanceof FileList && value.length > 0, "Upload KTM wajib diisi"),
+    .custom<File>((value): value is File => typeof File !== "undefined" && value instanceof File, {
+      message: "Upload KTM wajib diisi",
+    })
+    .refine((file) => allowedKtmMimeTypes.includes(file.type as (typeof allowedKtmMimeTypes)[number]), "Format KTM harus PNG atau JPG")
+    .refine((file) => file.size <= maxKtmFileSizeBytes, "Ukuran KTM maksimal 1 MB"),
   businessName: z.string().min(2, "Nama bisnis wajib diisi").max(120, "Nama bisnis terlalu panjang"),
   category: z.enum(["Makanan", "Jasa", "Kebutuhan"], {
     message: "Pilih kategori bisnis",
@@ -35,6 +45,8 @@ const vendorOnboardingSchema = z.object({
 type VendorOnboardingValues = z.infer<typeof vendorOnboardingSchema>;
 
 type VendorOnboardingWizardProps = {
+  initialStep?: 1 | 2 | 3;
+  initialValues?: Partial<VendorOnboardingValues>;
   onComplete?: (values: VendorOnboardingValues) => Promise<void> | void;
 };
 
@@ -50,7 +62,7 @@ const defaultValues: VendorOnboardingValues = {
   fullName: "",
   university: "",
   whatsappNumber: "",
-  ktmFile: undefined as unknown as FileList,
+  ktmFile: undefined as unknown as File,
   businessName: "",
   category: "Makanan",
   description: "",
@@ -58,9 +70,17 @@ const defaultValues: VendorOnboardingValues = {
   deliveryMethod: [],
 };
 
-export default function VendorOnboardingWizard({ onComplete }: VendorOnboardingWizardProps) {
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+export default function VendorOnboardingWizard({ initialStep = 1, initialValues, onComplete }: VendorOnboardingWizardProps) {
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(initialStep);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [compressionMessage, setCompressionMessage] = useState<string | null>(null);
+
+  const mergedDefaultValues: VendorOnboardingValues = {
+    ...defaultValues,
+    ...initialValues,
+    ktmFile: initialValues?.ktmFile ?? (undefined as unknown as File),
+  };
 
   const {
     register,
@@ -71,7 +91,7 @@ export default function VendorOnboardingWizard({ onComplete }: VendorOnboardingW
     formState: { errors, isSubmitting },
   } = useForm<VendorOnboardingValues>({
     resolver: zodResolver(vendorOnboardingSchema),
-    defaultValues,
+    defaultValues: mergedDefaultValues,
     mode: "onTouched",
   });
 
@@ -90,6 +110,36 @@ export default function VendorOnboardingWizard({ onComplete }: VendorOnboardingW
     setCurrentStep((prev) => Math.max(prev - 1, 1) as 1 | 2 | 3);
   }
 
+  async function handleKtmFileChange(event: React.ChangeEvent<HTMLInputElement>, onChange: (value: File | undefined) => void) {
+    setCompressionMessage(null);
+    const file = event.target.files?.[0];
+    if (!file) {
+      onChange(undefined);
+      return;
+    }
+
+    setIsCompressing(true);
+    try {
+      const originalSize = formatFileSize(file.size);
+      if (file.size > 500 * 1024) {
+        setCompressionMessage(`Mengompres file (${originalSize})...`);
+        const compressedFile = await compressImage(file);
+        const compressedSize = formatFileSize(compressedFile.size);
+        const reduction = Math.round(((file.size - compressedFile.size) / file.size) * 100);
+        setCompressionMessage(`✓ File dikompres: ${originalSize} → ${compressedSize} (${reduction}% lebih kecil)`);
+        onChange(compressedFile);
+      } else {
+        onChange(file);
+      }
+    } catch (error) {
+      console.error("Compression error:", error);
+      setCompressionMessage("Gagal mengompres file, menggunakan file asli.");
+      onChange(file);
+    } finally {
+      setIsCompressing(false);
+    }
+  }
+
   const onSubmit = async (values: VendorOnboardingValues) => {
     await onComplete?.(values);
     setIsSubmitted(true);
@@ -97,6 +147,7 @@ export default function VendorOnboardingWizard({ onComplete }: VendorOnboardingW
   };
 
   const descriptionValue = watch("description");
+  const ktmFileValue = watch("ktmFile");
 
   return (
     <section className="w-full max-w-3xl mx-auto">
@@ -117,9 +168,9 @@ export default function VendorOnboardingWizard({ onComplete }: VendorOnboardingW
                     className={[
                       "inline-flex h-8 w-8 items-center justify-center rounded-full border text-xs font-bold transition-colors",
                       isActive
-                        ? "border-[var(--brand-orange)] bg-[var(--brand-orange)] text-white"
+                        ? "border-(--brand-orange) bg-(--brand-orange) text-white"
                         : isComplete
-                          ? "border-[var(--brand-orange)] bg-orange-50 text-[var(--brand-orange)]"
+                          ? "border-(--brand-orange) bg-orange-50 text-(--brand-orange)"
                           : "border-gray-300 bg-white text-gray-400",
                     ].join(" ")}
                   >
@@ -128,7 +179,7 @@ export default function VendorOnboardingWizard({ onComplete }: VendorOnboardingW
                   <span
                     className={[
                       "transition-colors",
-                      isActive ? "text-[var(--brand-orange)]" : "text-gray-400",
+                      isActive ? "text-(--brand-orange)" : "text-gray-400",
                     ].join(" ")}
                   >
                     {label}
@@ -143,7 +194,7 @@ export default function VendorOnboardingWizard({ onComplete }: VendorOnboardingW
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="min-h-[320px] space-y-5 transition-all duration-300">
+          <div className="min-h-80 space-y-5 transition-all duration-300">
             {currentStep === 1 && (
               <div className="space-y-5">
                 <div>
@@ -153,7 +204,7 @@ export default function VendorOnboardingWizard({ onComplete }: VendorOnboardingW
                   <input
                     id="fullName"
                     {...register("fullName")}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-[var(--brand-orange)] focus:ring-2 focus:ring-orange-100"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-(--brand-orange) focus:ring-2 focus:ring-orange-100"
                     placeholder="Nama lengkap"
                   />
                   {errors.fullName && <p className="mt-2 text-sm text-red-600">{errors.fullName.message}</p>}
@@ -166,7 +217,7 @@ export default function VendorOnboardingWizard({ onComplete }: VendorOnboardingW
                   <input
                     id="university"
                     {...register("university")}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-[var(--brand-orange)] focus:ring-2 focus:ring-orange-100"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-(--brand-orange) focus:ring-2 focus:ring-orange-100"
                     placeholder="Universitas"
                   />
                   {errors.university && <p className="mt-2 text-sm text-red-600">{errors.university.message}</p>}
@@ -179,7 +230,7 @@ export default function VendorOnboardingWizard({ onComplete }: VendorOnboardingW
                   <input
                     id="whatsappNumber"
                     {...register("whatsappNumber")}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-[var(--brand-orange)] focus:ring-2 focus:ring-orange-100"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-(--brand-orange) focus:ring-2 focus:ring-orange-100"
                     placeholder="08xxxxxxxxxx"
                   />
                   {errors.whatsappNumber && (
@@ -191,16 +242,32 @@ export default function VendorOnboardingWizard({ onComplete }: VendorOnboardingW
                   <label className="mb-2 block text-sm font-semibold text-gray-700" htmlFor="ktmFile">
                     Upload KTM
                   </label>
-                  <input
-                    id="ktmFile"
-                    type="file"
-                    accept="image/*,.pdf"
-                    {...register("ktmFile")}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition file:mr-4 file:rounded-md file:border-0 file:bg-orange-50 file:px-4 file:py-2 file:font-semibold file:text-[var(--brand-orange)] focus:border-[var(--brand-orange)] focus:ring-2 focus:ring-orange-100"
+                  <Controller
+                    control={control}
+                    name="ktmFile"
+                    render={({ field }) => (
+                      <input
+                        id="ktmFile"
+                        type="file"
+                        accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+                        onChange={(event) => handleKtmFileChange(event, field.onChange)}
+                        disabled={isCompressing}
+                        className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition file:mr-4 file:rounded-md file:border-0 file:bg-orange-50 file:px-4 file:py-2 file:font-semibold file:text-(--brand-orange) focus:border-(--brand-orange) focus:ring-2 focus:ring-orange-100 disabled:opacity-50"
+                      />
+                    )}
                   />
+                  {isCompressing && <p className="mt-2 text-sm text-blue-600">Sedang mengompres file...</p>}
+                  {compressionMessage && !isCompressing && (
+                    <p className={`mt-2 text-sm ${compressionMessage.includes("✓") ? "text-green-600" : "text-orange-600"}`}>
+                      {compressionMessage}
+                    </p>
+                  )}
+                  {ktmFileValue && (
+                    <p className="mt-2 text-sm text-gray-500">File terpilih: {ktmFileValue.name} ({formatFileSize(ktmFileValue.size)})</p>
+                  )}
                   {errors.ktmFile && <p className="mt-2 text-sm text-red-600">{errors.ktmFile.message as string}</p>}
                   <p className="mt-2 text-sm text-gray-500">
-                    File KTM akan dipakai sebagai verifikasi mahasiswa. Integrasi penyimpanan bisa disambungkan ke Supabase nanti.
+                    File KTM akan dipakai sebagai verifikasi mahasiswa. Pastikan file yang diunggah jelas dan sesuai dengan ketentuan (PNG/JPG, maksimal 1 MB).
                   </p>
                 </div>
               </div>
@@ -215,7 +282,7 @@ export default function VendorOnboardingWizard({ onComplete }: VendorOnboardingW
                   <input
                     id="businessName"
                     {...register("businessName")}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-[var(--brand-orange)] focus:ring-2 focus:ring-orange-100"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-(--brand-orange) focus:ring-2 focus:ring-orange-100"
                     placeholder="Nama usaha"
                   />
                   {errors.businessName && (
@@ -230,7 +297,7 @@ export default function VendorOnboardingWizard({ onComplete }: VendorOnboardingW
                   <select
                     id="category"
                     {...register("category")}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 outline-none transition focus:border-[var(--brand-orange)] focus:ring-2 focus:ring-orange-100"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 outline-none transition focus:border-(--brand-orange) focus:ring-2 focus:ring-orange-100"
                   >
                     <option value="Makanan">Makanan</option>
                     <option value="Jasa">Jasa</option>
@@ -248,7 +315,7 @@ export default function VendorOnboardingWizard({ onComplete }: VendorOnboardingW
                     {...register("description")}
                     maxLength={150}
                     rows={4}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-[var(--brand-orange)] focus:ring-2 focus:ring-orange-100"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-(--brand-orange) focus:ring-2 focus:ring-orange-100"
                     placeholder="Jelaskan bisnis kamu secara singkat"
                   />
                   <div className="mt-2 flex items-center justify-between gap-4 text-sm text-gray-500">
@@ -271,13 +338,13 @@ export default function VendorOnboardingWizard({ onComplete }: VendorOnboardingW
                     {salesSystemOptions.map((option) => (
                       <label
                         key={option}
-                        className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 transition hover:border-[var(--brand-orange)]"
+                        className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 transition hover:border-(--brand-orange)"
                       >
                         <input
                           type="radio"
                           value={option}
                           {...register("salesSystem")}
-                          className="h-4 w-4 accent-[var(--brand-orange)]"
+                          className="h-4 w-4 accent-(--brand-orange)"
                         />
                         <span className="text-sm font-medium text-gray-700">
                           {option === "ready-stock" ? "Ready Stock" : "Pre-Order"}
@@ -295,7 +362,7 @@ export default function VendorOnboardingWizard({ onComplete }: VendorOnboardingW
                       return (
                         <label
                           key={option}
-                          className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 transition hover:border-[var(--brand-orange)]"
+                          className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 transition hover:border-(--brand-orange)"
                         >
                           <Controller
                             control={control}
@@ -311,7 +378,7 @@ export default function VendorOnboardingWizard({ onComplete }: VendorOnboardingW
                                     field.onChange(field.value.filter((item) => item !== option));
                                   }
                                 }}
-                                className="h-4 w-4 rounded border-gray-300 text-[var(--brand-orange)] focus:ring-[var(--brand-orange)]"
+                                className="h-4 w-4 rounded border-gray-300 text-(--brand-orange) focus:ring-(--brand-orange)"
                               />
                             )}
                           />
@@ -351,7 +418,7 @@ export default function VendorOnboardingWizard({ onComplete }: VendorOnboardingW
                 type="button"
                 onClick={() => void handleNext()}
                 disabled={isSubmitting}
-                className="rounded-lg bg-[var(--brand-orange)] px-5 py-3 text-sm font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-lg bg-(--brand-orange) px-5 py-3 text-sm font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Selanjutnya
               </button>
@@ -359,7 +426,7 @@ export default function VendorOnboardingWizard({ onComplete }: VendorOnboardingW
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="rounded-lg bg-[var(--brand-orange)] px-5 py-3 text-sm font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-lg bg-(--brand-orange) px-5 py-3 text-sm font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting ? "Menyimpan..." : "Selesai"}
               </button>

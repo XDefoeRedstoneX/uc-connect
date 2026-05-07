@@ -19,6 +19,7 @@ export default function ThreadPage({ category, thread, replies: initialReplies }
   const [replies, setReplies] = useState<ReplyWithAuthor[]>(initialReplies);
   const [newReply, setNewReply] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   if (!category || !thread) {
     return (
@@ -40,11 +41,12 @@ export default function ThreadPage({ category, thread, replies: initialReplies }
   async function submitReply(e: FormEvent) {
     e.preventDefault();
     if (!newReply.trim()) return;
+    setSubmitError(null);
     setSubmitting(true);
 
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      alert("Layanan tidak tersedia");
+      setSubmitError("Layanan sementara tidak tersedia. Silakan muat ulang halaman.");
       setSubmitting(false);
       return;
     }
@@ -57,22 +59,27 @@ export default function ThreadPage({ category, thread, replies: initialReplies }
       return;
     }
 
+    const { data: authorProfile } = await supabase
+      .from("profiles")
+      .select("id,full_name,avatar_url")
+      .eq("id", user.id)
+      .single();
+
     const { data, error } = await supabase
       .from("forum_replies")
       .insert({ thread_id: threadId, author_id: user.id, content: newReply.trim() })
-      .select("*, profiles!author_id(id,full_name,avatar_url)")
       .single();
 
     if (error) {
       console.error(error);
-      alert("Gagal mengirim balasan.");
-    } else if (data) {
-      const added: ReplyWithAuthor = { ...(data as any), profiles: (data as any).profiles ?? null };
-      setReplies((r) => [added, ...r]);
-      setNewReply("");
+      setSubmitError("Gagal mengirim balasan.");
+      setSubmitting(false);
+      return;
     }
 
-    setSubmitting(false);
+    setNewReply("");
+    window.location.reload();
+    return;
   }
 
   return (
@@ -94,6 +101,7 @@ export default function ThreadPage({ category, thread, replies: initialReplies }
         <form onSubmit={submitReply} style={{ marginBottom: '1.5rem' }}>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Tulis Balasan</label>
           <textarea value={newReply} onChange={(e) => setNewReply(e.target.value)} rows={4} style={{ width: '100%', padding: '0.75rem', borderRadius: 8, border: '1px solid #d1d5db' }} />
+          {submitError && <p style={{ color: '#b91c1c', marginTop: '0.5rem' }}>{submitError}</p>}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.75rem' }}>
             <button className="btn" type="submit" disabled={submitting}>{submitting ? 'Mengirim...' : 'Kirim Balasan'}</button>
           </div>
@@ -128,63 +136,87 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
     return { notFound: true };
   }
 
-  // Check if user is authenticated by looking for session in cookies
-  const cookies = context.req.headers.cookie || '';
-  const hasSession = cookies.includes('sb-') && cookies.includes('auth-token');
-  
-  if (!hasSession) {
-    return {
-      redirect: {
-        destination: `/auth/login?redirect=/community/${slug}/${thread_id}`,
-        permanent: false,
-      },
-    };
-  }
-
   const supabase = getSupabaseServerClient();
   if (!supabase) return { props: { category: null, thread: null, replies: [] } };
 
-  const { data: categoryData, error: categoryError } = await supabase.from('forum_categories').select('*').eq('slug', slug).single();
-  if (categoryError) {
-    console.error('Category query error:', categoryError, 'slug:', slug);
-    return { notFound: true };
-  }
-  if (!categoryData) {
-    console.error('Category not found for slug:', slug);
-    return { notFound: true };
-  }
-
   const { data: threadData, error: threadError } = await supabase
     .from('forum_threads')
-    .select('*, profiles!author_id(id,full_name,avatar_url)')
+    .select('id,category_id,author_id,title,content,view_count,created_at,updated_at')
     .eq('id', thread_id)
-    .eq('category_id', categoryData.id)
     .single();
 
   if (threadError) {
-    console.error('Thread query error:', threadError, 'thread_id:', thread_id, 'category_id:', categoryData.id);
+    console.error('Thread query error:', threadError, 'thread_id:', thread_id);
   }
   if (!threadData) {
     return {
       props: {
-        category: categoryData as ForumCategory,
+        category: null,
         thread: null,
         replies: [],
       },
     };
   }
 
+  const { data: categoryData, error: categoryError } = await supabase
+    .from('forum_categories')
+    .select('*')
+    .eq('id', threadData.category_id)
+    .single();
+
+  if (categoryError) {
+    console.error('Category query error:', categoryError, 'category_id:', threadData.category_id);
+    return { notFound: true };
+  }
+  if (!categoryData) {
+    console.error('Category not found for thread category_id:', threadData.category_id);
+    return { notFound: true };
+  }
+
+  if (categoryData.slug !== slug) {
+    return {
+      redirect: {
+        destination: `/community/${categoryData.slug}/${threadData.id}`,
+        permanent: false,
+      },
+    };
+  }
+
+  const { data: threadAuthor } = await supabase
+    .from("profiles")
+    .select("id,full_name,avatar_url")
+    .eq("id", threadData.author_id)
+    .single();
+
   const { data: repliesData } = await supabase
     .from('forum_replies')
-    .select('*, profiles!author_id(id,full_name,avatar_url)')
+    .select('id,thread_id,author_id,content,created_at')
     .eq('thread_id', thread_id)
     .order('created_at', { ascending: false });
+
+  const replyAuthorIds = Array.from(new Set((repliesData ?? []).map((reply) => reply.author_id)));
+  const { data: replyProfiles } = replyAuthorIds.length > 0
+    ? await supabase
+        .from("profiles")
+        .select("id,full_name,avatar_url")
+        .in("id", replyAuthorIds)
+    : { data: [] as Array<Pick<UserProfile, "id" | "full_name" | "avatar_url">> };
+
+  const replyProfileMap = new Map((replyProfiles ?? []).map((profile) => [profile.id, profile]));
+  const threadWithAuthor: ThreadWithAuthor = {
+    ...(threadData as any),
+    profiles: (threadAuthor as UserProfile | null) ?? null,
+  };
+  const repliesWithAuthors: ReplyWithAuthor[] = (repliesData ?? []).map((reply) => ({
+    ...(reply as any),
+    profiles: replyProfileMap.get(reply.author_id) ?? null,
+  }));
 
   return {
     props: {
       category: categoryData as ForumCategory,
-      thread: threadData as any,
-      replies: (repliesData ?? []) as any,
+      thread: threadWithAuthor,
+      replies: repliesWithAuthors,
     },
   };
 };

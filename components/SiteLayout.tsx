@@ -1,7 +1,11 @@
+"use client";
+
 import Head from "next/head";
 import Link from "next/link";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useLanguage } from "@/lib/language-context";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { useRouter } from "next/navigation";
 
 type Props = {
   title: string;
@@ -10,6 +14,31 @@ type Props = {
 
 export default function SiteLayout({ title, children }: Props) {
   const { t } = useLanguage();
+  const router = useRouter();
+  const [isVendor, setIsVendor] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) return;
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) return;
+
+      try {
+        const resp = await fetch('/api/profile', { headers: { Authorization: `Bearer ${token}` } });
+        const json = await resp.json();
+        if (resp.ok && json.profile && json.profile.role === 'vendor') {
+          setIsVendor(true);
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    void load();
+  }, []);
 
   const navItems = [
     { href: "/", label: t("nav.home") },
@@ -45,6 +74,16 @@ export default function SiteLayout({ title, children }: Props) {
                   <circle cx="12" cy="7" r="4" />
                 </svg>
               </Link>
+
+              {isVendor && (
+                <button
+                  type="button"
+                  onClick={() => router.push('/vendor/dashboard')}
+                  className="inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-semibold text-orange-600 shadow-sm hover:bg-orange-50"
+                >
+                  Vendor Dashboard
+                </button>
+              )}
             </nav>
           </div>
         </header>

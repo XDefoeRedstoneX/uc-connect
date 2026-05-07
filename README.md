@@ -42,7 +42,7 @@ npm run build:ready
 Env vars used by the app:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY` (server-only; required for API routes / SSR in this project)
 
 The `check:env` script verifies these are present in `.env.local` before local dev or build starts.
