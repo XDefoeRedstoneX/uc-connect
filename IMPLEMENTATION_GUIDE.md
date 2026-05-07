@@ -185,9 +185,6 @@ SUPABASE_SERVICE_KEY=your-service-key
 - [x] Admin Dashboard
 - [x] Vendor Verification
 - [x] Forum Moderation
-- [ ] Shopping Cart
-- [ ] Order Management
-- [ ] Payment Integration
 
 ### Nice-to-Have Features
 - [ ] Real-time notifications

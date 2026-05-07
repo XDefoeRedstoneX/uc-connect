@@ -45,24 +45,23 @@ export default function BottomCTA() {
     setLoading(false);
   }
   return (
-    <section className="bg-orange-50 py-16 px-4 sm:px-6 lg:px-8 text-center">
-      <div className="max-w-4xl mx-auto text-center">
-        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-          Punya Bisnis Kampus?
-        </h2>
-        <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
-          Daftarkan UMKM mahasiswa Anda dan jangkau ribuan pelanggan potensial di UC Connect. 
-          Kelola pesanan, terima pembayaran, dan berkembang bersama komunitas kami.
-        </p>
-        <button
-          type="button"
-          onClick={handleVendorRegister}
-          disabled={loading}
-          className="inline-block bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
-        >
-          {loading ? "Loading..." : "Daftar Sebagai Vendor"}
-        </button>
-      </div>
+    <section className="section-cta" style={{ marginTop: '2rem' }}>
+      <h2 style={{ fontSize: 'clamp(1.5rem, 3vw, 2rem)', color: 'var(--text)', marginBottom: '0.75rem', position: 'relative', zIndex: 1 }}>
+        Punya Bisnis Kampus?
+      </h2>
+      <p style={{ color: 'var(--muted)', maxWidth: '36rem', margin: '0 auto 1.5rem', position: 'relative', zIndex: 1 }}>
+        Daftarkan UMKM mahasiswa Anda dan jangkau ribuan pelanggan potensial di UC Connect. 
+        Kelola pesanan, terima pembayaran, dan berkembang bersama komunitas kami.
+      </p>
+      <button
+        type="button"
+        onClick={handleVendorRegister}
+        disabled={loading}
+        className="btn"
+        style={{ position: 'relative', zIndex: 1 }}
+      >
+        {loading ? "Loading..." : "Daftar Sebagai Vendor"}
+      </button>
     </section>
   );
 }

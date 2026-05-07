@@ -267,3 +267,38 @@ select
 from auth.users u
 left join public.profiles p on p.id = u.id
 where p.id is null;
+
+-- ─── Migration additions ────────────────────────────────────────────────────
+-- Run these in Supabase SQL editor if you already applied the base schema above
+
+-- 1. WhatsApp click counter on vendors
+alter table public.vendors add column if not exists whatsapp_clicks integer not null default 0;
+
+-- 2. RPC to atomically increment the counter
+create or replace function public.increment_whatsapp_clicks(v_id uuid)
+returns void
+language sql
+security definer
+as $$
+  update public.vendors set whatsapp_clicks = whatsapp_clicks + 1 where id = v_id;
+$$;
+
+-- 3. Vendor owner write policies (missing from original schema)
+drop policy if exists "vendors_update_own" on public.vendors;
+create policy "vendors_update_own"
+  on public.vendors for update
+  using (auth.uid() = owner_id)
+  with check (auth.uid() = owner_id);
+
+-- 4. Vendor hours — owner can manage all rows for their vendor
+drop policy if exists "vendor_hours_owner_all" on public.vendor_hours;
+create policy "vendor_hours_owner_all"
+  on public.vendor_hours for all
+  using (exists (select 1 from public.vendors v where v.id = vendor_id and v.owner_id = auth.uid()));
+
+-- 5. Vendor items — owner can manage all rows (including inactive ones)
+drop policy if exists "vendor_items_owner_all" on public.vendor_items;
+create policy "vendor_items_owner_all"
+  on public.vendor_items for all
+  using (exists (select 1 from public.vendors v where v.id = vendor_id and v.owner_id = auth.uid()));
+

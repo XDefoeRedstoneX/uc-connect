@@ -18,14 +18,6 @@ function UserIcon() {
   );
 }
 
-function CheckIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M20 6 9 17l-5-5" />
-    </svg>
-  );
-}
-
 function ExitIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -252,173 +244,134 @@ export default function CustomerProfilePage() {
 
   return (
     <SiteLayout title={`${t("pages.editProfile.pageTitle")} | UC Connect`}>
-      <div className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
-        <header className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-6 py-6 shadow-sm">
-          <div className="flex items-center gap-4 text-gray-700">
-            <span className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-600 shadow-sm">
+      <div className="stack" style={{ gap: '1.25rem', maxWidth: '52rem', margin: '0 auto', marginTop: 0 }}>
+        {/* Header bar */}
+        <header className="profile-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--muted)' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '2.75rem', height: '2.75rem', borderRadius: '50%', background: 'var(--pacific-soft)', color: 'var(--pacific-dark)' }}>
               <UserIcon />
             </span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="row-wrap" style={{ gap: '0.5rem' }}>
             {!isEditing ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(true)}
-                  className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-                >
-                  Edit Profil
-                </button>
-              </>
+              <button type="button" onClick={() => setIsEditing(true)}>
+                Edit Profil
+              </button>
             ) : (
               <>
-                <button
-                  type="submit"
-                  form="profile-settings-form"
-                  disabled={isSaving}
-                  className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
-                >
+                <button type="submit" form="profile-settings-form" disabled={isSaving}>
                   {isSaving ? t("pages.editProfile.savingProfile") : t("pages.editProfile.saveBtn")}
                 </button>
-                <button
-                  type="button"
-                  onClick={handleCancelEdit}
-                  className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-6 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
-                >
+                <button type="button" className="ghost" onClick={handleCancelEdit}>
                   {t("pages.editProfile.cancelBtn") || "Cancel"}
                 </button>
-              </>) }
-              <button type="button" className="inline-flex items-center gap-2 rounded-md bg-red-600 px-6 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-red-700" onClick={logout}><ExitIcon /> {t("pages.profile.logout")}</button>
+              </>
+            )}
+            <button type="button" style={{ background: 'var(--error)' }} onClick={logout}>
+              <ExitIcon /> {t("pages.profile.logout")}
+            </button>
           </div>
         </header>
 
-        <section className="rounded-lg border border-gray-200 bg-white px-6 py-6 shadow-sm sm:px-10 sm:py-8">
-          <form id="profile-settings-form" onSubmit={onSubmit} className="space-y-6">
+        {/* Profile form */}
+        <section className="profile-form">
+          <form id="profile-settings-form" onSubmit={onSubmit}>
 
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-
-              <div className="mx-auto h-36 w-36 shrink-0 overflow-hidden rounded-full border border-gray-200 bg-gray-100 shadow-md sm:mx-0">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center' }}>
+              <div className="profile-avatar">
                 {displayAvatarUrl ? (
                   <img
                     src={displayAvatarUrl}
                     alt={`${profile?.full_name ?? t("pages.profile.notSet")} avatar`}
-                    className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-4xl font-bold text-gray-400">
+                  <div className="profile-avatar-placeholder">
                     {(profile?.full_name ?? "U").slice(0, 1).toUpperCase()}
                   </div>
                 )}
               </div>
 
-                <div className="min-w-0 flex-1 space-y-3 text-center sm:text-left">
-                <h2 className="text-3xl font-semibold text-gray-900">{profile?.full_name ?? t("pages.profile.notSet")}</h2>
-                <p className="text-base text-blue-600">{userEmail || profile?.username || t("pages.profile.notSet")}</p>
-                <p className="text-base text-gray-500">{currentTitle === "vendor" ? t("pages.editProfile.vendorAccount") : t("pages.editProfile.customerAccount")}</p>
+              <div style={{ flex: 1, textAlign: 'center' }}>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text)' }}>{profile?.full_name ?? t("pages.profile.notSet")}</h2>
+                <p style={{ color: 'var(--pacific-dark)', fontWeight: 500 }}>{userEmail || profile?.username || t("pages.profile.notSet")}</p>
+                <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>
+                  {currentTitle === "vendor" ? t("pages.editProfile.vendorAccount") : t("pages.editProfile.customerAccount")}
+                </p>
 
-                  {isEditing && (
-                    <>
-                      <p className="mt-2 text-sm text-gray-400">{t("pages.editProfile.avatarHint")}</p>
-
-                      <div
+                {isEditing && (
+                  <>
+                    <p style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--muted)' }}>{t("pages.editProfile.avatarHint")}</p>
+                    <div
                       role="button"
                       tabIndex={0}
-                      onClick={() => { openFilePicker(); }}
+                      onClick={openFilePicker}
                       onKeyDown={(event) => {
                         if (event.key === "Enter" || event.key === " ") {
                           event.preventDefault();
                           openFilePicker();
                         }
                       }}
-                      onDragOver={(event) => {
-                        event.preventDefault();
-                        setDragActive(true);
-                      }}
+                      onDragOver={(event) => { event.preventDefault(); setDragActive(true); }}
                       onDragLeave={() => setDragActive(false)}
-                      onDrop={(event) => {
-                        event.preventDefault();
-                        setDragActive(false);
-                        handleAvatarChange(event.dataTransfer.files?.[0] ?? null);
-                      }}
-                      className={[
-                        "mt-3 flex min-h-28 w-full cursor-pointer items-center justify-center rounded-md border-2 border-dashed px-6 py-8 text-center transition",
-                        dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50",
-                      ].join(" ")}
+                      onDrop={(event) => { event.preventDefault(); setDragActive(false); handleAvatarChange(event.dataTransfer.files?.[0] ?? null); }}
+                      className={`dropzone${dragActive ? ' active' : ''}`}
+                      style={{ marginTop: '0.75rem' }}
                     >
-                      <span className="text-sm font-medium text-gray-500 sm:text-base">{t("pages.editProfile.dropzone")}</span>
+                      <span style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--muted)' }}>{t("pages.editProfile.dropzone")}</span>
                       <input
                         ref={fileInputRef}
                         type="file"
                         accept="image/png,image/jpeg,.png,.jpg,.jpeg"
-                        className="hidden"
+                        style={{ display: 'none' }}
                         onChange={(event) => handleAvatarChange(event.target.files?.[0] ?? null)}
                       />
                     </div>
-
-                      {avatarFile && <p className="mt-2 text-sm font-medium text-blue-600">{avatarFile.name}</p>}
-                    </>
-                  )}
+                    {avatarFile && <p style={{ marginTop: '0.5rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--pacific-dark)' }}>{avatarFile.name}</p>}
+                  </>
+                )}
               </div>
             </div>
 
-            <div className="pt-4">
-              <h3 className="text-xl font-semibold text-gray-800">{t("pages.editProfile.accountTitle")}</h3>
-              <hr className="mt-4 border-gray-200" />
+            <div style={{ marginTop: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text)' }}>{t("pages.editProfile.accountTitle")}</h3>
+              <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '0.75rem 0' }} />
             </div>
 
-            <div className="space-y-5 pt-2">
-              <div className="grid gap-3 lg:grid-cols-[25%_1fr] lg:items-center lg:gap-8 pb-4">
-                <label className="text-sm font-medium text-gray-700" htmlFor="username">
-                  {t("pages.editProfile.username")}
-                </label>
+            <div className="stack" style={{ gap: '0.25rem', marginTop: '0.5rem' }}>
+              <div className="profile-field">
+                <label htmlFor="username">{t("pages.editProfile.username")}</label>
                 <input
                   id="username"
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}
                   readOnly={!isEditing}
-                  className={`w-full rounded-md border border-gray-300 px-4 py-2.5 outline-none transition ${
-                    isEditing ? "focus:border-blue-500 focus:ring-2 focus:ring-blue-100" : "bg-gray-50 text-gray-500"
-                  }`}
+                  style={!isEditing ? { background: 'var(--bg)', color: 'var(--muted)' } : {}}
                 />
               </div>
 
-              <div className="grid gap-3 lg:grid-cols-[25%_1fr] lg:items-center lg:gap-8 pb-4">
-                <label className="text-sm font-medium text-gray-700" htmlFor="email">
-                  {t("pages.editProfile.email")}
-                </label>
-                <input
-                  id="email"
-                  value={userEmail}
-                  readOnly
-                  className="w-full rounded-md border border-gray-300 bg-gray-50 px-4 py-2.5 text-gray-500 outline-none"
-                />
+              <div className="profile-field">
+                <label htmlFor="email">{t("pages.editProfile.email")}</label>
+                <input id="email" value={userEmail} readOnly style={{ background: 'var(--bg)', color: 'var(--muted)' }} />
               </div>
 
-              <div className="grid gap-3 lg:grid-cols-[25%_1fr] lg:items-center lg:gap-8 pb-4">
-                <label className="text-sm font-medium text-gray-700" htmlFor="fullName">
-                  {t("pages.editProfile.fullName")}
-                </label>
+              <div className="profile-field">
+                <label htmlFor="fullName">{t("pages.editProfile.fullName")}</label>
                 <input
                   id="fullName"
                   value={fullName}
                   onChange={(event) => setFullName(event.target.value)}
                   readOnly={!isEditing}
-                  className={`w-full rounded-md border border-gray-300 px-4 py-2.5 outline-none transition ${
-                    isEditing ? "focus:border-blue-500 focus:ring-2 focus:ring-blue-100" : "bg-gray-50 text-gray-500"
-                  }`}
+                  style={!isEditing ? { background: 'var(--bg)', color: 'var(--muted)' } : {}}
                 />
               </div>
 
-              <div className="grid gap-2 lg:grid-cols-[25%_1fr] lg:gap-8 lg:items-center pb-4">
-                <label className="text-sm font-medium text-gray-700" htmlFor="language">
-                  {t("pages.editProfile.language")}
-                </label>
+              <div className="profile-field">
+                <label htmlFor="language">{t("pages.editProfile.language")}</label>
                 <select
                   id="language"
                   value={language}
                   onChange={(event) => setLanguage(event.target.value as "id" | "en")}
-                  className="w-full rounded-md border border-gray-300 bg-white px-4 py-2.5 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 >
                   <option value="id">{t("pages.editProfile.languageOptions.id")}</option>
                   <option value="en">{t("pages.editProfile.languageOptions.en")}</option>
@@ -427,17 +380,13 @@ export default function CustomerProfilePage() {
             </div>
           </form>
 
-          {message && <p className="mt-4 text-sm font-medium text-green-700">{message}</p>}
-          {error && <p className="mt-4 text-sm font-medium text-red-600">{error}</p>}
+          {message && <p className="ok">{message}</p>}
+          {error && <p className="err">{error}</p>}
         </section>
 
         {profile?.role !== "vendor" && (
-          <div className="flex justify-start pl-1 pt-2">
-            <button
-              type="button"
-              onClick={() => void router.push("/vendor/onboarding")}
-              className="inline-flex rounded-md bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600"
-            >
+          <div style={{ paddingLeft: '0.25rem' }}>
+            <button type="button" onClick={() => void router.push("/vendor/onboarding")}>
               {t("pages.editProfile.becomeVendor")}
             </button>
           </div>

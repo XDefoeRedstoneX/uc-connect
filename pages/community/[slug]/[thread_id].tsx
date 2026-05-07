@@ -92,16 +92,16 @@ export default function ThreadPage({ category, thread, replies: initialReplies }
         </div>
 
         <h1 style={{ margin: '0 0 0.5rem' }}>{thread.title}</h1>
-        <div style={{ color: '#6b7280', marginBottom: '1rem' }}>
+        <div style={{ color: 'var(--muted)', marginBottom: '1rem' }}>
           Diposting oleh <strong>{thread.profiles?.full_name ?? 'Pengguna Anonim'}</strong> • {new Date(thread.created_at).toLocaleString('id-ID')}
         </div>
 
-        <div style={{ whiteSpace: 'pre-wrap', color: '#374151', marginBottom: '1.5rem' }}>{thread.content}</div>
+        <div style={{ whiteSpace: 'pre-wrap', color: 'var(--text)', marginBottom: '1.5rem' }}>{thread.content}</div>
 
         <form onSubmit={submitReply} style={{ marginBottom: '1.5rem' }}>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Tulis Balasan</label>
-          <textarea value={newReply} onChange={(e) => setNewReply(e.target.value)} rows={4} style={{ width: '100%', padding: '0.75rem', borderRadius: 8, border: '1px solid #d1d5db' }} />
-          {submitError && <p style={{ color: '#b91c1c', marginTop: '0.5rem' }}>{submitError}</p>}
+          <textarea value={newReply} onChange={(e) => setNewReply(e.target.value)} rows={4} style={{ width: '100%' }} />
+          {submitError && <p className="err">{submitError}</p>}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.75rem' }}>
             <button className="btn" type="submit" disabled={submitting}>{submitting ? 'Mengirim...' : 'Kirim Balasan'}</button>
           </div>
@@ -109,19 +109,19 @@ export default function ThreadPage({ category, thread, replies: initialReplies }
 
         <h3 style={{ marginTop: 0 }}>{replies.length} Komentar</h3>
         <div style={{ display: 'grid', gap: '0.75rem' }}>
-          {replies.length === 0 && <p style={{ color: '#6b7280' }}>Belum ada balasan untuk diskusi ini.</p>}
+          {replies.length === 0 && <p style={{ color: 'var(--muted)' }}>Belum ada balasan untuk diskusi ini.</p>}
           {replies.map((r) => (
-            <div key={r.id} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '1rem', background: '#fff' }}>
+            <div key={r.id} className="reply-card">
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <div style={{ width: 32, height: 32, borderRadius: 999, background: '#e6eef8', overflow: 'hidden' }}>
+                <div className="reply-avatar">
                   {r.profiles?.avatar_url && <img src={r.profiles.avatar_url} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
                 </div>
                 <div>
-                  <div style={{ fontWeight: 700 }}>{r.profiles?.full_name ?? 'Pengguna Anonim'}</div>
-                  <div style={{ color: '#6b7280', fontSize: '0.85rem' }}>{new Date(r.created_at).toLocaleString('id-ID')}</div>
+                  <div className="reply-author">{r.profiles?.full_name ?? 'Pengguna Anonim'}</div>
+                  <div className="reply-time">{new Date(r.created_at).toLocaleString('id-ID')}</div>
                 </div>
               </div>
-              <div style={{ whiteSpace: 'pre-wrap', color: '#374151' }}>{r.content}</div>
+              <div style={{ whiteSpace: 'pre-wrap', color: 'var(--text)' }}>{r.content}</div>
             </div>
           ))}
         </div>

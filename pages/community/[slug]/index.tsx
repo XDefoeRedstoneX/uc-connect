@@ -36,31 +36,29 @@ export default function CategoryPage({ category, threads }: Props) {
             {category.description && <p style={{ color: '#4b5563', margin: 0 }}>{category.description}</p>}
           </div>
           
-          <Link href={`/community/${category.slug}/new`} className="button" style={{ 
-            backgroundColor: "var(--brand-orange)", color: "white", padding: "0.75rem 1.5rem", borderRadius: "8px", textDecoration: "none", fontWeight: "bold", whiteSpace: "nowrap"
-          }}>
+          <Link href={`/community/${category.slug}/new`} className="btn" style={{ whiteSpace: 'nowrap' }}>
             + Tambah Diskusi
           </Link>
         </div>
 
         <div className="stack compact-top">
           {threads.length > 0 ? (
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '1rem' }}>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '0.75rem' }}>
               {threads.map((thread) => (
-                <li key={thread.id} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1.5rem' }}>
-                  <h2 style={{ margin: "0 0 0.5rem", fontSize: '1.25rem' }}>
-                    <Link href={`/community/${category.slug}/${thread.id}`} style={{ textDecoration: 'none', color: '#111827' }}>
+                <li key={thread.id} className="thread-card">
+                  <h2>
+                    <Link href={`/community/${category.slug}/${thread.id}`}>
                       {thread.title}
                     </Link>
                   </h2>
-                  <p style={{ margin: 0, color: '#6b7280', fontSize: '0.875rem' }}>
+                  <p className="thread-meta">
                     {thread.forum_replies?.[0]?.count ?? 0} Komentar • {new Date(thread.created_at).toLocaleDateString('id-ID')}
                   </p>
                 </li>
               ))}
             </ul>
           ) : (
-            <p style={{ textAlign: "center", padding: "2rem", backgroundColor: "#f9fafb", borderRadius: "8px", color: "#6b7280" }}>
+            <p style={{ textAlign: "center", padding: "2rem", background: 'var(--gradient-subtle)', borderRadius: 'var(--radius-md)', color: 'var(--muted)' }}>
               Belum ada diskusi di kategori ini. Jadilah yang pertama!
             </p>
           )}
