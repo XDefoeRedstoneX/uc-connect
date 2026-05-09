@@ -391,6 +391,14 @@ export default function CustomerProfilePage() {
             </button>
           </div>
         )}
+
+        {/* Favorites link */}
+        <div style={{ paddingLeft: '0.25rem', marginTop: '0.5rem' }}>
+          <button type="button" className="ghost" onClick={() => void router.push("/customer/favorites")}
+            style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            ❤️ Lihat Vendor Favorit
+          </button>
+        </div>
       </div>
     </SiteLayout>
   );

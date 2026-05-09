@@ -16,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === "GET") {
     const { data: vendor, error } = await supabase
       .from("vendors")
-      .select("id,slug,name,tagline,category,city,description,whatsapp,website_url,hero_image_url,is_verified,whatsapp_clicks,created_at,updated_at")
+      .select("id,slug,name,tagline,category,city,description,whatsapp,website_url,hero_image_url,is_verified,whatsapp_clicks,university,sales_system,delivery_methods,created_at,updated_at")
       .eq("owner_id", userId)
       .maybeSingle();
 
@@ -46,6 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const {
       name, tagline, category, city, description,
       whatsapp, website_url, hero_image_url,
+      university, sales_system, delivery_methods,
     } = req.body as Record<string, string>;
 
     if (!name?.trim()) return res.status(400).json({ error: "Nama bisnis wajib diisi." });
@@ -58,6 +59,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       description: description?.trim() || null,
       whatsapp: whatsapp?.trim() || null,
       website_url: website_url?.trim() || null,
+      university: university?.trim() || null,
+      sales_system: sales_system?.trim() || null,
+      delivery_methods: delivery_methods?.trim() || null,
     };
 
     if (hero_image_url !== undefined) {
@@ -68,7 +72,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .from("vendors")
       .update(updates)
       .eq("id", existing.id)
-      .select("id,slug,name,tagline,category,city,description,whatsapp,website_url,hero_image_url,is_verified,whatsapp_clicks")
+      .select("id,slug,name,tagline,category,city,description,whatsapp,website_url,hero_image_url,is_verified,whatsapp_clicks,university,sales_system,delivery_methods")
       .maybeSingle();
 
     if (updateError) {

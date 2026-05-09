@@ -11,12 +11,14 @@ type Props = {
   title: string;
   children: ReactNode;
   description?: string;
+  ogImage?: string;
 };
 
-export default function SiteLayout({ title, children, description }: Props) {
+export default function SiteLayout({ title, children, description, ogImage }: Props) {
   const { t } = useLanguage();
   const router = useRouter();
   const [isVendor, setIsVendor] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -34,8 +36,9 @@ export default function SiteLayout({ title, children, description }: Props) {
       try {
         const resp = await fetch('/api/profile', { headers: { Authorization: `Bearer ${token}` } });
         const json = await resp.json();
-        if (resp.ok && json.profile && json.profile.role === 'vendor') {
-          setIsVendor(true);
+        if (resp.ok && json.profile) {
+          if (json.profile.role === 'vendor') setIsVendor(true);
+          if (json.profile.role === 'admin') setIsAdmin(true);
         }
       } catch {
         // ignore
@@ -57,6 +60,13 @@ export default function SiteLayout({ title, children, description }: Props) {
         <title>{title}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         {description && <meta name="description" content={description} />}
+        <meta property="og:title" content={title} />
+        {description && <meta property="og:description" content={description} />}
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content={ogImage ?? "/og-default.png"} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={title} />
+        {description && <meta name="twitter:description" content={description} />}
       </Head>
       <div className="site-shell">
         <header className="topbar">
@@ -85,6 +95,13 @@ export default function SiteLayout({ title, children, description }: Props) {
                 >
                   🏪 Dashboard
                 </button>
+              )}
+
+              {isAdmin && (
+                <Link href="/admin" className="nav-link"
+                  style={{ background: '#fff', fontWeight: 700, color: 'var(--orange-dark)', border: '1.5px solid var(--orange)' }}>
+                  🛡 Admin
+                </Link>
               )}
 
               {isLoggedIn ? (
@@ -149,6 +166,11 @@ export default function SiteLayout({ title, children, description }: Props) {
               {isVendor && (
                 <Link href="/vendor/dashboard" className="nav-link" onClick={() => setMenuOpen(false)} style={{ color: 'var(--orange)', background: 'var(--orange-soft)' }}>
                   🏪 Vendor Dashboard
+                </Link>
+              )}
+              {isAdmin && (
+                <Link href="/admin" className="nav-link" onClick={() => setMenuOpen(false)} style={{ color: 'var(--orange-dark)', background: 'var(--orange-soft)' }}>
+                  🛡 Admin Panel
                 </Link>
               )}
               {isLoggedIn ? (

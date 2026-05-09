@@ -302,3 +302,131 @@ create policy "vendor_items_owner_all"
   on public.vendor_items for all
   using (exists (select 1 from public.vendors v where v.id = vendor_id and v.owner_id = auth.uid()));
 
+-- ─── Admin RLS Policies ─────────────────────────────────────────────────────
+-- Admin helper function
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+as $$
+  select exists (
+    select 1 from public.profiles where id = auth.uid() and role = 'admin'
+  );
+$$;
+
+-- Admins can read all profiles
+drop policy if exists "profiles_admin_read_all" on public.profiles;
+create policy "profiles_admin_read_all"
+  on public.profiles for select
+  using (public.is_admin());
+
+-- Admins can update all profiles (e.g. change roles)
+drop policy if exists "profiles_admin_update_all" on public.profiles;
+create policy "profiles_admin_update_all"
+  on public.profiles for update
+  using (public.is_admin())
+  with check (public.is_admin());
+
+-- Admins can update any vendor (e.g. verify)
+drop policy if exists "vendors_admin_update_all" on public.vendors;
+create policy "vendors_admin_update_all"
+  on public.vendors for update
+  using (public.is_admin())
+  with check (public.is_admin());
+
+-- Admins can delete any vendor
+drop policy if exists "vendors_admin_delete_all" on public.vendors;
+create policy "vendors_admin_delete_all"
+  on public.vendors for delete
+  using (public.is_admin());
+
+-- Admins can delete any thread
+drop policy if exists "forum_threads_admin_delete" on public.forum_threads;
+create policy "forum_threads_admin_delete"
+  on public.forum_threads for delete
+  using (public.is_admin());
+
+-- Admins can delete any reply
+drop policy if exists "forum_replies_admin_delete" on public.forum_replies;
+create policy "forum_replies_admin_delete"
+  on public.forum_replies for delete
+  using (public.is_admin());
+
+-- ─── Phase 5 Migrations ─────────────────────────────────────────────────────
+
+-- Vendor onboarding fields (proper columns instead of hacking into tagline/description)
+alter table public.vendors add column if not exists university text;
+alter table public.vendors add column if not exists sales_system text;
+alter table public.vendors add column if not exists delivery_methods text;
+alter table public.vendors add column if not exists ktm_url text;
+
+-- Forum image support
+alter table public.forum_threads add column if not exists image_url text;
+alter table public.forum_replies add column if not exists image_url text;
+
+-- ─── Phase 6 Migrations ─────────────────────────────────────────────────────
+
+-- Reviews table (1 review per user per vendor)
+create table if not exists public.vendor_reviews (
+  id uuid primary key default gen_random_uuid(),
+  vendor_id uuid not null references public.vendors(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  rating smallint not null check (rating between 1 and 5),
+  content text,
+  created_at timestamptz not null default now(),
+  unique (vendor_id, user_id)
+);
+
+alter table public.vendor_reviews enable row level security;
+
+-- Anyone can read reviews
+drop policy if exists "vendor_reviews_public_read" on public.vendor_reviews;
+create policy "vendor_reviews_public_read"
+  on public.vendor_reviews for select using (true);
+
+-- Authenticated users can insert their own review
+drop policy if exists "vendor_reviews_user_insert" on public.vendor_reviews;
+create policy "vendor_reviews_user_insert"
+  on public.vendor_reviews for insert
+  with check (auth.uid() = user_id);
+
+-- Users can delete their own review
+drop policy if exists "vendor_reviews_user_delete" on public.vendor_reviews;
+create policy "vendor_reviews_user_delete"
+  on public.vendor_reviews for delete
+  using (auth.uid() = user_id);
+
+-- Trigger: auto-recalculate vendor_metrics on review insert/delete
+create or replace function public.recalculate_vendor_rating()
+returns trigger
+language plpgsql
+security definer
+as $$
+declare
+  v_id uuid;
+  new_avg numeric(3,2);
+  new_count integer;
+begin
+  v_id := coalesce(new.vendor_id, old.vendor_id);
+
+  select coalesce(avg(rating), 0)::numeric(3,2), count(*)::integer
+  into new_avg, new_count
+  from public.vendor_reviews
+  where vendor_id = v_id;
+
+  insert into public.vendor_metrics (vendor_id, sample_rating, review_count, updated_at)
+  values (v_id, new_avg, new_count, now())
+  on conflict (vendor_id) do update
+    set sample_rating = new_avg,
+        review_count = new_count,
+        updated_at = now();
+
+  return coalesce(new, old);
+end;
+$$;
+
+drop trigger if exists trg_recalculate_vendor_rating on public.vendor_reviews;
+create trigger trg_recalculate_vendor_rating
+  after insert or delete on public.vendor_reviews
+  for each row execute function public.recalculate_vendor_rating();

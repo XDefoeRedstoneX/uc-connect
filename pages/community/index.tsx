@@ -26,7 +26,7 @@ type Props = {
 
 export default function CommunityPage({ categories }: Props) {
   return (
-    <SiteLayout title="Forum Komunitas | UC Connect">
+    <SiteLayout title="Forum Komunitas | UC Connect" description="Diskusi dan tanya jawab antar mahasiswa di forum komunitas UC Connect.">
       {/* ── Hero ── */}
       <section className="hero bubble-section" aria-labelledby="community-title">
         <span className="badge pacific" style={{ marginBottom: "0.75rem", display: "inline-block" }}>

@@ -4,7 +4,17 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { compressImage, formatFileSize } from "@/lib/image-compression";
+import { compressAndResize } from "@/lib/compress-image";
+
+/** Compress to max 500KB for onboarding KTM uploads */
+const compressImage = (f: File) => compressAndResize(f, 1200, 1200, 500);
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+}
 
 const salesSystemOptions = ["ready-stock", "pre-order"] as const;
 const deliveryMethodOptions = ["cod-kampus", "digital-delivery"] as const;

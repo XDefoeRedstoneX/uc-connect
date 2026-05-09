@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
 import SiteLayout from "@/components/SiteLayout";
+import LoadingScreen from "@/components/LoadingScreen";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import TabOverview from "@/components/vendor/TabOverview";
 import TabEditProfile from "@/components/vendor/TabEditProfile";
@@ -81,10 +82,7 @@ export default function VendorDashboardPage() {
 
   if (loading) return (
     <SiteLayout title="Vendor Dashboard | UC Connect">
-      <div style={{ textAlign: "center", padding: "4rem" }}>
-        <p style={{ fontSize: "2rem" }}>⏳</p>
-        <p style={{ color: "var(--muted)" }}>Memuat dashboard...</p>
-      </div>
+      <LoadingScreen message="Memuat dashboard..." />
     </SiteLayout>
   );
 

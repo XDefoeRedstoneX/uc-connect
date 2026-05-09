@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import type { VendorProfile } from "@/pages/vendor/dashboard";
 import { compressBanner } from "@/lib/compress-image";
+import { useToast } from "@/components/ToastProvider";
 
 const CATEGORIES = ["Makanan & Minuman","Jasa & Layanan","Fashion","Kreatif & Desain","Elektronik","Kesehatan & Kecantikan","Lainnya"];
 
@@ -22,6 +23,7 @@ async function uploadImage(supabaseUrl: string, anonKey: string, bucket: string,
 
 export default function TabEditProfile({ vendor, token, onSaved }: Props) {
   const bannerRef = useRef<HTMLInputElement>(null);
+  const { showToast } = useToast();
 
   const [form, setForm] = useState({
     name: vendor.name,
@@ -31,12 +33,13 @@ export default function TabEditProfile({ vendor, token, onSaved }: Props) {
     description: vendor.description ?? "",
     whatsapp: vendor.whatsapp ?? "",
     website_url: vendor.website_url ?? "",
+    university: (vendor as any).university ?? "",
+    sales_system: (vendor as any).sales_system ?? "",
+    delivery_methods: (vendor as any).delivery_methods ?? "",
   });
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(vendor.hero_image_url);
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
-  const [err, setErr] = useState<string | null>(null);
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
@@ -48,7 +51,7 @@ export default function TabEditProfile({ vendor, token, onSaved }: Props) {
   }
 
   async function save() {
-    setSaving(true); setMsg(null); setErr(null);
+    setSaving(true);
     try {
       let hero_image_url = vendor.hero_image_url;
 
@@ -66,11 +69,11 @@ export default function TabEditProfile({ vendor, token, onSaved }: Props) {
         body: JSON.stringify({ ...form, hero_image_url }),
       });
       const json = await res.json();
-      if (!res.ok) { setErr(json.error ?? "Gagal menyimpan."); return; }
+      if (!res.ok) { showToast(json.error ?? "Gagal menyimpan.", "error"); return; }
       onSaved(json.vendor);
-      setMsg("✓ Profil berhasil disimpan!");
+      showToast("Profil berhasil disimpan!");
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Terjadi kesalahan");
+      showToast(e instanceof Error ? e.message : "Terjadi kesalahan", "error");
     } finally {
       setSaving(false);
     }
@@ -130,10 +133,29 @@ export default function TabEditProfile({ vendor, token, onSaved }: Props) {
             <textarea value={form.description} onChange={e => set("description", e.target.value)}
               rows={4} placeholder="Ceritakan tentang bisnis Anda..." style={{ marginTop: "0.35rem", width: "100%" }} />
           </label>
-        </div>
 
-        {msg && <p className="ok" style={{ marginTop: "0.75rem" }}>{msg}</p>}
-        {err && <p className="err" style={{ marginTop: "0.75rem" }}>{err}</p>}
+          {/* Onboarding fields */}
+          <label>
+            <span style={{ fontWeight: 600, fontSize: "0.88rem", color: "var(--muted)" }}>Universitas</span>
+            <input type="text" value={form.university}
+              onChange={e => set("university", e.target.value)} placeholder="Universitas Ciputra" style={{ marginTop: "0.35rem" }} />
+          </label>
+
+          <label>
+            <span style={{ fontWeight: 600, fontSize: "0.88rem", color: "var(--muted)" }}>Sistem Penjualan</span>
+            <select value={form.sales_system} onChange={e => set("sales_system", e.target.value)} style={{ marginTop: "0.35rem" }}>
+              <option value="">Pilih...</option>
+              <option value="ready-stock">Ready Stock</option>
+              <option value="pre-order">Pre-Order</option>
+            </select>
+          </label>
+
+          <label>
+            <span style={{ fontWeight: 600, fontSize: "0.88rem", color: "var(--muted)" }}>Metode Pengiriman</span>
+            <input type="text" value={form.delivery_methods}
+              onChange={e => set("delivery_methods", e.target.value)} placeholder="COD Kampus, Digital Delivery" style={{ marginTop: "0.35rem" }} />
+          </label>
+        </div>
 
         <button onClick={save} disabled={saving} style={{ marginTop: "1rem", width: "100%" }}>
           {saving ? "Menyimpan..." : "Simpan Perubahan"}

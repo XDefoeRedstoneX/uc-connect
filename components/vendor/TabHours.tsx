@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { VendorHour } from "@/pages/vendor/dashboard";
+import { useToast } from "@/components/ToastProvider";
 
 const DAYS = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
 
@@ -8,8 +9,7 @@ type Props = { hours: VendorHour[]; token: string; onSaved: (h: VendorHour[]) =>
 export default function TabHours({ hours, token, onSaved }: Props) {
   const [local, setLocal] = useState<VendorHour[]>(hours);
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
-  const [err, setErr] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   function update(dayIndex: number, field: keyof VendorHour, value: unknown) {
     setLocal(prev => prev.map(h => h.day_of_week === dayIndex ? { ...h, [field]: value } : h));
@@ -23,16 +23,16 @@ export default function TabHours({ hours, token, onSaved }: Props) {
   }
 
   async function save() {
-    setSaving(true); setMsg(null); setErr(null);
+    setSaving(true);
     const res = await fetch("/api/vendor/hours", {
       method: "PUT",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ hours: local }),
     });
     const json = await res.json();
-    if (!res.ok) { setErr(json.error ?? "Gagal menyimpan."); setSaving(false); return; }
+    if (!res.ok) { showToast(json.error ?? "Gagal menyimpan.", "error"); setSaving(false); return; }
     onSaved(json.hours ?? local);
-    setMsg("✓ Jam operasional berhasil disimpan!");
+    showToast("Jam operasional berhasil disimpan!");
     setSaving(false);
   }
 
@@ -95,8 +95,6 @@ export default function TabHours({ hours, token, onSaved }: Props) {
         ))}
       </div>
 
-      {msg && <p className="ok" style={{ marginTop: "1rem" }}>{msg}</p>}
-      {err && <p className="err" style={{ marginTop: "1rem" }}>{err}</p>}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
 import SiteLayout from "@/components/SiteLayout";
+import LoadingScreen from "@/components/LoadingScreen";
 import VendorOnboardingWizard from "@/components/VendorOnboardingWizard";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { clearVendorRegistrationDraft, loadVendorRegistrationDraft, VendorRegistrationDraft } from "@/lib/vendor-registration-draft";
@@ -10,6 +11,7 @@ export default function VendorOnboardingPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<VendorRegistrationDraft | null>(null);
 
@@ -23,7 +25,8 @@ export default function VendorOnboardingPage() {
 
       const { data: sessionData } = await supabase.auth.getSession();
       const sessionToken = sessionData.session?.access_token;
-      if (!sessionToken) {
+      const uid = sessionData.session?.user?.id;
+      if (!sessionToken || !uid) {
         window.location.href = "/auth/login?next=/vendor/onboarding&role=vendor";
         return;
       }
@@ -45,6 +48,7 @@ export default function VendorOnboardingPage() {
       }
 
       setToken(sessionToken);
+      setUserId(uid);
 
       const savedDraft = await loadVendorRegistrationDraft();
       setDraft(savedDraft);
@@ -54,6 +58,30 @@ export default function VendorOnboardingPage() {
     void loadSession();
   }, [router]);
 
+  async function uploadKtm(file: File): Promise<string | null> {
+    if (!userId) return null;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+    const path = `ktm/${userId}/ktm.${file.type === "image/png" ? "png" : "jpg"}`;
+
+    const res = await fetch(`${supabaseUrl}/storage/v1/object/vendor-documents/${path}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${anonKey}`,
+        "Content-Type": file.type,
+        "x-upsert": "true",
+      },
+      body: file,
+    });
+
+    if (!res.ok) {
+      console.error("KTM upload failed", await res.text());
+      return null;
+    }
+
+    return `${supabaseUrl}/storage/v1/object/public/vendor-documents/${path}`;
+  }
+
   async function handleComplete(values: Record<string, unknown>) {
     if (!token) {
       setError("Sesi login tidak ditemukan.");
@@ -61,13 +89,22 @@ export default function VendorOnboardingPage() {
     }
 
     setError(null);
+
+    // Upload KTM file if present
+    let ktmUrl: string | null = null;
+    if (values.ktmFile instanceof File) {
+      ktmUrl = await uploadKtm(values.ktmFile);
+    }
+
+    const payload = { ...values, ktmUrl, ktmFile: undefined };
+
     const response = await fetch("/api/vendor-onboarding", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(values),
+      body: JSON.stringify(payload),
     });
 
     const json = await response.json();
@@ -86,7 +123,7 @@ export default function VendorOnboardingPage() {
         <h1>Vendor Onboarding</h1>
         <p>Lengkapi data bisnis kamu untuk melanjutkan pendaftaran vendor.</p>
 
-        {loading && <p>Memuat sesi...</p>}
+        {loading && <LoadingScreen message="Memuat sesi..." />}
         {error && <p className="err">{error}</p>}
 
         {!loading && (

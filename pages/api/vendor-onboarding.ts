@@ -40,6 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const deliveryMethod = Array.isArray(body.deliveryMethod)
     ? body.deliveryMethod.filter((item): item is string => typeof item === "string")
     : [];
+  const ktmUrl = typeof body.ktmUrl === "string" ? body.ktmUrl.trim() : null;
 
   if (!fullName || !university || !whatsappNumber || !businessName || !category || !description || !salesSystem || deliveryMethod.length === 0) {
     return res.status(400).json({ error: "Data vendor belum lengkap" });
@@ -84,8 +85,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     tagline: `${university} • ${salesSystem === "ready-stock" ? "Ready Stock" : "Pre-Order"}`,
     category,
     city: university,
-    description: `${description}\n\nWhatsApp: ${whatsappNumber}\nMetode pengiriman: ${deliveryText}`,
+    description,
     whatsapp: whatsappNumber,
+    university,
+    sales_system: salesSystem,
+    delivery_methods: deliveryText,
+    ktm_url: ktmUrl,
     website_url: null,
     hero_image_url: null,
     is_verified: false,

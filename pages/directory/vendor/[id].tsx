@@ -2,9 +2,12 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
+import LoadingScreen from "@/components/LoadingScreen";
+import { useToast } from "@/components/ToastProvider";
 import { useLanguage } from "@/lib/language-context";
 import { toPublicPageErrorMessage } from "@/lib/public-errors";
-import { VendorDetail } from "@/types/domain";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { VendorDetail, VendorReview } from "@/types/domain";
 
 const weekdayLabels = {
   en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
@@ -31,12 +34,35 @@ export default function VendorDetailPage() {
   const [vendor, setVendor] = useState<VendorDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isFav, setIsFav] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  const { showToast } = useToast();
+
+  // Reviews state
+  const [reviews, setReviews] = useState<VendorReview[]>([]);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewHover, setReviewHover] = useState(0);
+  const [reviewContent, setReviewContent] = useState("");
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [hasReviewed, setHasReviewed] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   function trackWhatsApp(vendorId: string) {
     void fetch("/api/vendor/whatsapp-click", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ vendor_id: vendorId }),
+    });
+  }
+
+  async function toggleFav() {
+    if (!token || !vendor) return;
+    const wasFav = isFav;
+    setIsFav(!wasFav);
+    await fetch("/api/favorites", {
+      method: wasFav ? "DELETE" : "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ vendor_id: vendor.id }),
     });
   }
 
@@ -55,6 +81,30 @@ export default function VendorDetailPage() {
       }
       setVendor(data.vendor ?? null);
       setLoading(false);
+
+      // Load favorites status
+      const sb = getSupabaseBrowserClient();
+      if (sb) {
+        const { data: sd } = await sb.auth.getSession();
+        const tok = sd.session?.access_token;
+        const uid = sd.session?.user?.id ?? null;
+        setCurrentUserId(uid);
+        if (tok) {
+          setToken(tok);
+          const fr = await fetch("/api/favorites", { headers: { Authorization: `Bearer ${tok}` } });
+          if (fr.ok) {
+            const fj = await fr.json();
+            setIsFav((fj.vendorIds ?? []).includes(typeof id === "string" ? id : ""));
+          }
+        }
+      }
+
+      // Load reviews
+      const rr = await fetch(`/api/vendor/${id}/reviews`);
+      if (rr.ok) {
+        const rj = await rr.json();
+        setReviews(rj.reviews ?? []);
+      }
     };
 
     void load();
@@ -63,10 +113,7 @@ export default function VendorDetailPage() {
   if (loading) {
     return (
       <SiteLayout title="Memuat... | UC Connect">
-        <section className="card" style={{ textAlign: "center", padding: "4rem" }}>
-          <p style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>⏳</p>
-          <p style={{ color: "var(--muted)" }}>{t("pages.vendorDetail.loading")}</p>
-        </section>
+        <LoadingScreen />
       </SiteLayout>
     );
   }
@@ -102,8 +149,14 @@ export default function VendorDetailPage() {
               <span className="badge gold">{vendor.category ?? "Uncategorized"}</span>
               {vendor.city && <span className="badge pacific">📍 {vendor.city}</span>}
             </div>
-            <h1 id="vendor-name-title" style={{ fontSize: "clamp(1.5rem, 3vw, 2.2rem)", fontWeight: 900, margin: "0 0 0.35rem" }}>
+            <h1 id="vendor-name-title" style={{ fontSize: "clamp(1.5rem, 3vw, 2.2rem)", fontWeight: 900, margin: "0 0 0.35rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
               {vendor.name}
+              {token && (
+                <button type="button" onClick={toggleFav} aria-label={isFav ? "Hapus dari favorit" : "Tambah ke favorit"}
+                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.3rem", lineHeight: 1, padding: 0, transition: "transform 0.2s ease" }}>
+                  {isFav ? "❤️" : "🤍"}
+                </button>
+              )}
             </h1>
             <p style={{ color: "var(--muted)", margin: 0 }}>
               {vendor.tagline ?? `${vendor.city ?? ""} • UC Connect Directory`}
@@ -139,37 +192,34 @@ export default function VendorDetailPage() {
             {vendor.description ?? t("pages.vendorDetail.notFoundText")}
           </p>
 
-          {/* Stats */}
-          <div className="stat-grid" style={{ marginTop: "1.25rem" }}>
-            <div className="stat-tile">
-              <p className="stat-value" style={{ background: "var(--gradient-main)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                {vendor.metrics ? vendor.metrics.sample_rating.toFixed(1) : "—"}
-              </p>
-              <p className="stat-label">{t("pages.vendorDetail.sampleRating")}</p>
-              {vendor.metrics && <p className="muted" style={{ fontSize: "0.78rem" }}>{vendor.metrics.review_count} ulasan</p>}
+          {/* Rating placeholder — only show if metrics exist */}
+          {vendor.metrics && vendor.metrics.review_count > 0 ? (
+            <div className="stat-grid" style={{ marginTop: "1.25rem" }}>
+              <div className="stat-tile">
+                <p className="stat-value" style={{ background: "var(--gradient-main)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+                  {vendor.metrics.sample_rating.toFixed(1)}
+                </p>
+                <p className="stat-label">⭐ Rating</p>
+                <p className="muted" style={{ fontSize: "0.78rem" }}>{vendor.metrics.review_count} ulasan</p>
+              </div>
             </div>
-            <div className="stat-tile">
-              <p className="stat-value" style={{ background: "var(--gradient-main)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                {vendor.metrics ? `${(vendor.metrics.response_rate * 100).toFixed(0)}%` : "—"}
-              </p>
-              <p className="stat-label">{t("pages.vendorDetail.responseRate")}</p>
+          ) : (
+            <div style={{ marginTop: "1.25rem", padding: "0.75rem 1rem", background: "var(--gradient-subtle)", borderRadius: "var(--radius-md)" }}>
+              <p style={{ color: "var(--muted)", fontSize: "0.85rem", margin: 0 }}>⭐ Belum ada rating</p>
             </div>
-            <div className="stat-tile">
-              <p className="stat-value" style={{ background: "var(--gradient-main)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-                {vendor.metrics?.avg_reply_time ?? "—"}
-              </p>
-              <p className="stat-label">{t("pages.vendorDetail.avgReplyTime")}</p>
-            </div>
-          </div>
+          )}
 
-          {/* Menu / Items */}
-          {vendor.items.length > 0 && (
+          {vendor.items.length > 0 ? (
             <>
               <h3 className="section-title" style={{ marginTop: "1.5rem" }}>{t("pages.vendorDetail.menu")}</h3>
               <div style={{ display: "grid", gap: "0.75rem" }}>
                 {vendor.items.map((item) => (
-                  <div key={item.id} className="product-row">
-                    <div>
+                  <div key={item.id} className="product-row" style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+                    {item.image_url && (
+                      <img src={item.image_url} alt={item.name}
+                        style={{ width: "56px", height: "56px", borderRadius: "10px", objectFit: "cover", flexShrink: 0 }} />
+                    )}
+                    <div style={{ flex: 1 }}>
                       <p className="product-name">{item.name}</p>
                       {item.description && <p className="product-price">{item.description}</p>}
                     </div>
@@ -183,6 +233,11 @@ export default function VendorDetailPage() {
                 ))}
               </div>
             </>
+          ) : (
+            <div style={{ marginTop: "1.5rem", textAlign: "center", padding: "2rem 1rem", background: "var(--gradient-subtle)", borderRadius: "var(--radius-md)" }}>
+              <p style={{ fontSize: "1.5rem", margin: "0 0 0.35rem" }}>📦</p>
+              <p style={{ color: "var(--muted)", fontSize: "0.88rem", margin: 0 }}>Vendor ini belum menambahkan menu/produk.</p>
+            </div>
           )}
         </article>
 
@@ -210,11 +265,6 @@ export default function VendorDetailPage() {
           </div>
 
           <div className="stack compact-top" style={{ marginTop: "1.25rem" }}>
-            {vendor.metrics && (
-              <span className="badge success" style={{ display: "inline-block" }}>
-                ⚡ {`${(vendor.metrics.response_rate * 100).toFixed(0)}% ${t("pages.vendorDetail.fastResponse")}`}
-              </span>
-            )}
             {vendor.whatsapp ? (
               <a
                 className="btn"
@@ -232,6 +282,107 @@ export default function VendorDetailPage() {
             )}
           </div>
         </aside>
+      </section>
+
+      {/* ── Reviews Section ── */}
+      <section className="card" style={{ marginTop: "1.5rem" }}>
+        <h2 style={{ marginTop: 0 }}>⭐ Ulasan & Rating</h2>
+
+        {/* Rating summary */}
+        {vendor.metrics && vendor.metrics.review_count > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem", padding: "1rem", background: "var(--pacific-soft)", borderRadius: "var(--radius-md)" }}>
+            <span style={{ fontSize: "2rem", fontWeight: 800, color: "var(--pacific-dark)" }}>
+              {Number(vendor.metrics.sample_rating).toFixed(1)}
+            </span>
+            <div>
+              <div style={{ fontSize: "1.1rem" }}>
+                {"★".repeat(Math.round(Number(vendor.metrics.sample_rating)))}{"☆".repeat(5 - Math.round(Number(vendor.metrics.sample_rating)))}
+              </div>
+              <p style={{ margin: 0, fontSize: "0.82rem", color: "var(--muted)" }}>
+                {vendor.metrics.review_count} ulasan
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Review form */}
+        {token && !hasReviewed && !reviews.some(r => r.user_id === currentUserId) ? (
+          <div style={{ padding: "1rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", marginBottom: "1.25rem" }}>
+            <h3 style={{ margin: "0 0 0.5rem", fontSize: "0.95rem" }}>Tulis Ulasan</h3>
+            <div style={{ display: "flex", gap: "0.25rem", marginBottom: "0.5rem", fontSize: "1.5rem", cursor: "pointer" }}>
+              {[1, 2, 3, 4, 5].map(star => (
+                <span key={star}
+                  onClick={() => setReviewRating(star)}
+                  onMouseEnter={() => setReviewHover(star)}
+                  onMouseLeave={() => setReviewHover(0)}
+                  style={{ color: star <= (reviewHover || reviewRating) ? "#f59e0b" : "#d1d5db", transition: "color 0.15s" }}>
+                  ★
+                </span>
+              ))}
+            </div>
+            <textarea value={reviewContent} onChange={e => setReviewContent(e.target.value)}
+              rows={3} placeholder="Ceritakan pengalamanmu... (opsional)"
+              style={{ width: "100%", marginBottom: "0.5rem" }} />
+            <button disabled={reviewSubmitting || reviewRating === 0}
+              onClick={async () => {
+                setReviewSubmitting(true);
+                const res = await fetch(`/api/vendor/${vendor.id}/reviews`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                  body: JSON.stringify({ rating: reviewRating, content: reviewContent.trim() || null }),
+                });
+                const json = await res.json();
+                if (!res.ok) {
+                  showToast(json.error ?? "Gagal mengirim ulasan.", "error");
+                } else {
+                  showToast("Ulasan berhasil dikirim!");
+                  setHasReviewed(true);
+                  // Reload reviews
+                  const rr = await fetch(`/api/vendor/${vendor.id}/reviews`);
+                  if (rr.ok) { const rj = await rr.json(); setReviews(rj.reviews ?? []); }
+                }
+                setReviewSubmitting(false);
+              }}>
+              {reviewSubmitting ? "Mengirim..." : "Kirim Ulasan"}
+            </button>
+          </div>
+        ) : token && (hasReviewed || reviews.some(r => r.user_id === currentUserId)) ? (
+          <p style={{ color: "var(--muted)", fontSize: "0.88rem", marginBottom: "1rem" }}>✅ Kamu sudah memberikan ulasan untuk vendor ini.</p>
+        ) : !token ? (
+          <p style={{ color: "var(--muted)", fontSize: "0.88rem", marginBottom: "1rem" }}>
+            <a href={`/auth/login?redirect=/directory/vendor/${vendor.id}`} style={{ color: "var(--pacific)" }}>Login</a> untuk memberikan ulasan.
+          </p>
+        ) : null}
+
+        {/* Reviews list */}
+        {reviews.length > 0 ? (
+          <div style={{ display: "grid", gap: "0.75rem" }}>
+            {reviews.map(r => (
+              <div key={r.id} style={{ padding: "1rem", borderRadius: "var(--radius-md)", background: "var(--bg)", border: "1px solid var(--border)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.4rem" }}>
+                  <div style={{ width: 30, height: 30, borderRadius: "50%", background: "var(--gradient-subtle)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "0.75rem", color: "var(--muted)", overflow: "hidden", flexShrink: 0 }}>
+                    {r.profiles?.avatar_url
+                      ? <img src={r.profiles.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : (r.profiles?.full_name?.[0] ?? "?")}
+                  </div>
+                  <div>
+                    <span style={{ fontWeight: 700, fontSize: "0.85rem" }}>{r.profiles?.full_name ?? "Pengguna"}</span>
+                    <span style={{ color: "#f59e0b", marginLeft: "0.5rem", fontSize: "0.82rem" }}>
+                      {"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}
+                    </span>
+                  </div>
+                </div>
+                {r.content && <p style={{ margin: 0, fontSize: "0.88rem", lineHeight: 1.6, color: "var(--text)" }}>{r.content}</p>}
+                <p style={{ margin: "0.35rem 0 0", fontSize: "0.75rem", color: "var(--muted)" }}>{new Date(r.created_at).toLocaleDateString("id-ID")}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ textAlign: "center", padding: "2rem", background: "var(--gradient-subtle)", borderRadius: "var(--radius-md)" }}>
+            <p style={{ fontSize: "1.5rem", margin: "0 0 0.35rem" }}>⭐</p>
+            <p style={{ color: "var(--muted)", margin: 0 }}>Belum ada ulasan. Jadilah yang pertama!</p>
+          </div>
+        )}
       </section>
     </SiteLayout>
   );

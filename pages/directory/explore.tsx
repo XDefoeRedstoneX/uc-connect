@@ -1,11 +1,12 @@
 import { GetServerSideProps } from "next";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import BottomCTA from "@/components/BottomCTA";
 import VendorCard from "@/components/VendorCard";
 import SiteLayout from "@/components/SiteLayout";
 import { useLanguage } from "@/lib/language-context";
 import { toPublicPageErrorMessage } from "@/lib/public-errors";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { Vendor } from "@/types/domain";
 
 const CATEGORIES = [
@@ -28,6 +29,42 @@ export default function ExplorePage({ initialVendors, initialError }: Props) {
   const [vendors, setVendors] = useState<Vendor[]>(initialVendors);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
+  const [favIds, setFavIds] = useState<Set<string>>(new Set());
+  const [token, setToken] = useState<string | null>(null);
+
+  // Load favorites for logged-in user
+  useEffect(() => {
+    const loadFavs = async () => {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) return;
+      const { data: sd } = await supabase.auth.getSession();
+      const tok = sd.session?.access_token;
+      if (!tok) return;
+      setToken(tok);
+      const res = await fetch("/api/favorites", { headers: { Authorization: `Bearer ${tok}` } });
+      if (res.ok) {
+        const j = await res.json();
+        setFavIds(new Set(j.vendorIds ?? []));
+      }
+    };
+    void loadFavs();
+  }, []);
+
+  async function toggleFav(vendorId: string) {
+    if (!token) return; // not logged in
+    const isFav = favIds.has(vendorId);
+    // Optimistic update
+    setFavIds(prev => {
+      const next = new Set(prev);
+      if (isFav) next.delete(vendorId); else next.add(vendorId);
+      return next;
+    });
+    await fetch("/api/favorites", {
+      method: isFav ? "DELETE" : "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ vendor_id: vendorId }),
+    });
+  }
 
   async function loadData(search: string, category: string) {
     setLoading(true);
@@ -61,7 +98,7 @@ export default function ExplorePage({ initialVendors, initialError }: Props) {
   }
 
   return (
-    <SiteLayout title="Jelajahi Vendor | UC Connect">
+    <SiteLayout title="Jelajahi Vendor | UC Connect" description="Temukan dan jelajahi vendor bisnis mahasiswa terbaik di UC Connect.">
       {/* ── Hero Search ── */}
       <section className="hero bubble-section" aria-labelledby="explore-title">
         <h1 id="explore-title" style={{ position: "relative", zIndex: 1 }}>{t("pages.explore.title")}</h1>
@@ -144,6 +181,8 @@ export default function ExplorePage({ initialVendors, initialError }: Props) {
                 { tone: "gold" as const, text: t("pages.explore.campusBadge") },
               ]}
               ctaLabel={t("pages.explore.viewDetail")}
+              isFavorited={favIds.has(vendor.id)}
+              onToggleFavorite={token ? () => toggleFav(vendor.id) : undefined}
             />
           ))}
         </ul>

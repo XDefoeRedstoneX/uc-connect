@@ -1,368 +1,213 @@
-# UC-Connect - Implemented Features
+# UC Connect — Features
 
-## ✅ Authentication System
-
-### Login Page (`/pages/auth/login.html`)
-- **Tab Navigation**
-  - Switch between "Masuk" (Login) and "Daftar" (Register)
-  - Animated indicator sliding between tabs
-  - Smooth view transitions
-
-- **Login Form**
-  - Email field with validation
-  - Password field with show/hide toggle
-  - "Remember me" checkbox
-  - "Forgot password?" link (placeholder)
-  - Submit button with loading state
-  - Error message display
-  - Success message and redirect
-
-- **Registration Form**
-  - Full name input validation
-  - Email field validation
-  - Password field with validation (min 8 chars)
-  - Submit button with loading state
-  - Error message display
-  - Success message and redirect
-
-- **Form Features**
-  - Real-time validation feedback
-  - Password visibility toggle button
-  - Error state styling
-  - Success toast notifications
-  - Form submission prevention (no-reload)
-
-### Authentication Manager (`/assets/js/auth.js`)
-```javascript
-// Features:
-- setUser(user) - Store user in localStorage
-- getUser() - Retrieve current user
-- setToken(token) - Store authentication token
-- getToken() - Retrieve token
-- logout() - Clear session data
-- isAuthenticated() - Check if user is logged in
-- isAdmin() / isVendor() / isCustomer() - Role checking
-- requireAuth() - Protect page access
-- requireRole() - Enforce role-based access
-```
-
-### Supabase Integration (`/assets/js/supabase-client.js`)
-- Initializes Supabase client using client-safe keys
-- Uses UMD build: `supabase.min.js`
-- Exposes `window.supabaseClient` for auth flows
-- Requires setting `window.SUPABASE_URL` and `window.SUPABASE_ANON_KEY`
-
-## ✅ Admin Panel Features
-
-### Super Admin Page (`/pages/admin/super-admin.html`)
-
-#### Sidebar Navigation
-- **Menu Items**
-  - Overview (Dashboard) - Home view
-  - Verifikasi Vendor - Vendor verification section
-  - Manajemen Pengguna - User management section
-  - Moderasi Forum - Forum moderation section
-  - Laporan Keuangan - Financial reports section
-
-- **Navigation Features**
-  - Active state highlighting
-  - Smooth animations
-  - Quick access to support
-  - Logout with confirmation
-
-#### Dashboard Overview
-- **KPI Metrics Cards**
-  - Total Vendor Aktif (Active Vendors): 45
-  - Menunggu Verifikasi (Pending Verification): 12
-  - Pengguna Pembeli (Buyer Users): 210
-  - Revenue Premium: Rp 1.5M
-
-- **Metrics Features**
-  - Real-time update indicators
-  - Trend badges (Growth, +5%)
-  - Color-coded status (normal, warning, success)
-  - Responsive card layout
-
-#### Vendor Verification Queue
-- **Table Display**
-  - Vendor owner name with email
-  - Business name
-  - KTM file viewer link
-  - Registration date/time
-  - Action buttons
-
-- **Vendor Actions**
-  - **Approve Button**
-    - Confirmation dialog before approval
-    - Success notification
-    - Updates vendor status
-    - Disables button during processing
-
-  - **Reject Button**
-    - Confirmation dialog before rejection
-    - Success notification
-    - Updates vendor status
-    - Disables button during processing
-
-#### Forum Moderation
-- **Report Management**
-  - Flagged posts display
-  - Reporter username
-  - Report type badges (Spam/Iklan, Hate Speech)
-  - Timestamp of report
-  - Post content preview
-
-- **Moderation Actions**
-  - **Delete Post Button**
-    - Confirmation dialog
-    - Removes post permanently
-    - Updates report status
-    - Success notification
-
-  - **Review Detail Button**
-    - Opens detailed review view
-    - Full post context
-    - User history check
-    - Flagging options
-
-  - **Ignore Report Button**
-    - Confirms post is valid
-    - Dismisses report
-    - Keeps post visible
-    - Updates moderation record
-
-#### Admin Control Panel
-- **System Status Widget**
-  - Server status: 99.9% uptime
-  - SSL Encryption: Active
-  - Daily Backups: Completed
-  - Live status indicators
-  - System health overview
-
-#### Action Buttons
-- **Generate Report**
-  - Triggers report generation
-  - Shows processing state
-  - Success notification
-  - Exports data
-
-- **View System Logs**
-  - Displays activity logs
-  - Shows admin actions
-  - Timestamp and user info
-  - Searchable and sortable
-
-- **Settings**
-  - Opens admin settings panel
-  - Configuration management
-  - Preferences saving
-
-- **Notifications**
-  - Notification center
-  - Real-time alerts
-  - Message management
-  - Mark as read
-
-- **Sign Out**
-  - Confirmation dialog
-  - Clears session
-  - Redirects to login
-  - Secure logout
-
-## ✅ Utility Functions
-
-### API Client (`/assets/js/api-client.js`)
-
-**Authentication Endpoints:**
-```javascript
-login(email, password) - POST /api/auth/login
-register(email, password, name, role) - POST /api/auth/register
-logout() - POST /api/auth/logout
-```
-
-**User Endpoints:**
-```javascript
-getUser() - GET /api/users/me
-updateProfile(data) - PUT /api/users/profile
-```
-
-**Vendor Endpoints:**
-```javascript
-getVendors(filters) - GET /api/vendors
-getVendor(id) - GET /api/vendors/{id}
-createVendor(data) - POST /api/vendors
-updateVendor(id, data) - PUT /api/vendors/{id}
-```
-
-**Admin Endpoints:**
-```javascript
-getVendorsForVerification() - GET /api/admin/vendors/pending
-verifyVendor(vendorId, approved) - POST /api/admin/vendors/{id}/verify
-getForumPosts(filters) - GET /api/forum/posts
-deleteForumPost(postId) - DELETE /api/forum/posts/{id}
-getUsers(filters) - GET /api/admin/users
-getAdminStats() - GET /api/admin/stats
-```
-
-**Features:**
-- Automatic token management
-- Error handling with redirect on 401
-- Request/response logging
-- Bearer token authentication
-- JSON payload handling
-- Centralized error messages
-
-### Utility Functions (`/assets/js/utils.js`)
-
-**Form Validation:**
-```javascript
-validateEmail(email) - Check email format
-validatePassword(password) - Check min 8 chars
-validateForm(fields) - Validate multiple fields
-```
-
-**DOM Manipulation:**
-```javascript
-getElementById(id) - Safe element selection
-querySelector(selector) - CSS selector query
-addClass(element, className) - Add CSS class
-removeClass(element, className) - Remove CSS class
-toggleClass(element, className) - Toggle CSS class
-getText(element) - Get element text
-setText(element, text) - Set element text
-setHTML(element, html) - Set element HTML
-getValue(element) - Get input value
-setValue(element, value) - Set input value
-```
-
-**Event Handling:**
-```javascript
-addEventListener(element, event, callback)
-removeEventListener(element, event, callback)
-onClick(element, callback) - Shortcut for click
-onSubmit(form, callback) - Form submit handler
-```
-
-**UI Feedback:**
-```javascript
-showLoading(element, show) - Show/hide loading state
-showError(message) - Display error toast
-showSuccess(message) - Display success toast
-```
-
-**Formatting:**
-```javascript
-formatCurrency(value) - Format as IDR
-formatDate(date) - Format as date string
-formatDateTime(date) - Format as date + time
-```
-
-**Storage:**
-```javascript
-setStorage(key, value) - Save to localStorage
-getStorage(key) - Get from localStorage
-removeStorage(key) - Delete from localStorage
-```
-
-## ✅ Additional Pages
-
-### 404 Error Page (`/pages/404.html`)
-- Clear error message
-- Navigation links back to main pages
-- Helpful quick links
-- Professional design
-- Mobile responsive
-
-### Privacy Policy (`/pages/privacy-policy.html`)
-- Complete privacy documentation
-- Data collection information
-- Data usage policies
-- Security measures
-- User rights section
-- Contact information
-- Legal compliance
-
-### Terms of Service (`/pages/terms-of-service.html`)
-- Terms acceptance statement
-- Usage guidelines
-- Prohibited behaviors
-- User content rights
-- Liability limitations
-- Service modification clause
-- Support contact
-
-## ✅ Configuration & Deployment
-
-### Environment Configuration (`.env.example`)
-- Supabase URL
-- Supabase Anon Key
-- API Base URL
-- Database schema examples
-- Table definitions with SQL
-
-### Vercel Configuration (`vercel.json`)
-- Clean URLs enabled
-- Trailing slashes disabled
-- 16 page rewrites configured
-- 404 error routing
-- Production-ready setup
-
-## ✅ Security Features
-
-- Input validation on all forms
-- Password field masking/toggle
-- Confirmation dialogs for destructive actions
-- Error messages without sensitive info
-- localStorage for session management
-- Token-based authentication structure
-- CORS headers configured
-- No hardcoded credentials
-- Environment variable usage
-
-## ✅ Responsive Design
-
-- Mobile-first approach
-- Tablet layouts optimized
-- Desktop fullscreen views
-- Flexible spacing and sizing
-- Touch-friendly buttons
-- Readable font sizes
-- Proper contrast ratios
-- Accessibility compliance
-
-## 📈 Performance Features
-
-- Vanilla JavaScript (no framework overhead)
-- Minimal CSS (Tailwind CDN)
-- Efficient DOM queries
-- Event delegation where possible
-- Smooth CSS animations
-- Lazy loading ready
-- No unnecessary re-renders
-
-## 🔄 State Management
-
-- localStorage for user session
-- sessionStorage for temporary data
-- Cookie-ready infrastructure
-- Token refresh mechanism
-- Session expiration handling
-- Role-based state filtering
-
-## ✨ User Experience
-
-- Loading state indicators
-- Success notifications
-- Error feedback with solutions
-- Smooth transitions and animations
-- Consistent color scheme
-- Clear call-to-action buttons
-- Helpful placeholder text
-- Keyboard navigation support
-- Touch-friendly spacing
+> **Last Updated:** May 8, 2026
+> **Stack:** Next.js 16 (Pages Router) · Supabase · TypeScript · Tailwind CSS + Custom Design System
 
 ---
 
-**Total Features Implemented: 50+**
-**Status: Production Ready ✅**
-**Last Updated: April 18, 2026**
+## ✅ Authentication System
+
+### Login (`/auth/login`)
+- Email + password sign-in via Supabase Auth
+- Session token management (Bearer)
+- Profile auto-fetch after login → redirect to set-username if missing
+- Redirect to `?next=` path or homepage on success
+- Error handling with user-friendly Indonesian messages
+
+### Registration (`/auth/register`)
+- Full name, email, password (min 8 chars), confirm password
+- Indonesian phone number normalization (+62 / 0812 → local format)
+- Live international format preview
+- Supabase Auth sign-up with user metadata
+- Email confirmation flow
+
+### Forgot Password (`/auth/forgot-password`)
+- Password reset email via Supabase
+
+### Set Username (`/auth/set-username`)
+- Post-registration username selection
+- Uniqueness check
+
+---
+
+## ✅ Public Pages
+
+### Homepage (`/`)
+- Hero section with bubble decorations + gradient background
+- "How It Works" 3-step cards (Temukan Vendor → Hubungi → Komunitas)
+- Featured vendors grid (verified vendors from DB)
+- Empty state with vendor registration CTA
+- Bottom CTA with gradient + animated bubbles
+
+### Explore Directory (`/directory/explore`)
+- Full-text search with server-side filtering
+- **Working category filter chips** (Makanan, Kreatif, Jasa, Fashion)
+- Vendor count label
+- VendorCard grid with verified/campus badges
+- Styled empty state
+
+### Vendor Detail (`/directory/vendor/[id]`)
+- Hero banner + verified/category/city badges
+- WhatsApp button (branded green) with **click tracking** → increments `whatsapp_clicks`
+- About section with description
+- Stats tiles (rating, response rate, reply time) — hidden when no metrics
+- Menu/product/service items with pricing in IDR
+- Operating hours table with open/closed color coding
+- Sidebar with contact + quick response badge
+
+### Community Forum (`/community`)
+- Category grid with auto-detected emoji icons
+- Hero section with badge
+
+### Forum Category (`/community/[slug]`)
+- Thread list with `thread-card` design
+- "New Thread" button
+
+### Thread Detail (`/community/[slug]/[thread_id]`)
+- Original post display
+- Replies with `reply-card` + `reply-avatar` styling
+- Reply submission form
+
+### New Discussion (`/community/[slug]/new`)
+- Auth guard (redirects to login if not authenticated)
+- Title + content textarea
+- Auto-links to category
+
+---
+
+## ✅ Customer Features
+
+### Customer Profile (`/customer/profile`)
+- Avatar upload with canvas compression (1200×1200, 500KB max)
+- Profile fields: username, full name, phone
+- Language switcher (ID/EN)
+- Logout with redirect
+- Link to favorites tab
+
+### Favorites System (`/customer/favorites`)
+- `GET/POST/DELETE` endpoints for managing favorites
+- Heart toggle button on `VendorCard` and vendor detail pages
+- Optimistic UI updates
+- Grid view of all favorited vendors with empty state
+
+---
+
+## ✅ Vendor Features
+
+### Vendor Onboarding (`/vendor/onboarding`)
+- Multi-step wizard form (react-hook-form + zod validation)
+- KTM file upload with compression
+- Business details: name, category, university, WhatsApp
+- Sales system + delivery method selection
+- Draft persistence in sessionStorage
+
+### Vendor Dashboard (`/vendor/dashboard`) — 4 Tabs
+
+#### Tab 1: Overview
+- Banner preview + verified/pending badge
+- **WhatsApp click count** (replaces removed vendor_metrics)
+- Total items + active items count
+- Today's open/close status
+- WhatsApp Insights card with link
+- Quick action buttons → Edit Profile / Manage Items / Hours
+
+#### Tab 2: Edit Profile
+- **Banner image upload** — auto-compressed to 1200×400, max 300KB via canvas
+- All fields: name, tagline, category (dropdown), city, description, WhatsApp, website
+- **Live preview panel** (sticky on desktop) showing how profile will appear
+- Uploads to Supabase Storage
+
+#### Tab 3: Products & Services
+- **Auto-infers item type from vendor category:**
+  - `Makanan & Minuman` → `menu` items
+  - `Jasa & Layanan` → `service` items
+  - Everything else → `product` items
+- Inline add/edit form
+- Toggle active/inactive per item
+- Delete with confirmation
+- Price in IDR format
+
+#### Tab 4: Operating Hours
+- 7-day grid (Mon–Sun) with checkbox open/close toggle
+- Time pickers for opens_at / closes_at
+- "Terapkan ke Semua" (Apply to All open days) shortcut
+- Batch save via upsert
+
+---
+
+## ✅ Admin Panel
+
+### Admin Dashboard (`/admin`)
+- KPI stats grid: Total Users, Total Vendors, Pending Verifications, Threads, Replies
+- Orange-highlighted pending vendor alert card
+- Quick action cards → Vendor / Users / Forum
+
+### Vendor Verification (`/admin/vendors`)
+- Filter chips: Pending / Verified / All
+- Vendor cards with owner name, category, city, date
+- **Approve ✓** button (sets `is_verified = true`)
+- **Reject ✕** button (deletes vendor + resets owner to customer role)
+- View button → links to public vendor detail page
+
+### User Management (`/admin/users`)
+- Filter by role (All / Customer / Vendor / Admin)
+- User list with avatar, name, username, phone
+- Role badge (color-coded per role)
+- Inline role change dropdown (Customer / Vendor / Admin)
+
+### Forum Moderation (`/admin/forum`)
+- Tabs: Threads / Replies
+- Content preview with author + category + date
+- Delete button with confirmation
+
+### Access Control
+- Admin nav link (`🛡 Admin`) appears only when `profile.role === 'admin'`
+- All admin API routes use `requireAdmin()` middleware
+- RLS policies: `is_admin()` SQL function for row-level security
+
+---
+
+## ✅ Legal & Support
+
+### Privacy Policy (`/legal/privacy`)
+- 5-section policy covering data collection, usage, security, rights, and contact.
+
+### Terms of Service (`/legal/terms`)
+- 7-section ToS covering account rules, content, vendors, liability, and changes.
+
+### Support (`/support`)
+- FAQ accordion with common questions
+- Styled 2-column contact form
+
+---
+
+## ✅ Design System (Pacific Blue → Spanish Orange)
+
+- **CSS Variables**: `--pacific`, `--orange`, `--gradient-main/warm/cool/subtle`
+- **Topbar**: Pacific → Orange gradient with glow shadow
+- **Buttons**: Gradient backgrounds, glow on hover
+- **Hero sections**: Floating bubble pseudo-elements with `float-bubble` keyframe
+- **Auth panels**: Gradient background + animated bubbles
+- **Cards**: Tonal layering without borders ("No-Line" philosophy)
+- **Mobile**: Hamburger drawer menu at `< 960px`
+- **Component classes**: `dash-card`, `dash-stat`, `action-card`, `product-row`, `thread-card`, `reply-card`, `profile-header`, `profile-form`, `dropzone`, `section-cta`, `bubble-section`
+
+---
+
+## ✅ Infrastructure
+
+- **Image Compression**: `lib/compress-image.ts` — canvas-based resize + iterative quality reduction
+  - Banner: 1200×400, 300KB
+  - Avatar: 400×400, 150KB
+  - Item image: 800×600, 200KB
+- **Auth**: Supabase Auth with Bearer token flow
+- **RLS**: Row-level security on all tables
+- **Translations**: `lib/translations.ts` (ID + EN)
+- **Deployment**: Vercel-ready with `vercel.json`
+- **SEO & Meta**: Global `og:title`, `og:description`, `og:image`, `twitter:card` tags via `SiteLayout`. Page-specific descriptions.
+- **Polish**: `LoadingSkeleton.tsx` for shimmer effects.
+
+---
+
+**Total Features: 80+**
+**Status: Feature Complete (MVP) ✅**

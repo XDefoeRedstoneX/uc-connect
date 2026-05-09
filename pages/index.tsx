@@ -38,7 +38,7 @@ export default function Home({ featuredVendors }: HomeProps) {
   const { t } = useLanguage();
 
   return (
-    <SiteLayout title="UC Connect — Direktori Bisnis Mahasiswa Indonesia">
+    <SiteLayout title="UC Connect — Direktori Bisnis Mahasiswa Indonesia" description="Platform direktori bisnis mahasiswa terbesar di Indonesia. Temukan vendor terverifikasi dari berbagai universitas.">
       {/* ── Hero ── */}
       <HeroSection
         title={t("pages.homepage.title")}

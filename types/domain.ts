@@ -10,6 +10,10 @@ export type Vendor = {
   whatsapp: string | null;
   website_url?: string | null;
   hero_image_url?: string | null;
+  university?: string | null;
+  sales_system?: string | null;
+  delivery_methods?: string | null;
+  ktm_url?: string | null;
   created_at: string;
 };
 
@@ -78,6 +82,7 @@ export type ForumThread = {
   author_id: string;
   title: string;
   content: string;
+  image_url: string | null;
   view_count: number;
   created_at: string;
   updated_at: string;
@@ -89,5 +94,16 @@ export type ForumReply = {
   thread_id: string;
   author_id: string;
   content: string;
+  image_url: string | null;
   created_at: string;
+};
+
+export type VendorReview = {
+  id: string;
+  vendor_id: string;
+  user_id: string;
+  rating: number;
+  content: string | null;
+  created_at: string;
+  profiles?: { full_name: string | null; avatar_url: string | null } | null;
 };

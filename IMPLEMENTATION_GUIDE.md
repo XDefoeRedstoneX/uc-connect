@@ -1,244 +1,198 @@
-# UC-Connect Project - Implementation Guide
+# UC Connect — Implementation Guide
 
-## Project Status Overview
-
-This is a **working prototype** of the UC-Connect platform, a university-based local marketplace connecting students as buyers and sellers.
-
-## ✅ Completed Features
-
-### 1. **Project Structure**
-- ✅ Organized directory structure with assets, API, and pages folders
-- ✅ Separation of concerns: HTML, JavaScript utilities, styling
-
-### 2. **Shared JavaScript Utilities**
-- ✅ `assets/js/api-client.js` - API communication module
-- ✅ `assets/js/auth.js` - Authentication manager
-- ✅ `assets/js/utils.js` - Form validation, DOM helpers, UI utilities
-- ✅ `assets/js/config.js` - Configuration management
-- ✅ `assets/js/supabase-env.js` - Client-safe Supabase keys
-- ✅ `assets/js/supabase-client.js` - Supabase initialization
-
-### 3. **Authentication System**
-- ✅ Login page with working form validation
-- ✅ Registration page with form validation
-- ✅ Password visibility toggle
-- ✅ Session management with localStorage
-- ✅ Authentication guards for admin pages
-- ✅ Supabase Auth integration (sign-in + sign-up)
-
-### 4. **Admin Panel (Super Admin)**
-- ✅ Sidebar navigation with active state tracking
-- ✅ Vendor verification workflow (approve/reject buttons)
-- ✅ Forum moderation features (delete post, review detail)
-- ✅ Dashboard with KPI metrics
-- ✅ Report generation button
-- ✅ System logs viewer
-- ✅ Logout functionality
-- ✅ Settings and notifications buttons
-
-### 5. **Missing/Additional Pages**
-- ✅ 404 Page Not Found
-- ✅ Privacy Policy
-- ✅ Terms of Service
-
-### 6. **Deployment Configuration**
-- ✅ Updated `vercel.json` with all routes
-- ✅ Environment configuration guide (.env.example)
-- ✅ Clean URLs enabled
-
-## 📋 Pages Inventory
-
-### Currently Available:
-| Page | Route | Status |
-|------|-------|--------|
-| Home (Directory) | `/directory/home` | ✅ Ready |
-| Explore Vendors | `/directory/explore` | ✅ Ready |
-| Vendor Detail | `/directory/vendor-detail` | ✅ Ready |
-| Login | `/auth/login` | ✅ Functional |
-| Register | `/auth/register` | ✅ Functional |
-| Customer Profile | `/customer/profile` | ✅ Ready |
-| Edit Profile | `/customer/edit-profile` | ✅ Ready |
-| Forum | `/community/forum` | ✅ Ready |
-| Thread Detail | `/community/thread-detail` | ✅ Ready |
-| Vendor Dashboard | `/vendor/dashboard` | ✅ Ready |
-| Super Admin | `/admin/super-admin` | ✅ Functional |
-| Privacy Policy | `/privacy-policy` | ✅ New |
-| Terms of Service | `/terms-of-service` | ✅ New |
-| 404 Error | `/404` | ✅ New |
-
-## 🔧 Working Features by Page
-
-### Login & Register Pages
-- Email/password validation
-- Password visibility toggle
-- Tab switching between login and register
-- Success/error messaging
-- Session storage for user data
-- Mock authentication (ready for Supabase integration)
-
-### Super Admin Panel
-- **Navigation**: Sidebar with active state, lazy-load page sections
-- **Vendor Verification**: Approve/Reject buttons with confirmation dialogs
-- **Forum Moderation**: Delete post and review detail buttons
-- **Actions**: Generate reports, view logs, settings
-- **Logout**: With confirmation dialog
-
-## 🚀 Next Steps for Full Functionality
-
-### Backend Integration (Priority: HIGH)
-1. **Supabase Setup**
-   - Create Supabase project
-   - Set up authentication
-   - Create database tables (see `.env.example`)
-   - Configure API routes
-
-2. **API Routes** (needed for Vercel)
-   - `/api/auth/login` - POST endpoint
-   - `/api/auth/register` - POST endpoint
-   - `/api/auth/logout` - POST endpoint
-   - `/api/users/me` - GET endpoint
-   - `/api/vendors/pending` - GET endpoint
-   - `/api/vendors/{id}/verify` - POST endpoint
-   - `/api/forum/posts` - GET endpoint
-   - `/api/admin/stats` - GET endpoint
-
-### Frontend Enhancements
-1. **Replace Mock Data** with real API calls
-   - Update login/register to call actual API
-   - Load vendor lists dynamically
-   - Fetch user profiles from database
-   - Real-time forum posts
-
-2. **Add Missing Functionality**
-   - Search and filter across pages
-   - Vendor image/KTM file uploads
-   - Shopping cart functionality
-   - Order management
-   - User reviews and ratings
-
-3. **Testing & QA**
-   - Test responsive design on all devices
-   - Cross-browser compatibility
-   - Load testing
-   - Security audit
-
-## 📱 Responsive Design
-
-All pages are built with Tailwind CSS and are fully responsive:
-- Mobile: 375px+
-- Tablet: 768px+
-- Desktop: 1024px+
-
-## 🔐 Security Notes
-
-1. **Current State**: Mock authentication using localStorage
-2. **Production**: Implement proper JWT authentication via Supabase
-3. **Important**: Never commit secrets or credentials to git
-4. **HTTPS**: Always use HTTPS in production
-
-## 🛠️ Development Workflow
-
-### Local Development
-```bash
-# View any page locally
-# Pages are pure HTML/CSS/JS - just open in browser or use a local server
-
-# Start a simple Python server
-python -m http.server 8000
-
-# Or use Node's http-server
-npx http-server
-```
-
-### Deployment to Vercel
-```bash
-# 1. Push to GitHub
-git add .
-git commit -m "UC-Connect implementation"
-git push origin main
-
-# 2. Connect GitHub to Vercel
-# 3. Configure environment variables in Vercel dashboard
-# 4. Deploy!
-```
-
-## 📦 Environment Variables
-
-### For Local Development (.env.local)
-```
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
-API_BASE_URL=http://localhost:3000/api
-```
-
-### For Production (Vercel)
-```
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_KEY=your-service-key
-```
-
-## 🎯 Feature Checklist
-
-### Must-Have Features
-- [x] Login/Registration
-- [x] Admin Dashboard
-- [x] Vendor Verification
-- [x] Forum Moderation
-
-### Nice-to-Have Features
-- [ ] Real-time notifications
-- [ ] User ratings/reviews
-- [ ] Product recommendations
-- [ ] Analytics dashboard
-- [ ] Email notifications
-
-## 📞 Support
-
-For issues or questions about the implementation, refer to:
-- `/pages/privacy-policy.html` - For data handling questions
-- `/pages/terms-of-service.html` - For usage policies
-- `/community/forum` - Community support forum
-
-## 📄 File Structure
-
-```
-/
-├── assets/
-│   └── js/
-│       ├── api-client.js       (API communication)
-│       ├── auth.js             (Authentication manager)
-│       ├── config.js           (Configuration)
-│       └── utils.js            (Utility functions)
-├── pages/
-│   ├── admin/
-│   │   └── super-admin.html    (Admin panel - FUNCTIONAL)
-│   ├── auth/
-│   │   ├── login.html          (Login - FUNCTIONAL)
-│   │   └── register.html       (Register - READY)
-│   ├── community/
-│   ├── customer/
-│   ├── directory/
-│   ├── vendor/
-│   ├── 404.html                (Error page - NEW)
-│   ├── privacy-policy.html     (Privacy - NEW)
-│   └── terms-of-service.html   (Terms - NEW)
-├── index.html                  (Site map)
-├── vercel.json                 (Deployment config - UPDATED)
-├── .env.example                (Environment template - NEW)
-└── README.md                   (This file)
-```
-
-## 🎓 Learning Notes
-
-- Pages use Tailwind CSS for styling
-- JavaScript is vanilla (no framework dependencies)
-- Mock authentication ready for Supabase integration
-- All buttons have event listeners and functionality
-- Error handling and success messages included
+> **Last Updated:** May 8, 2026
+> **Stack:** Next.js 16 (Pages Router) · Supabase · TypeScript · Tailwind CSS + CSS Variables
 
 ---
 
-**Last Updated**: April 18, 2024
-**Version**: 1.0.0
-**Status**: ✅ Ready for Supabase Integration & Deployment
+## Project Overview
+
+UC Connect is a premium, community-based student business directory for universities in Indonesia. Registered student businesses are listed as verified vendors, and the platform includes a forum for community interaction.
+
+---
+
+## Architecture
+
+```
+pages/                    → Next.js Pages Router (SSR/SSG)
+  api/                    → Serverless API routes
+    admin/                → Admin-only endpoints (stats, vendors, users, forum)
+    vendor/               → Vendor-owner endpoints (profile, hours, items, whatsapp-click)
+    vendors/              → Public vendor endpoints (list, detail)
+  admin/                  → Admin panel pages
+  auth/                   → Login, register, forgot password, set username
+  community/              → Forum pages
+  customer/               → Customer profile
+  directory/              → Explore + vendor detail
+  vendor/                 → Vendor dashboard + onboarding
+components/
+  vendor/                 → TabOverview, TabEditProfile, TabItems, TabHours
+  SiteLayout.tsx          → Global layout with auth-aware nav, mobile drawer
+  VendorOnboardingWizard  → Multi-step vendor registration
+  LoadingSkeleton.tsx     → Shimmer skeleton loading states
+  HeroSection, VendorCard, BottomCTA, AuthSplitLayout, FormField
+lib/
+  api-admin.ts            → requireAdmin() middleware
+  api-auth.ts             → resolveAuthedUser() + readBearerToken()
+  api-response.ts         → Shared HTTP response helpers
+  compress-image.ts       → Canvas-based image compression/resize
+  language-context.tsx     → React context for ID/EN translations
+  profile-image-upload.ts → Avatar upload to Supabase Storage
+  public-errors.ts        → User-facing error message mapper
+  supabase-browser.ts     → Browser-side Supabase client
+  supabase-server.ts      → Server-side Supabase client (service key)
+  translations.ts         → Translation strings (ID + EN)
+  vendor-registration-draft.ts → SessionStorage draft persistence
+styles/
+  globals.css             → Design system (CSS variables, tokens, components)
+supabase/
+  schema.sql              → Full database schema + RLS policies + migrations
+types/
+  domain.ts               → TypeScript types (Vendor, VendorItem, VendorHour, etc.)
+```
+
+---
+
+## Environment Variables
+
+Create `.env` in project root:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
+
+---
+
+## Database
+
+### Tables
+| Table | Purpose |
+|-------|---------|
+| `profiles` | User profiles (extends auth.users) — role: customer/vendor/admin |
+| `vendors` | Business listings — name, category, city, whatsapp, hero_image_url, whatsapp_clicks |
+| `vendor_hours` | Operating hours per day (0=Sunday–6=Saturday) |
+| `vendor_items` | Products/menu/services — item_type, price, is_active |
+| `forum_categories` | Forum category list |
+| `forum_threads` | Discussion threads |
+| `forum_replies` | Thread replies |
+| `favorites` | User → vendor favorites (DB exists, no frontend UI yet) |
+| `vendor_metrics` | Engagement metrics (DB exists, temporarily hidden in UI) |
+
+### RLS Policies
+- **Public read** on vendors (verified only), forum categories/threads/replies
+- **Self-update** on profiles (`auth.uid() = id`)
+- **Owner-write** on vendors, vendor_hours, vendor_items (via `owner_id`)
+- **Admin-all** via `is_admin()` SQL function — profiles, vendors, threads, replies
+
+### Required Migrations
+If starting from the base `schema.sql`, the following additions at the bottom must also be applied:
+1. `whatsapp_clicks` column on vendors
+2. `increment_whatsapp_clicks(uuid)` RPC function
+3. Vendor owner update/insert policies
+4. Admin RLS policies
+
+---
+
+## API Routes
+
+### Public
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/vendors` | List vendors (filtered by search/category) |
+| GET | `/api/vendors/[id]` | Single vendor detail with hours + items |
+| POST | `/api/vendor/whatsapp-click` | Increment WhatsApp click counter |
+| GET | `/api/health` | Health check |
+
+### Authenticated (Bearer token)
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET/PUT | `/api/profile` | Current user profile |
+| POST | `/api/vendor-onboarding` | Start vendor registration |
+| GET/PUT | `/api/vendor/profile` | Vendor's own profile |
+| GET/PUT | `/api/vendor/hours` | Vendor operating hours (batch upsert) |
+| GET/POST | `/api/vendor/items` | Vendor items list + create |
+| PUT/DELETE | `/api/vendor/items/[id]` | Update/delete single item |
+| GET/POST/DELETE | `/api/favorites` | Manage user favorites |
+
+### Admin Only (Bearer token + role=admin)
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/admin/stats` | KPI counts |
+| GET/PATCH | `/api/admin/vendors` | List + approve/reject vendors |
+| GET/PATCH | `/api/admin/users` | List + change user roles |
+| GET/DELETE | `/api/admin/forum` | List + delete threads/replies |
+
+---
+
+## Design System
+
+Defined in `styles/globals.css` using CSS custom properties:
+
+```css
+--pacific: #1CA9C9       /* Primary — Pacific Blue */
+--orange: #E86100        /* Accent — Spanish Orange */
+--gradient-main          /* Pacific → Orange */
+--gradient-warm          /* Orange → Pacific */
+--gradient-subtle        /* Low-opacity background gradient */
+```
+
+### Key Classes
+| Class | Usage |
+|-------|-------|
+| `.card` | Standard content card |
+| `.dash-card` | Dashboard-specific card |
+| `.dash-stat` | Stat tile (value + label) |
+| `.action-card` | Clickable action tile |
+| `.product-row` | Item row in vendor dashboard |
+| `.thread-card` | Forum thread card |
+| `.badge.pacific` / `.badge.success` | Color-coded badges |
+| `.chip` | Filter chip button |
+| `.hero` | Page hero section |
+| `.bubble-section` | Section with floating bubble decorations |
+| `.dropzone` | File upload dropzone |
+| `.btn` / `.btn.ghost` | Standard buttons |
+
+---
+
+## Development
+
+```bash
+# Install
+npm install
+
+# Run dev server
+npm run dev
+
+# Type check
+npx tsc --noEmit
+
+# Node version (required for @tailwindcss/oxide)
+nvm use 21
+```
+
+---
+
+## Deployment (Vercel)
+
+1. Push to GitHub
+2. Connect repo in Vercel dashboard
+3. Set environment variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`)
+4. Deploy — Vercel auto-detects Next.js
+
+---
+
+## Security Checklist
+
+- [x] Bearer token auth on all mutating endpoints
+- [x] RLS policies on all tables
+- [x] Admin middleware (`requireAdmin`) checks profile role
+- [x] Image compression prevents oversized uploads
+- [x] Ownership verification on vendor item/hour updates
+- [x] No hardcoded secrets (all via `.env`)
+
+---
+
+**Version:** 2.0.0
+**Status:** Feature Complete (MVP) ✅
