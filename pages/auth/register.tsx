@@ -1,14 +1,24 @@
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { FormEvent, useState } from "react";
+import { GetServerSideProps } from "next";
+import AuthSplitLayout from "@/components/AuthSplitLayout";
+import AuthTabs from "@/components/AuthTabs";
+import FormField from "@/components/FormField";
 import SiteLayout from "@/components/SiteLayout";
+import { useLanguage } from "@/lib/language-context";
+import { toPublicAuthErrorMessage } from "@/lib/public-errors";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const { t } = useLanguage();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [phone, setPhone] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,7 +30,7 @@ export default function RegisterPage() {
     cleaned = cleaned.replace(/[^0-9+]/g, "");
     if (cleaned.startsWith("+")) {
       if (!cleaned.startsWith("+62")) {
-        return { phone: null, error: "Phone must start with +62 for international format." };
+        return { phone: null, error: t("pages.register.errors.phoneRequired") };
       }
       cleaned = `0${cleaned.slice(3)}`;
     } else if (cleaned.startsWith("62")) {
@@ -28,15 +38,15 @@ export default function RegisterPage() {
     } else if (cleaned.startsWith("8")) {
       cleaned = `0${cleaned}`;
     } else if (!cleaned.startsWith("0")) {
-      return { phone: null, error: "Use format 08…, 8…, +62…, or 62…." };
+      return { phone: null, error: t("pages.register.errors.phoneInvalidFormat") };
     }
 
     if (!/^\d+$/.test(cleaned)) {
-      return { phone: null, error: "Phone must contain digits only." };
+      return { phone: null, error: t("pages.register.errors.phoneOnlyDigits") };
     }
 
     if (cleaned.length < 10 || cleaned.length > 13) {
-      return { phone: null, error: "Phone number length looks invalid." };
+      return { phone: null, error: t("pages.register.errors.phoneInvalidLength") };
     }
 
     return { phone: cleaned, error: null };
@@ -49,27 +59,32 @@ export default function RegisterPage() {
     e.preventDefault();
     setMessage(null);
     setError(null);
+    setSubmitting(true);
 
     const normalizedFullName = fullName.trim();
     if (!normalizedFullName) {
-      setError("Full name is required.");
+      setError(t("pages.register.errors.fullNameRequired"));
+      setSubmitting(false);
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      setError(t("pages.register.errors.passwordsMismatch"));
+      setSubmitting(false);
       return;
     }
 
     const normalizedPhone = normalizeIndonesianPhoneToLocal(phone);
     if (normalizedPhone.error) {
       setError(normalizedPhone.error);
+      setSubmitting(false);
       return;
     }
 
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      setError("Supabase env is missing.");
+      setError(t("errors.serviceUnavailable"));
+      setSubmitting(false);
       return;
     }
 
@@ -82,56 +97,96 @@ export default function RegisterPage() {
     });
 
     if (authError) {
-      setError(authError.message);
+      setError(toPublicAuthErrorMessage(authError.message, "register"));
+      setSubmitting(false);
       return;
     }
 
-    setMessage("Registration successful. Check your email for verification.");
+    setMessage(t("pages.register.successMsg"));
+    setSubmitting(false);
   }
 
   return (
     <SiteLayout title="Register | UC Connect">
-      <section className="card">
-        <h1>Register</h1>
-        <form onSubmit={onRegister} className="stack">
-          <label>
-            Full name
-            <input value={fullName} onChange={(e) => setFullName(e.target.value)} required />
-          </label>
-          <label>
-            Email
-            <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
-          </label>
-          <label>
-            Password
-            <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required minLength={8} />
-          </label>
-          <label>
-            Confirm password
-            <input
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              type="password"
-              required
-              minLength={8}
-            />
-          </label>
-          <label>
-            Phone
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" placeholder="0812… / +62812…" />
-          </label>
-          {phone && phonePreview.error && <p className="err">{phonePreview.error}</p>}
-          {phoneInternational && !phonePreview.error && <p>International format: {phoneInternational}</p>}
-          <button type="submit">Create account</button>
+      <AuthSplitLayout
+        labelledBy="register-title"
+        visualPanel={
+          <>
+            <span className="badge gold">{t("pages.register.panelBadge")}</span>
+            <h2>{t("pages.register.panelTitle")}</h2>
+            <p>{t("pages.register.panelDesc")}</p>
+          </>
+        }
+      >
+        <AuthTabs currentPage="register" />
+
+        <h1 id="register-title">{t("pages.register.title")}</h1>
+        <p className="muted">{t("pages.register.subtitle")}</p>
+
+        <form onSubmit={onRegister} className="stack" aria-label="Register form">
+          <FormField
+            id="register-full-name"
+            label={t("pages.register.fullName")}
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            required
+            placeholder="Nama sesuai identitas"
+          />
+          <FormField
+            id="register-email"
+            label={t("pages.register.email")}
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            placeholder="nama@kampus.ac.id"
+          />
+          <FormField
+            id="register-password"
+            label={t("pages.register.password")}
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={8}
+            placeholder="Minimal 8 karakter"
+          />
+          <FormField
+            id="register-confirm-password"
+            label={t("pages.register.confirmPassword")}
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            minLength={8}
+            placeholder="Ulangi kata sandi"
+          />
+          <FormField
+            id="register-phone"
+            label={t("pages.register.phone")}
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="0812... / +62812..."
+            error={phone && phonePreview.error ? phonePreview.error : null}
+            helpText={phoneInternational && !phonePreview.error ? `${t("pages.register.internationalFormat")} ${phoneInternational}` : null}
+          />
+          <button type="submit" disabled={submitting}>
+            {submitting ? "Memproses..." : t("pages.register.submitBtn")}
+          </button>
         </form>
 
         <div className="row-gap">
-          <Link href="/auth/login">Already have an account?</Link>
+          <Link href="/auth/login">{t("pages.register.haveAccount")}</Link>
         </div>
 
         {message && <p className="ok">{message}</p>}
         {error && <p className="err">{error}</p>}
-      </section>
+      </AuthSplitLayout>
     </SiteLayout>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  return { props: {} };
+};

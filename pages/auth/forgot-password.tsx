@@ -1,8 +1,12 @@
 import { FormEvent, useState } from "react";
+import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
+import { useLanguage } from "@/lib/language-context";
+import { toPublicAuthErrorMessage } from "@/lib/public-errors";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export default function ForgotPasswordPage() {
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -14,7 +18,7 @@ export default function ForgotPasswordPage() {
 
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      setError("Supabase env is missing.");
+      setError(t("errors.serviceUnavailable"));
       return;
     }
 
@@ -23,23 +27,24 @@ export default function ForgotPasswordPage() {
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
 
     if (resetError) {
-      setError(resetError.message);
+      setError(toPublicAuthErrorMessage(resetError.message, "forgot"));
       return;
     }
 
-    setMessage("Reset email sent. Check your inbox.");
+    setMessage(t("pages.forgotPassword.successMsg"));
   }
 
   return (
     <SiteLayout title="Forgot Password | UC Connect">
       <section className="card">
-        <h1>Forgot Password</h1>
+        <h1>{t("pages.forgotPassword.title")}</h1>
+        <p>{t("pages.forgotPassword.subtitle")}</p>
         <form onSubmit={onSubmit} className="stack">
           <label>
-            Email
+            {t("pages.forgotPassword.email")}
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </label>
-          <button type="submit">Send reset link</button>
+          <button type="submit">{t("pages.forgotPassword.submitBtn")}</button>
         </form>
         {message && <p className="ok">{message}</p>}
         {error && <p className="err">{error}</p>}
@@ -47,3 +52,7 @@ export default function ForgotPasswordPage() {
     </SiteLayout>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  return { props: {} };
+};

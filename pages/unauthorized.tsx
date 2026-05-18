@@ -1,5 +1,6 @@
 import Link from "next/link";
 import SiteLayout from "@/components/SiteLayout";
+import { GetServerSideProps } from "next";
 
 export default function UnauthorizedPage() {
   return (
@@ -12,3 +13,7 @@ export default function UnauthorizedPage() {
     </SiteLayout>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  return { props: {} };
+};

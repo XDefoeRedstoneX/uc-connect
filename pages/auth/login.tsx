@@ -1,62 +1,129 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { FormEvent, useState } from "react";
+import { GetServerSideProps } from "next";
+import AuthSplitLayout from "@/components/AuthSplitLayout";
+import AuthTabs from "@/components/AuthTabs";
+import FormField from "@/components/FormField";
 import SiteLayout from "@/components/SiteLayout";
+import { useLanguage } from "@/lib/language-context";
+import { toPublicAuthErrorMessage } from "@/lib/public-errors";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const nextPath = typeof router.query.next === "string" && router.query.next.startsWith("/")
+    ? router.query.next
+    : "/";
+
+  const setUsernamePath = `/auth/set-username?next=${encodeURIComponent(nextPath)}`;
 
   async function onLogin(e: FormEvent) {
     e.preventDefault();
     setMessage(null);
     setError(null);
+    setSubmitting(true);
 
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      setError("Supabase env is missing. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.");
+      setError(t("errors.serviceUnavailable"));
+      setSubmitting(false);
       return;
     }
 
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-
     if (authError) {
-      setError(authError.message);
+      setError(toPublicAuthErrorMessage(authError.message, "login"));
+      setSubmitting(false);
       return;
     }
 
-    setMessage("Login successful. Redirecting...");
-    await router.replace("/directory/home");
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+
+    if (!token) {
+      setError(t("errors.sessionExpired"));
+      setSubmitting(false);
+      return;
+    }
+
+    const profileResponse = await fetch("/api/profile", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const profileJson = await profileResponse.json();
+    if (profileResponse.ok && profileJson.profile && !profileJson.profile.username) {
+      await router.replace(setUsernamePath);
+      setSubmitting(false);
+      return;
+    }
+
+    setMessage(t("pages.login.successMsg"));
+    await router.replace(nextPath);
+    setSubmitting(false);
   }
 
   return (
     <SiteLayout title="Login | UC Connect">
-      <section className="card">
-        <h1>Login</h1>
-        <form onSubmit={onLogin} className="stack">
-          <label>
-            Email
-            <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
-          </label>
-          <label>
-            Password
-            <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required />
-          </label>
-          <button type="submit">Login</button>
+      <AuthSplitLayout
+        labelledBy="login-title"
+        visualPanel={
+          <>
+            <span className="badge gold">{t("pages.login.panelBadge")}</span>
+            <h2>{t("pages.login.panelTitle")}</h2>
+            <p>{t("pages.login.panelDesc")}</p>
+          </>
+        }
+      >
+        <AuthTabs currentPage="login" />
+
+        <h1 id="login-title">{t("pages.login.title")}</h1>
+        <p className="muted">{t("pages.login.subtitle")}</p>
+
+        <form onSubmit={onLogin} className="stack" aria-label="Login form">
+          <FormField
+            id="login-email"
+            label={t("pages.login.email")}
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            placeholder="nama@kampus.ac.id"
+          />
+          <FormField
+            id="login-password"
+            label={t("pages.login.password")}
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            placeholder="Minimal 8 karakter"
+          />
+          <button type="submit" disabled={submitting}>
+            {submitting ? "Memproses..." : t("pages.login.submitBtn")}
+          </button>
         </form>
 
         <div className="row-gap">
-          <Link href="/auth/forgot-password">Forgot password?</Link>
-          <Link href="/auth/register">Create account</Link>
+          <Link href="/auth/forgot-password">{t("pages.login.forgotPassword")}</Link>
+          <Link href="/auth/register">{t("pages.login.noAccount")}</Link>
         </div>
 
         {message && <p className="ok">{message}</p>}
         {error && <p className="err">{error}</p>}
-      </section>
+      </AuthSplitLayout>
     </SiteLayout>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  return { props: {} };
+};
+  

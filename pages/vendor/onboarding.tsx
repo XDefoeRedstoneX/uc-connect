@@ -1,0 +1,143 @@
+import { useEffect, useState } from "react";
+import { GetServerSideProps } from "next";
+import { useRouter } from "next/router";
+import SiteLayout from "@/components/SiteLayout";
+import LoadingScreen from "@/components/LoadingScreen";
+import VendorOnboardingWizard from "@/components/VendorOnboardingWizard";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { clearVendorRegistrationDraft, loadVendorRegistrationDraft, VendorRegistrationDraft } from "@/lib/vendor-registration-draft";
+
+export default function VendorOnboardingPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [draft, setDraft] = useState<VendorRegistrationDraft | null>(null);
+
+  useEffect(() => {
+    const loadSession = async () => {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) {
+        window.location.href = "/auth/login?next=/vendor/onboarding&role=vendor";
+        return;
+      }
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const sessionToken = sessionData.session?.access_token;
+      const uid = sessionData.session?.user?.id;
+      if (!sessionToken || !uid) {
+        window.location.href = "/auth/login?next=/vendor/onboarding&role=vendor";
+        return;
+      }
+
+      const response = await fetch("/api/profile", {
+        headers: { Authorization: `Bearer ${sessionToken}` },
+      });
+      const json = await response.json();
+
+      if (!response.ok || !json.profile) {
+        window.location.href = "/auth/login?next=/vendor/onboarding&role=vendor";
+        return;
+      }
+
+      if (json.profile.role === "vendor") {
+        clearVendorRegistrationDraft();
+        router.replace("/");
+        return;
+      }
+
+      setToken(sessionToken);
+      setUserId(uid);
+
+      const savedDraft = await loadVendorRegistrationDraft();
+      setDraft(savedDraft);
+      setLoading(false);
+    };
+
+    void loadSession();
+  }, [router]);
+
+  async function uploadKtm(file: File): Promise<string | null> {
+    if (!userId) return null;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+    const path = `ktm/${userId}/ktm.${file.type === "image/png" ? "png" : "jpg"}`;
+
+    const res = await fetch(`${supabaseUrl}/storage/v1/object/vendor-documents/${path}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${anonKey}`,
+        "Content-Type": file.type,
+        "x-upsert": "true",
+      },
+      body: file,
+    });
+
+    if (!res.ok) {
+      console.error("KTM upload failed", await res.text());
+      return null;
+    }
+
+    return `${supabaseUrl}/storage/v1/object/public/vendor-documents/${path}`;
+  }
+
+  async function handleComplete(values: Record<string, unknown>) {
+    if (!token) {
+      setError("Sesi login tidak ditemukan.");
+      return;
+    }
+
+    setError(null);
+
+    // Upload KTM file if present
+    let ktmUrl: string | null = null;
+    if (values.ktmFile instanceof File) {
+      ktmUrl = await uploadKtm(values.ktmFile);
+    }
+
+    const payload = { ...values, ktmUrl, ktmFile: undefined };
+
+    const response = await fetch("/api/vendor-onboarding", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const json = await response.json();
+    if (!response.ok) {
+      setError(typeof json.error === "string" ? json.error : "Gagal menyimpan data vendor.");
+      return;
+    }
+
+    clearVendorRegistrationDraft();
+    router.replace("/vendor/dashboard");
+  }
+
+  return (
+    <SiteLayout title="Vendor Onboarding | UC Connect">
+      <section className="card">
+        <h1>Vendor Onboarding</h1>
+        <p>Lengkapi data bisnis kamu untuk melanjutkan pendaftaran vendor.</p>
+
+        {loading && <LoadingScreen message="Memuat sesi..." />}
+        {error && <p className="err">{error}</p>}
+
+        {!loading && (
+          <VendorOnboardingWizard
+            initialStep={draft ? 2 : 1}
+            initialValues={draft ?? undefined}
+            onComplete={handleComplete}
+          />
+        )}
+      </section>
+    </SiteLayout>
+  );
+}
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  return { props: {} };
+};
