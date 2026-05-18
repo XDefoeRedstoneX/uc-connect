@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import LoadingScreen from "@/components/LoadingScreen";
+import ReportButton from "@/components/ReportButton";
 import { useToast } from "@/components/ToastProvider";
 import { useLanguage } from "@/lib/language-context";
 import { toPublicPageErrorMessage } from "@/lib/public-errors";
@@ -179,6 +180,9 @@ export default function VendorDetailPage() {
             ) : (
               <button type="button" disabled>{t("pages.vendorDetail.unavailableWhatsApp")}</button>
             )}
+            {currentUserId && (
+              <ReportButton targetType="vendor" targetId={vendor.id} size="md" />
+            )}
           </div>
         </div>
       </section>
@@ -191,6 +195,29 @@ export default function VendorDetailPage() {
           <p style={{ color: "var(--muted)", lineHeight: 1.7 }}>
             {vendor.description ?? t("pages.vendorDetail.notFoundText")}
           </p>
+
+          {(vendor.university || vendor.sales_system || vendor.delivery_methods) && (
+            <div className="vendor-meta-grid" style={{ marginTop: "1.25rem", display: "grid", gap: "0.5rem" }}>
+              {vendor.university && (
+                <div style={{ display: "flex", gap: "0.6rem", alignItems: "baseline", fontSize: "0.88rem" }}>
+                  <span style={{ color: "var(--muted)", minWidth: "9rem", flexShrink: 0 }}>🎓 Universitas</span>
+                  <span style={{ fontWeight: 600, color: "var(--text)" }}>{vendor.university}</span>
+                </div>
+              )}
+              {vendor.sales_system && (
+                <div style={{ display: "flex", gap: "0.6rem", alignItems: "baseline", fontSize: "0.88rem" }}>
+                  <span style={{ color: "var(--muted)", minWidth: "9rem", flexShrink: 0 }}>🧾 Sistem Penjualan</span>
+                  <span style={{ fontWeight: 600, color: "var(--text)" }}>{vendor.sales_system}</span>
+                </div>
+              )}
+              {vendor.delivery_methods && (
+                <div style={{ display: "flex", gap: "0.6rem", alignItems: "baseline", fontSize: "0.88rem" }}>
+                  <span style={{ color: "var(--muted)", minWidth: "9rem", flexShrink: 0 }}>🚚 Pengiriman</span>
+                  <span style={{ fontWeight: 600, color: "var(--text)" }}>{vendor.delivery_methods}</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Rating placeholder — only show if metrics exist */}
           {vendor.metrics && vendor.metrics.review_count > 0 ? (
@@ -373,7 +400,20 @@ export default function VendorDetailPage() {
                   </div>
                 </div>
                 {r.content && <p style={{ margin: 0, fontSize: "0.88rem", lineHeight: 1.6, color: "var(--text)" }}>{r.content}</p>}
-                <p style={{ margin: "0.35rem 0 0", fontSize: "0.75rem", color: "var(--muted)" }}>{new Date(r.created_at).toLocaleDateString("id-ID")}</p>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.35rem" }}>
+                  <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--muted)" }}>{new Date(r.created_at).toLocaleDateString("id-ID")}</p>
+                  {currentUserId && currentUserId !== r.user_id && (
+                    <ReportButton targetType="review" targetId={r.id} />
+                  )}
+                </div>
+                {r.vendor_reply && (
+                  <div style={{ marginTop: "0.6rem", borderLeft: "3px solid var(--pacific)", padding: "0.5rem 0.75rem", background: "var(--gradient-subtle)", borderRadius: "0 8px 8px 0" }}>
+                    <p style={{ margin: 0, fontSize: "0.72rem", fontWeight: 700, color: "var(--pacific)", letterSpacing: "0.04em" }}>
+                      BALASAN VENDOR{r.vendor_reply_at ? ` · ${new Date(r.vendor_reply_at).toLocaleDateString("id-ID")}` : ""}
+                    </p>
+                    <p style={{ margin: "0.25rem 0 0", fontSize: "0.86rem", lineHeight: 1.55, color: "var(--text)" }}>{r.vendor_reply}</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>

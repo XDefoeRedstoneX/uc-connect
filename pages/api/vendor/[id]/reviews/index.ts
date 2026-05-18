@@ -7,18 +7,20 @@ import {
 } from "@/lib/api-response";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 
+const REVIEW_COLUMNS =
+  "id,vendor_id,user_id,rating,content,vendor_reply,vendor_reply_at,created_at,profiles:user_id(full_name,avatar_url)";
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const vendorId = req.query.id as string;
   if (!vendorId) return res.status(400).json({ error: "Missing vendor id" });
 
-  // GET — fetch reviews for a vendor (public, no auth required)
   if (req.method === "GET") {
     const supabase = getSupabaseServerClient();
     if (!supabase) return sendServiceUnavailable(res);
 
     const { data, error } = await supabase
       .from("vendor_reviews")
-      .select("id,vendor_id,user_id,rating,content,created_at,profiles:user_id(full_name,avatar_url)")
+      .select(REVIEW_COLUMNS)
       .eq("vendor_id", vendorId)
       .order("created_at", { ascending: false })
       .limit(50);
@@ -31,7 +33,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({ reviews: data ?? [] });
   }
 
-  // POST — submit a review (auth required)
   if (req.method === "POST") {
     const authContext = await resolveAuthedUser(req);
     if (authContext.status === 503) return sendServiceUnavailable(res);
@@ -46,7 +47,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: "Rating harus antara 1-5" });
     }
 
-    // Check vendor exists
     const { data: vendor } = await supabase
       .from("vendors")
       .select("id,owner_id")
@@ -55,12 +55,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (!vendor) return res.status(404).json({ error: "Vendor tidak ditemukan" });
 
-    // Prevent vendors from reviewing themselves
     if (vendor.owner_id === userId) {
       return res.status(403).json({ error: "Tidak bisa mereview toko sendiri" });
     }
 
-    // Insert (unique constraint will prevent duplicates)
     const { data: review, error: insertError } = await supabase
       .from("vendor_reviews")
       .insert({
@@ -69,7 +67,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         rating: Math.round(rating),
         content: content?.trim() || null,
       })
-      .select("id,vendor_id,user_id,rating,content,created_at")
+      .select("id,vendor_id,user_id,rating,content,vendor_reply,vendor_reply_at,created_at")
       .single();
 
     if (insertError) {

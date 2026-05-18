@@ -36,14 +36,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (action === "reject") {
-      // Delete the vendor record entirely
+      // Read owner_id FIRST — before deleting, so we can reset their role
+      const { data: vendorToReject } = await supabase
+        .from("vendors")
+        .select("owner_id")
+        .eq("id", vendor_id)
+        .maybeSingle();
+
       const { error } = await supabase.from("vendors").delete().eq("id", vendor_id);
       if (error) return sendInternalServerError(res, "Failed to reject vendor");
-      // Optionally reset the user's role back to customer
-      const { data: vendor } = await supabase.from("vendors").select("owner_id").eq("id", vendor_id).maybeSingle();
-      if (vendor?.owner_id) {
-        await supabase.from("profiles").update({ role: "customer" }).eq("id", vendor.owner_id);
+
+      // Reset the owner's role back to customer
+      if (vendorToReject?.owner_id) {
+        await supabase
+          .from("profiles")
+          .update({ role: "customer" })
+          .eq("id", vendorToReject.owner_id);
       }
+
       return res.status(200).json({ success: true, deleted: true });
     }
 

@@ -5,7 +5,8 @@ import Link from "next/link";
 import { ReactNode, useEffect, useState } from "react";
 import { useLanguage } from "@/lib/language-context";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router";
+import NotificationBell from "@/components/NotificationBell";
 
 type Props = {
   title: string;
@@ -105,13 +106,16 @@ export default function SiteLayout({ title, children, description, ogImage }: Pr
               )}
 
               {isLoggedIn ? (
-                <Link href="/customer/profile" aria-label="Profil Saya" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 700, color: 'var(--pacific-dark)' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                  Profil
-                </Link>
+                <>
+                  <NotificationBell />
+                  <Link href="/customer/profile" aria-label="Profil Saya" className="nav-link" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 700, color: 'var(--pacific-dark)' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    Profil
+                  </Link>
+                </>
               ) : (
                 <Link href="/auth/login" className="nav-link" style={{ background: '#fff', fontWeight: 700, color: 'var(--pacific-dark)' }}>
                   Masuk
@@ -174,9 +178,14 @@ export default function SiteLayout({ title, children, description, ogImage }: Pr
                 </Link>
               )}
               {isLoggedIn ? (
-                <Link href="/customer/profile" className="nav-link" onClick={() => setMenuOpen(false)} style={{ color: 'var(--pacific-dark)', background: 'var(--pacific-soft)' }}>
-                  👤 Profil Saya
-                </Link>
+                <>
+                  <Link href="/notifications" className="nav-link" onClick={() => setMenuOpen(false)} style={{ color: 'var(--pacific-dark)', background: 'var(--pacific-soft)' }}>
+                    🔔 Notifikasi
+                  </Link>
+                  <Link href="/customer/profile" className="nav-link" onClick={() => setMenuOpen(false)} style={{ color: 'var(--pacific-dark)', background: 'var(--pacific-soft)' }}>
+                    👤 Profil Saya
+                  </Link>
+                </>
               ) : (
                 <Link href="/auth/login" className="nav-link" onClick={() => setMenuOpen(false)} style={{ color: 'var(--pacific-dark)', background: 'var(--pacific-soft)' }}>
                   Masuk / Daftar

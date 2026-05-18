@@ -5,6 +5,7 @@
   "scripts": {
     "setup:env": "node scripts/setup-env.mjs",
     "check:env": "node scripts/check-env.mjs",
+    "seed:users": "node scripts/seed-users.mjs",
     "dev": "next dev",
     "dev:ready": "npm run check:env && next dev",
     "build": "next build",
@@ -20,6 +21,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.74.0",
+    "ws": "^8.20.1",
     "zod": "^4.4.1"
   },
   "devDependencies": {

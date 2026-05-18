@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import Link from "next/link";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
+import AdminNav from "@/components/admin/AdminNav";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type AdminUser = {
@@ -11,13 +11,6 @@ type AdminUser = {
   phone: string | null; avatar_url: string | null;
   role: "customer" | "vendor" | "admin"; updated_at: string;
 };
-
-const NAV = [
-  { href: "/admin", label: "📊 Dashboard", id: "dash" },
-  { href: "/admin/vendors", label: "🏪 Verifikasi Vendor", id: "vendors" },
-  { href: "/admin/users", label: "👥 Users", id: "users" },
-  { href: "/admin/forum", label: "💬 Forum", id: "forum" },
-];
 
 const ROLE_BADGE: Record<string, { bg: string; color: string; label: string }> = {
   admin: { bg: "var(--orange-soft)", color: "var(--orange-dark)", label: "🛡 Admin" },
@@ -69,21 +62,25 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function deleteUser(user: AdminUser) {
+    if (!token) return;
+    const name = user.full_name ?? user.username ?? "user ini";
+    if (!confirm(`Hapus akun ${name} secara permanen? Semua kontennya akan ikut terhapus.`)) return;
+    const res = await fetch(`/api/admin/users/${user.id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+      setUsers((prev) => prev.filter((u) => u.id !== user.id));
+    } else {
+      const j = await res.json().catch(() => ({}));
+      alert(j.error ?? "Gagal menghapus akun");
+    }
+  }
+
   return (
     <SiteLayout title="User Management | Admin">
-      <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", borderBottom: "2px solid var(--border)", paddingBottom: "0.5rem", marginBottom: "1.25rem" }}>
-        {NAV.map(n => (
-          <Link key={n.id} href={n.href}
-            style={{
-              background: n.id === "users" ? "var(--gradient-main)" : "transparent",
-              color: n.id === "users" ? "#fff" : "var(--muted)",
-              border: "none", borderRadius: "8px", padding: "0.45rem 1rem",
-              fontWeight: 700, fontSize: "0.88rem", textDecoration: "none",
-            }}>
-            {n.label}
-          </Link>
-        ))}
-      </div>
+      <AdminNav current="users" />
 
       <div className="dash-card">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1rem" }}>
@@ -130,6 +127,10 @@ export default function AdminUsersPage() {
                       <option value="vendor">Vendor</option>
                       <option value="admin">Admin</option>
                     </select>
+                    <button type="button" onClick={() => void deleteUser(u)} title="Hapus akun"
+                      style={{ fontSize: "0.78rem", padding: "0.25rem 0.55rem", background: "var(--error)" }}>
+                      🗑
+                    </button>
                   </div>
                 </div>
               );

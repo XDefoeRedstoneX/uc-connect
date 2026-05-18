@@ -102,5 +102,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({ profile: data });
   }
 
-  return sendMethodNotAllowed(res, "GET, PUT");
+  if (req.method === "DELETE") {
+    // Self-delete: hard-removes the auth user. Cascade deletes profile, vendor
+    // ownership becomes null, threads/replies/reviews/favorites cascade-delete.
+    const { error } = await supabase.auth.admin.deleteUser(userId);
+    if (error) {
+      console.error("[api/profile] failed to delete auth user", error);
+      return sendInternalServerError(res, "Gagal menghapus akun");
+    }
+    return res.status(200).json({ success: true });
+  }
+
+  return sendMethodNotAllowed(res, "GET, PUT, DELETE");
 }

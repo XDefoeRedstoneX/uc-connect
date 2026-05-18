@@ -7,7 +7,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!ctx) return;
   const { supabase } = ctx;
 
-  // GET — list users
   if (req.method === "GET") {
     const role = req.query.role as string | undefined;
     let query = supabase
@@ -25,7 +24,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({ users: data ?? [] });
   }
 
-  // PATCH — update role
   if (req.method === "PATCH") {
     const { user_id, role } = req.body as { user_id?: string; role?: string };
     if (!user_id || !role) return res.status(400).json({ error: "user_id and role required" });

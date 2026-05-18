@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import Link from "next/link";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
+import AdminNav from "@/components/admin/AdminNav";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type ForumThread = {
@@ -16,13 +16,6 @@ type ForumReply = {
   id: string; thread_id: string; content: string; created_at: string; author_id: string;
   profiles: { username: string | null; full_name: string | null } | null;
 };
-
-const NAV = [
-  { href: "/admin", label: "📊 Dashboard", id: "dash" },
-  { href: "/admin/vendors", label: "🏪 Verifikasi Vendor", id: "vendors" },
-  { href: "/admin/users", label: "👥 Users", id: "users" },
-  { href: "/admin/forum", label: "💬 Forum", id: "forum" },
-];
 
 export default function AdminForumPage() {
   const router = useRouter();
@@ -74,19 +67,7 @@ export default function AdminForumPage() {
 
   return (
     <SiteLayout title="Forum Moderation | Admin">
-      <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", borderBottom: "2px solid var(--border)", paddingBottom: "0.5rem", marginBottom: "1.25rem" }}>
-        {NAV.map(n => (
-          <Link key={n.id} href={n.href}
-            style={{
-              background: n.id === "forum" ? "var(--gradient-main)" : "transparent",
-              color: n.id === "forum" ? "#fff" : "var(--muted)",
-              border: "none", borderRadius: "8px", padding: "0.45rem 1rem",
-              fontWeight: 700, fontSize: "0.88rem", textDecoration: "none",
-            }}>
-            {n.label}
-          </Link>
-        ))}
-      </div>
+      <AdminNav current="forum" />
 
       <div className="dash-card">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1rem" }}>

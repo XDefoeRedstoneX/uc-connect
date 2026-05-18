@@ -35,9 +35,16 @@ npm run build:ready
 
 ## Supabase setup
 
-- Create tables + RLS policies by running `supabase/schema.sql` in the Supabase SQL Editor.
-- After that, run `supabase/seed.sql` to load demo vendors, hours, metrics, and menu/service items.
-- The seeded data powers the directory listings and vendor detail page.
+- **Fresh DB:** run `supabase/schema.sql` in the Supabase SQL Editor (destructive — drops and recreates everything).
+- **Existing DB:** run only the latest `supabase/migration_phase{N}.sql` to apply deltas. Each migration is idempotent and safe to re-run.
+- After schema is up, run `supabase/seed.sql` to load demo vendors, hours, metrics, and menu/service items.
+- Finally, seed baseline accounts (admin / vendor / customer) so you can log in:
+
+```bash
+npm run seed:users
+```
+
+This needs `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`. Default password for all three accounts is printed at the end of the run.
 
 Env vars used by the app:
 

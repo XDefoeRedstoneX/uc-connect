@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const { data: vendor, error: vendorError } = await supabase
     .from("vendors")
-    .select("id,slug,name,tagline,category,city,is_verified,description,whatsapp,website_url,hero_image_url,created_at")
+    .select("id,slug,name,tagline,category,city,is_verified,description,whatsapp,website_url,hero_image_url,university,sales_system,delivery_methods,whatsapp_clicks,created_at")
     .eq("id", id)
     .single();
 

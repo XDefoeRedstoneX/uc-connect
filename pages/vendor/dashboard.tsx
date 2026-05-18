@@ -9,6 +9,7 @@ import TabOverview from "@/components/vendor/TabOverview";
 import TabEditProfile from "@/components/vendor/TabEditProfile";
 import TabItems from "@/components/vendor/TabItems";
 import TabHours from "@/components/vendor/TabHours";
+import TabReviews from "@/components/vendor/TabReviews";
 
 export type VendorProfile = {
   id: string; slug: string; name: string; tagline: string | null;
@@ -31,6 +32,7 @@ const TABS = [
   { id: "profile", label: "✏️ Edit Profil" },
   { id: "items", label: "📦 Produk & Layanan" },
   { id: "hours", label: "🕐 Jam Operasional" },
+  { id: "reviews", label: "⭐ Ulasan" },
 ];
 
 const DEFAULT_HOURS: VendorHour[] = Array.from({ length: 7 }, (_, i) => ({
@@ -118,6 +120,7 @@ export default function VendorDashboardPage() {
         {activeTab === "profile" && token && <TabEditProfile vendor={vendor} token={token} onSaved={setVendor} />}
         {activeTab === "items" && token && <TabItems items={items} vendor={vendor} token={token} onItemsChange={setItems} />}
         {activeTab === "hours" && token && <TabHours hours={hours} token={token} onSaved={setHours} />}
+        {activeTab === "reviews" && token && <TabReviews vendorId={vendor.id} token={token} />}
       </div>
     </SiteLayout>
   );

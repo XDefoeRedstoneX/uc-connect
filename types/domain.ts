@@ -14,6 +14,7 @@ export type Vendor = {
   sales_system?: string | null;
   delivery_methods?: string | null;
   ktm_url?: string | null;
+  whatsapp_clicks?: number;
   created_at: string;
 };
 
@@ -104,6 +105,39 @@ export type VendorReview = {
   user_id: string;
   rating: number;
   content: string | null;
+  vendor_reply: string | null;
+  vendor_reply_at: string | null;
   created_at: string;
   profiles?: { full_name: string | null; avatar_url: string | null } | null;
+};
+
+export type ReportTargetType = "vendor" | "review" | "thread" | "reply";
+
+export type Report = {
+  id: string;
+  target_type: ReportTargetType;
+  target_id: string;
+  reporter_id: string;
+  reason: string;
+  status: "open" | "resolved" | "dismissed";
+  resolved_by: string | null;
+  resolved_at: string | null;
+  created_at: string;
+};
+
+export type NotificationType =
+  | "review_received"
+  | "forum_reply"
+  | "vendor_approved"
+  | "content_removed"
+  | "report_received"
+  | "report_resolved";
+
+export type Notification = {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  payload: Record<string, unknown>;
+  read_at: string | null;
+  created_at: string;
 };

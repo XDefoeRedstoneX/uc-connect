@@ -399,8 +399,69 @@ export default function CustomerProfilePage() {
             ❤️ Lihat Vendor Favorit
           </button>
         </div>
+
+        <DangerZone />
       </div>
     </SiteLayout>
+  );
+}
+
+function DangerZone() {
+  const router = useRouter();
+  const [confirmText, setConfirmText] = useState("");
+  const [open, setOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function deleteAccount() {
+    setSubmitting(true);
+    try {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) throw new Error("Layanan tidak tersedia");
+      const { data: sd } = await supabase.auth.getSession();
+      const token = sd.session?.access_token;
+      if (!token) throw new Error("Sesi tidak ditemukan");
+
+      const res = await fetch("/api/profile", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? "Gagal menghapus akun");
+      }
+      await supabase.auth.signOut();
+      await router.replace("/");
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Gagal menghapus akun");
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <section style={{ marginTop: "2rem", padding: "1rem", border: "1.5px solid var(--error)", borderRadius: "var(--radius-md)", background: "rgba(239,68,68,0.04)" }}>
+      <h3 style={{ margin: "0 0 0.35rem", color: "var(--error)", fontSize: "1rem" }}>⚠️ Zona Bahaya</h3>
+      <p className="muted" style={{ margin: "0 0 0.75rem", fontSize: "0.85rem" }}>
+        Menghapus akun bersifat permanen. Semua thread forum, balasan, ulasan, dan toko yang kamu miliki akan dihapus.
+      </p>
+      {!open ? (
+        <button type="button" onClick={() => setOpen(true)}
+          style={{ background: "var(--error)", fontSize: "0.85rem" }}>
+          🗑 Hapus Akun
+        </button>
+      ) : (
+        <div style={{ display: "grid", gap: "0.5rem" }}>
+          <p style={{ margin: 0, fontSize: "0.85rem" }}>Ketik <strong>HAPUS</strong> untuk konfirmasi:</p>
+          <input value={confirmText} onChange={(e) => setConfirmText(e.target.value)} placeholder="HAPUS" />
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <button type="button" className="ghost" onClick={() => { setOpen(false); setConfirmText(""); }}>Batal</button>
+            <button type="button" disabled={submitting || confirmText !== "HAPUS"} onClick={() => void deleteAccount()}
+              style={{ background: "var(--error)" }}>
+              {submitting ? "Menghapus…" : "Hapus Permanen"}
+            </button>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 

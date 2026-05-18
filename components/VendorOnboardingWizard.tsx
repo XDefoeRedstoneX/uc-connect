@@ -21,6 +21,18 @@ const deliveryMethodOptions = ["cod-kampus", "digital-delivery"] as const;
 const allowedKtmMimeTypes = ["image/png", "image/jpeg"] as const;
 const maxKtmFileSizeBytes = 1 * 1024 * 1024;
 
+// Canonical category list — must match TabEditProfile.tsx and explore filter chips
+const CATEGORY_OPTIONS = [
+  "Makanan & Minuman",
+  "Jasa & Layanan",
+  "Fashion",
+  "Kreatif & Desain",
+  "Elektronik",
+  "Kesehatan & Kecantikan",
+  "Lainnya",
+] as const;
+type CategoryOption = (typeof CATEGORY_OPTIONS)[number];
+
 function isFileList(value: unknown): value is FileList {
   return typeof FileList !== "undefined" && value instanceof FileList;
 }
@@ -40,7 +52,7 @@ const vendorOnboardingSchema = z.object({
     .refine((file) => allowedKtmMimeTypes.includes(file.type as (typeof allowedKtmMimeTypes)[number]), "Format KTM harus PNG atau JPG")
     .refine((file) => file.size <= maxKtmFileSizeBytes, "Ukuran KTM maksimal 1 MB"),
   businessName: z.string().min(2, "Nama bisnis wajib diisi").max(120, "Nama bisnis terlalu panjang"),
-  category: z.enum(["Makanan", "Jasa", "Kebutuhan"], {
+  category: z.enum(CATEGORY_OPTIONS, {
     message: "Pilih kategori bisnis",
   }),
   description: z.string().min(10, "Deskripsi minimal 10 karakter").max(150, "Deskripsi maksimal 150 karakter"),
@@ -74,7 +86,7 @@ const defaultValues: VendorOnboardingValues = {
   whatsappNumber: "",
   ktmFile: undefined as unknown as File,
   businessName: "",
-  category: "Makanan",
+  category: "Makanan & Minuman",
   description: "",
   salesSystem: "ready-stock",
   deliveryMethod: [],
@@ -309,9 +321,9 @@ export default function VendorOnboardingWizard({ initialStep = 1, initialValues,
                     {...register("category")}
                     className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 outline-none transition focus:border-(--brand-orange) focus:ring-2 focus:ring-orange-100"
                   >
-                    <option value="Makanan">Makanan</option>
-                    <option value="Jasa">Jasa</option>
-                    <option value="Kebutuhan">Kebutuhan</option>
+                    {CATEGORY_OPTIONS.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
                   </select>
                   {errors.category && <p className="mt-2 text-sm text-red-600">{errors.category.message}</p>}
                 </div>

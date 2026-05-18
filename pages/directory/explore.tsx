@@ -9,12 +9,15 @@ import { getSupabaseServerClient } from "@/lib/supabase-server";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { Vendor } from "@/types/domain";
 
+// Canonical category values — must match VendorOnboardingWizard.tsx and TabEditProfile.tsx
 const CATEGORIES = [
   { label: "Semua", value: "" },
-  { label: "🍜 Makanan", value: "food" },
-  { label: "🎨 Kreatif", value: "creative" },
-  { label: "📦 Jasa", value: "essentials" },
-  { label: "👗 Fashion", value: "fashion" },
+  { label: "🍜 Makanan & Minuman", value: "Makanan & Minuman" },
+  { label: "🎨 Kreatif & Desain", value: "Kreatif & Desain" },
+  { label: "🛠 Jasa & Layanan", value: "Jasa & Layanan" },
+  { label: "👗 Fashion", value: "Fashion" },
+  { label: "📱 Elektronik", value: "Elektronik" },
+  { label: "💊 Kesehatan & Kecantikan", value: "Kesehatan & Kecantikan" },
 ];
 
 type Props = {

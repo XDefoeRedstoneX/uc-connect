@@ -82,9 +82,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     owner_id: userId,
     slug: existingVendorResult.data?.slug ?? `${slugify(businessName)}-${userId.slice(0, 8)}`,
     name: businessName,
-    tagline: `${university} • ${salesSystem === "ready-stock" ? "Ready Stock" : "Pre-Order"}`,
+    tagline: null,            // vendor sets this themselves in dashboard
     category,
-    city: university,
+    city: null,               // vendor sets this themselves in dashboard
     description,
     whatsapp: whatsappNumber,
     university,

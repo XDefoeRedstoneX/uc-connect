@@ -1,12 +1,16 @@
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
+import ReportButton from "@/components/ReportButton";
 import { useToast } from "@/components/ToastProvider";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { compressAndResize } from "@/lib/compress-image";
 import { ForumCategory, ForumThread, ForumReply, UserProfile } from "@/types/domain";
+
+const EDIT_WINDOW_MS = 15 * 60 * 1000;
+const isWithinEditWindow = (createdAt: string) => Date.now() - new Date(createdAt).getTime() < EDIT_WINDOW_MS;
 
 type ReplyWithAuthor = ForumReply & { profiles?: UserProfile | null };
 type ThreadWithAuthor = ForumThread & { profiles?: UserProfile | null };
@@ -30,15 +34,90 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("id-ID");
 }
 
-export default function ThreadPage({ category, thread, replies: initialReplies }: Props) {
+export default function ThreadPage({ category, thread: initialThread, replies: initialReplies }: Props) {
+  const [thread, setThread] = useState<ThreadWithAuthor | null>(initialThread);
   const [replies, setReplies] = useState<ReplyWithAuthor[]>(initialReplies);
   const [newReply, setNewReply] = useState("");
   const [replyImage, setReplyImage] = useState<File | null>(null);
   const [replyImagePreview, setReplyImagePreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Inline edit state. We only edit one thing at a time, so a single discriminated value works.
+  const [editing, setEditing] = useState<{ kind: "thread" } | { kind: "reply"; id: string } | null>(null);
+  const [editDraft, setEditDraft] = useState("");
+  const [saving, setSaving] = useState(false);
+
   const { showToast } = useToast();
   const imageRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+    void (async () => {
+      const { data } = await supabase.auth.getUser();
+      setCurrentUserId(data.user?.id ?? null);
+    })();
+  }, []);
+
+  async function saveThreadEdit() {
+    if (!thread) return;
+    setSaving(true);
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) { setSaving(false); return; }
+    const { error } = await supabase.from("forum_threads").update({ content: editDraft.trim() }).eq("id", thread.id);
+    if (error) {
+      showToast("Gagal menyimpan perubahan.", "error");
+    } else {
+      setThread({ ...thread, content: editDraft.trim(), updated_at: new Date().toISOString() });
+      setEditing(null);
+      showToast("Thread diperbarui.");
+    }
+    setSaving(false);
+  }
+
+  async function deleteThread() {
+    if (!thread) return;
+    if (!confirm("Hapus thread ini? Semua balasan akan ikut dihapus.")) return;
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+    const { error } = await supabase.from("forum_threads").delete().eq("id", thread.id);
+    if (error) {
+      showToast("Gagal menghapus thread.", "error");
+      return;
+    }
+    showToast("Thread dihapus.");
+    window.location.href = `/community/${category?.slug ?? ""}`;
+  }
+
+  async function saveReplyEdit(replyId: string) {
+    setSaving(true);
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) { setSaving(false); return; }
+    const { error } = await supabase.from("forum_replies").update({ content: editDraft.trim() }).eq("id", replyId);
+    if (error) {
+      showToast("Gagal menyimpan perubahan.", "error");
+    } else {
+      setReplies((prev) => prev.map((r) => (r.id === replyId ? { ...r, content: editDraft.trim() } : r)));
+      setEditing(null);
+      showToast("Balasan diperbarui.");
+    }
+    setSaving(false);
+  }
+
+  async function deleteReply(replyId: string) {
+    if (!confirm("Hapus balasan ini?")) return;
+    const supabase = getSupabaseBrowserClient();
+    if (!supabase) return;
+    const { error } = await supabase.from("forum_replies").delete().eq("id", replyId);
+    if (error) {
+      showToast("Gagal menghapus balasan.", "error");
+      return;
+    }
+    setReplies((prev) => prev.filter((r) => r.id !== replyId));
+    showToast("Balasan dihapus.");
+  }
 
   if (!category || !thread) {
     return (
@@ -177,11 +256,44 @@ export default function ThreadPage({ category, thread, replies: initialReplies }
               <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--muted)" }}>{timeAgo(thread.created_at)}</p>
             </div>
           </div>
-          <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.7, color: "var(--text)" }}>{thread.content}</div>
+          {editing?.kind === "thread" ? (
+            <div style={{ display: "grid", gap: "0.5rem" }}>
+              <textarea value={editDraft} onChange={(e) => setEditDraft(e.target.value)} rows={6} style={{ width: "100%" }} />
+              <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+                <button type="button" className="ghost" disabled={saving} onClick={() => setEditing(null)}>Batal</button>
+                <button type="button" disabled={saving || !editDraft.trim()} onClick={() => void saveThreadEdit()}>
+                  {saving ? "Menyimpan…" : "Simpan"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.7, color: "var(--text)" }}>{thread.content}</div>
+          )}
           {thread.image_url && (
             <img src={thread.image_url} alt="Lampiran"
               style={{ width: "100%", maxHeight: "400px", objectFit: "cover", borderRadius: "10px", marginTop: "1rem" }} />
           )}
+
+          {/* Owner actions + report */}
+          <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem", flexWrap: "wrap" }}>
+            {currentUserId === thread.author_id && !editing && (
+              <>
+                {isWithinEditWindow(thread.created_at) && (
+                  <button type="button" className="ghost" style={{ fontSize: "0.78rem", padding: "0.25rem 0.6rem" }}
+                    onClick={() => { setEditDraft(thread.content); setEditing({ kind: "thread" }); }}>
+                    ✏️ Edit
+                  </button>
+                )}
+                <button type="button" style={{ fontSize: "0.78rem", padding: "0.25rem 0.6rem", background: "var(--error)" }}
+                  onClick={() => void deleteThread()}>
+                  🗑 Hapus
+                </button>
+              </>
+            )}
+            {currentUserId && currentUserId !== thread.author_id && (
+              <ReportButton targetType="thread" targetId={thread.id} />
+            )}
+          </div>
         </div>
 
         {/* Reply Form */}
@@ -239,11 +351,43 @@ export default function ThreadPage({ category, thread, replies: initialReplies }
                   <span style={{ color: "var(--muted)", fontSize: "0.78rem", marginLeft: "0.5rem" }}>{timeAgo(r.created_at)}</span>
                 </div>
               </div>
-              <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, color: "var(--text)" }}>{r.content}</div>
+              {editing?.kind === "reply" && editing.id === r.id ? (
+                <div style={{ display: "grid", gap: "0.5rem" }}>
+                  <textarea value={editDraft} onChange={(e) => setEditDraft(e.target.value)} rows={3} style={{ width: "100%" }} />
+                  <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+                    <button type="button" className="ghost" disabled={saving} onClick={() => setEditing(null)}>Batal</button>
+                    <button type="button" disabled={saving || !editDraft.trim()} onClick={() => void saveReplyEdit(r.id)}>
+                      {saving ? "Menyimpan…" : "Simpan"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, color: "var(--text)" }}>{r.content}</div>
+              )}
               {r.image_url && (
                 <img src={r.image_url} alt="Lampiran"
                   style={{ width: "100%", maxHeight: "300px", objectFit: "cover", borderRadius: "8px", marginTop: "0.75rem" }} />
               )}
+
+              <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
+                {currentUserId === r.author_id && !(editing?.kind === "reply" && editing.id === r.id) && (
+                  <>
+                    {isWithinEditWindow(r.created_at) && (
+                      <button type="button" className="ghost" style={{ fontSize: "0.72rem", padding: "0.2rem 0.5rem" }}
+                        onClick={() => { setEditDraft(r.content); setEditing({ kind: "reply", id: r.id }); }}>
+                        ✏️ Edit
+                      </button>
+                    )}
+                    <button type="button" style={{ fontSize: "0.72rem", padding: "0.2rem 0.5rem", background: "var(--error)" }}
+                      onClick={() => void deleteReply(r.id)}>
+                      🗑 Hapus
+                    </button>
+                  </>
+                )}
+                {currentUserId && currentUserId !== r.author_id && (
+                  <ReportButton targetType="reply" targetId={r.id} />
+                )}
+              </div>
             </div>
           ))}
         </div>
