@@ -228,6 +228,26 @@ function renderNotif(n: Notification): { icon: string; message: string; href: st
         message: `Laporanmu (${labelTarget(String(p.target_type ?? ""))}) ${p.status === "resolved" ? "diselesaikan" : "ditolak"}.`,
         href: null,
       };
+    case "bid_won":
+      return {
+        icon: "🏆",
+        message: `Bid featured-mu menang (peringkat #${p.rank ?? "?"})! Vendor tampil 24 jam. Saldo dipotong Rp${Number(p.amount ?? 0).toLocaleString("id-ID")}.`,
+        href: p.vendor_id ? `/directory/vendor/${p.vendor_id}` : "/vendor/dashboard",
+      };
+    case "bid_lost":
+      return {
+        icon: "📉",
+        message: p.reason === "insufficient_balance"
+          ? "Bid featured-mu gagal: saldo tidak cukup saat settlement."
+          : "Bid featured-mu kalah di lelang kali ini.",
+        href: "/vendor/dashboard",
+      };
+    case "topup_credited":
+      return {
+        icon: "💰",
+        message: `Top-up berhasil. Saldo bertambah Rp${Number(p.amount ?? 0).toLocaleString("id-ID")}.`,
+        href: "/vendor/dashboard",
+      };
   }
 }
 

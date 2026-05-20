@@ -5,6 +5,7 @@ import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { compressAndResize } from "@/lib/compress-image";
+import { isValidIndonesianPhone } from "@/lib/phone";
 
 /** Compress to max 500KB for onboarding KTM uploads */
 const compressImage = (f: File) => compressAndResize(f, 1200, 1200, 500);
@@ -16,8 +17,18 @@ function formatFileSize(bytes: number): string {
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
 }
 
-const salesSystemOptions = ["ready-stock", "pre-order"] as const;
-const deliveryMethodOptions = ["cod-kampus", "digital-delivery"] as const;
+const salesSystemOptions = ["ready-stock", "pre-order", "lainnya"] as const;
+const deliveryMethodOptions = ["cod-kampus", "digital-delivery", "lainnya"] as const;
+const SALES_SYSTEM_LABELS: Record<(typeof salesSystemOptions)[number], string> = {
+  "ready-stock": "Ready Stock",
+  "pre-order": "Pre-Order",
+  lainnya: "Lainnya",
+};
+const DELIVERY_METHOD_LABELS: Record<(typeof deliveryMethodOptions)[number], string> = {
+  "cod-kampus": "COD Kampus",
+  "digital-delivery": "Digital Delivery",
+  lainnya: "Lainnya",
+};
 const allowedKtmMimeTypes = ["image/png", "image/jpeg"] as const;
 const maxKtmFileSizeBytes = 1 * 1024 * 1024;
 
@@ -42,9 +53,8 @@ const vendorOnboardingSchema = z.object({
   university: z.string().min(2, "Asal universitas wajib diisi").max(120, "Asal universitas terlalu panjang"),
   whatsappNumber: z
     .string()
-    .min(8, "Nomor WhatsApp tidak valid")
-    .max(20, "Nomor WhatsApp terlalu panjang")
-    .regex(/^[0-9+()\-\s]+$/, "Nomor WhatsApp tidak valid"),
+    .min(1, "Nomor WhatsApp wajib diisi — ini kontak utama pembeli")
+    .refine(isValidIndonesianPhone, "Nomor WhatsApp tidak valid (contoh: 0812xxxxxxx)"),
   ktmFile: z
     .custom<File>((value): value is File => typeof File !== "undefined" && value instanceof File, {
       message: "Upload KTM wajib diisi",
@@ -369,7 +379,7 @@ export default function VendorOnboardingWizard({ initialStep = 1, initialValues,
                           className="h-4 w-4 accent-(--brand-orange)"
                         />
                         <span className="text-sm font-medium text-gray-700">
-                          {option === "ready-stock" ? "Ready Stock" : "Pre-Order"}
+                          {SALES_SYSTEM_LABELS[option]}
                         </span>
                       </label>
                     ))}
@@ -405,7 +415,7 @@ export default function VendorOnboardingWizard({ initialStep = 1, initialValues,
                             )}
                           />
                           <span className="text-sm font-medium text-gray-700">
-                            {option === "cod-kampus" ? "COD Kampus" : "Digital Delivery"}
+                            {DELIVERY_METHOD_LABELS[option]}
                           </span>
                         </label>
                       );

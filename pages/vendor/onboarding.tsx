@@ -59,15 +59,15 @@ export default function VendorOnboardingPage() {
   }, [router]);
 
   async function uploadKtm(file: File): Promise<string | null> {
-    if (!userId) return null;
+    if (!userId || !token) return null;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
     const path = `ktm/${userId}/ktm.${file.type === "image/png" ? "png" : "jpg"}`;
 
+    // Use the user's session token — Supabase Storage RLS rejects the anon key.
     const res = await fetch(`${supabaseUrl}/storage/v1/object/vendor-documents/${path}`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${anonKey}`,
+        Authorization: `Bearer ${token}`,
         "Content-Type": file.type,
         "x-upsert": "true",
       },

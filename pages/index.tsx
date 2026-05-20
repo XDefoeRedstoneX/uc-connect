@@ -9,6 +9,7 @@ import { Vendor } from "@/types/domain";
 import Link from "next/link";
 
 type HomeProps = {
+  sponsoredVendors: Vendor[];
   featuredVendors: Vendor[];
 };
 
@@ -34,7 +35,7 @@ const HOW_IT_WORKS = [
 ];
 
 
-export default function Home({ featuredVendors }: HomeProps) {
+export default function Home({ sponsoredVendors, featuredVendors }: HomeProps) {
   const { t } = useLanguage();
 
   return (
@@ -81,6 +82,41 @@ export default function Home({ featuredVendors }: HomeProps) {
           ))}
         </div>
       </section>
+
+      {/* ── Sponsored (paid featured auction winners) ── */}
+      {sponsoredVendors.length > 0 && (
+        <section
+          className="card compact-top"
+          aria-label="Sponsored vendors"
+          style={{ background: "linear-gradient(135deg, rgba(232,97,0,0.06), rgba(28,169,201,0.06))", border: "1.5px solid var(--orange-light)" }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1.25rem", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "1.2rem" }}>⭐</span>
+            <h2 style={{ margin: 0 }}>Vendor Sponsor</h2>
+            <span className="badge" style={{ background: "var(--orange-soft)", color: "var(--orange-dark)", fontSize: "0.72rem" }}>
+              Bersponsor
+            </span>
+          </div>
+          <ul className="vendor-grid">
+            {sponsoredVendors.map((vendor) => (
+              <VendorCard
+                key={vendor.id}
+                title={vendor.name}
+                meta={`${vendor.category || "General"}${vendor.city ? ` • ${vendor.city}` : ""}`}
+                description={vendor.tagline || undefined}
+                href={`/directory/vendor/${vendor.slug || vendor.id}`}
+                imageSrc={vendor.hero_image_url || undefined}
+                imageAlt={`${vendor.name} cover`}
+                badges={[
+                  { text: "Sponsor", tone: "gold" as const },
+                  ...(vendor.is_verified ? [{ text: "Verified", tone: "success" as const }] : []),
+                ]}
+                ctaLabel="Lihat Detail"
+              />
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* ── Featured Vendors ── */}
       <section className="card compact-top" aria-label="Featured vendors">
@@ -131,18 +167,41 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async () => {
   const supabase = getSupabaseServerClient();
 
   if (!supabase) {
-    return { props: { featuredVendors: [] } };
+    return { props: { sponsoredVendors: [], featuredVendors: [] } };
   }
 
+  // Paid auction winners with an active 24h window, ordered by rank.
+  const { data: slots } = await supabase
+    .from("featured_slots")
+    .select("vendor_id,rank,ends_at")
+    .gt("ends_at", new Date().toISOString())
+    .order("rank", { ascending: true });
+
+  const sponsoredIds = (slots ?? []).map((s) => s.vendor_id);
+  let sponsoredVendors: Vendor[] = [];
+  if (sponsoredIds.length > 0) {
+    const { data: sv } = await supabase
+      .from("vendors")
+      .select("id,slug,name,tagline,category,city,is_verified,hero_image_url")
+      .in("id", sponsoredIds);
+    const byId = new Map((sv ?? []).map((v) => [v.id, v as Vendor]));
+    sponsoredVendors = sponsoredIds.map((id) => byId.get(id)).filter(Boolean) as Vendor[];
+  }
+
+  // Regular "Vendor Pilihan": recent verified vendors, excluding any already
+  // shown in the sponsored row.
   const { data } = await supabase
     .from("vendors")
     .select("id,slug,name,tagline,category,city,is_verified,hero_image_url")
     .eq("is_verified", true)
-    .limit(3);
+    .order("created_at", { ascending: false })
+    .limit(6);
+
+  const featuredVendors = ((data ?? []) as Vendor[])
+    .filter((v) => !sponsoredIds.includes(v.id))
+    .slice(0, 3);
 
   return {
-    props: {
-      featuredVendors: (data ?? []) as Vendor[],
-    },
+    props: { sponsoredVendors, featuredVendors },
   };
 };

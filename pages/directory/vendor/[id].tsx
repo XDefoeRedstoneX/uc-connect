@@ -47,6 +47,8 @@ export default function VendorDetailPage() {
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [hasReviewed, setHasReviewed] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [reviewImage, setReviewImage] = useState<File | null>(null);
+  const [reviewImagePreview, setReviewImagePreview] = useState<string | null>(null);
 
   function trackWhatsApp(vendorId: string) {
     void fetch("/api/vendor/whatsapp-click", {
@@ -151,6 +153,10 @@ export default function VendorDetailPage() {
               {vendor.city && <span className="badge pacific">📍 {vendor.city}</span>}
             </div>
             <h1 id="vendor-name-title" style={{ fontSize: "clamp(1.5rem, 3vw, 2.2rem)", fontWeight: 900, margin: "0 0 0.35rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              {vendor.logo_url && (
+                <img src={vendor.logo_url} alt={`${vendor.name} logo`}
+                  style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+              )}
               {vendor.name}
               {token && (
                 <button type="button" onClick={toggleFav} aria-label={isFav ? "Hapus dari favorit" : "Tambah ke favorit"}
@@ -162,6 +168,9 @@ export default function VendorDetailPage() {
             <p style={{ color: "var(--muted)", margin: 0 }}>
               {vendor.tagline ?? `${vendor.city ?? ""} • UC Connect Directory`}
             </p>
+            {vendor.address && (
+              <p style={{ color: "var(--muted)", margin: "0.25rem 0 0", fontSize: "0.85rem" }}>📍 {vendor.address}</p>
+            )}
           </div>
 
           <div className="row-wrap" style={{ gap: "0.5rem" }}>
@@ -350,25 +359,63 @@ export default function VendorDetailPage() {
             <textarea value={reviewContent} onChange={e => setReviewContent(e.target.value)}
               rows={3} placeholder="Ceritakan pengalamanmu... (opsional)"
               style={{ width: "100%", marginBottom: "0.5rem" }} />
+
+            {/* Optional photo */}
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.5rem", flexWrap: "wrap" }}>
+              <label className="btn ghost" style={{ fontSize: "0.8rem", cursor: "pointer" }}>
+                📷 Tambah Foto
+                <input type="file" accept="image/*" style={{ display: "none" }}
+                  onChange={async e => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const { compressAndResize } = await import("@/lib/compress-image");
+                    const compressed = await compressAndResize(file, 1000, 1000, 300);
+                    setReviewImage(compressed);
+                    setReviewImagePreview(URL.createObjectURL(compressed));
+                  }} />
+              </label>
+              {reviewImagePreview && (
+                <>
+                  <img src={reviewImagePreview} alt="Preview" style={{ height: 40, borderRadius: 6, objectFit: "cover" }} />
+                  <button type="button" onClick={() => { setReviewImage(null); setReviewImagePreview(null); }}
+                    style={{ background: "var(--error)", fontSize: "0.72rem", padding: "0.2rem 0.5rem" }}>✕</button>
+                </>
+              )}
+            </div>
+
             <button disabled={reviewSubmitting || reviewRating === 0}
               onClick={async () => {
                 setReviewSubmitting(true);
-                const res = await fetch(`/api/vendor/${vendor.id}/reviews`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                  body: JSON.stringify({ rating: reviewRating, content: reviewContent.trim() || null }),
-                });
-                const json = await res.json();
-                if (!res.ok) {
-                  showToast(json.error ?? "Gagal mengirim ulasan.", "error");
-                } else {
-                  showToast("Ulasan berhasil dikirim!");
-                  setHasReviewed(true);
-                  // Reload reviews
-                  const rr = await fetch(`/api/vendor/${vendor.id}/reviews`);
-                  if (rr.ok) { const rj = await rr.json(); setReviews(rj.reviews ?? []); }
+                try {
+                  let imageUrl: string | null = null;
+                  if (reviewImage && currentUserId) {
+                    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+                    const path = `reviews/${vendor.id}/${currentUserId}-${Date.now()}.jpg`;
+                    const up = await fetch(`${supabaseUrl}/storage/v1/object/vendor-assets/${path}`, {
+                      method: "POST",
+                      headers: { Authorization: `Bearer ${token}`, "Content-Type": reviewImage.type, "x-upsert": "true" },
+                      body: reviewImage,
+                    });
+                    if (up.ok) imageUrl = `${supabaseUrl}/storage/v1/object/public/vendor-assets/${path}`;
+                  }
+                  const res = await fetch(`/api/vendor/${vendor.id}/reviews`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                    body: JSON.stringify({ rating: reviewRating, content: reviewContent.trim() || null, image_url: imageUrl }),
+                  });
+                  const json = await res.json();
+                  if (!res.ok) {
+                    showToast(json.error ?? "Gagal mengirim ulasan.", "error");
+                  } else {
+                    showToast("Ulasan berhasil dikirim!");
+                    setHasReviewed(true);
+                    setReviewImage(null); setReviewImagePreview(null);
+                    const rr = await fetch(`/api/vendor/${vendor.id}/reviews`);
+                    if (rr.ok) { const rj = await rr.json(); setReviews(rj.reviews ?? []); }
+                  }
+                } finally {
+                  setReviewSubmitting(false);
                 }
-                setReviewSubmitting(false);
               }}>
               {reviewSubmitting ? "Mengirim..." : "Kirim Ulasan"}
             </button>
@@ -400,6 +447,10 @@ export default function VendorDetailPage() {
                   </div>
                 </div>
                 {r.content && <p style={{ margin: 0, fontSize: "0.88rem", lineHeight: 1.6, color: "var(--text)" }}>{r.content}</p>}
+                {r.image_url && (
+                  <img src={r.image_url} alt="Foto ulasan"
+                    style={{ marginTop: "0.5rem", maxHeight: 200, borderRadius: 8, objectFit: "cover", maxWidth: "100%" }} />
+                )}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.35rem" }}>
                   <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--muted)" }}>{new Date(r.created_at).toLocaleDateString("id-ID")}</p>
                   {currentUserId && currentUserId !== r.user_id && (

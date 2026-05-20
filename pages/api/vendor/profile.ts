@@ -16,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === "GET") {
     const { data: vendor, error } = await supabase
       .from("vendors")
-      .select("id,slug,name,tagline,category,city,description,whatsapp,website_url,hero_image_url,is_verified,whatsapp_clicks,university,sales_system,delivery_methods,created_at,updated_at")
+      .select("id,slug,name,tagline,category,city,address,description,whatsapp,website_url,hero_image_url,logo_url,is_verified,whatsapp_clicks,university,sales_system,delivery_methods,created_at,updated_at")
       .eq("owner_id", userId)
       .maybeSingle();
 
@@ -44,8 +44,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!existing) return res.status(404).json({ error: "Vendor not found" });
 
     const {
-      name, tagline, category, city, description,
-      whatsapp, website_url, hero_image_url,
+      name, tagline, category, city, address, description,
+      whatsapp, website_url, hero_image_url, logo_url,
       university, sales_system, delivery_methods,
     } = req.body as Record<string, string>;
 
@@ -56,6 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       tagline: tagline?.trim() || null,
       category: category?.trim() || null,
       city: city?.trim() || null,
+      address: address?.trim() || null,
       description: description?.trim() || null,
       whatsapp: whatsapp?.trim() || null,
       website_url: website_url?.trim() || null,
@@ -67,12 +68,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (hero_image_url !== undefined) {
       updates.hero_image_url = hero_image_url || null;
     }
+    if (logo_url !== undefined) {
+      updates.logo_url = logo_url || null;
+    }
 
     const { data: updated, error: updateError } = await supabase
       .from("vendors")
       .update(updates)
       .eq("id", existing.id)
-      .select("id,slug,name,tagline,category,city,description,whatsapp,website_url,hero_image_url,is_verified,whatsapp_clicks,university,sales_system,delivery_methods")
+      .select("id,slug,name,tagline,category,city,address,description,whatsapp,website_url,hero_image_url,logo_url,is_verified,whatsapp_clicks,university,sales_system,delivery_methods")
       .maybeSingle();
 
     if (updateError) {

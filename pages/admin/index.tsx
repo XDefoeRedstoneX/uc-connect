@@ -101,6 +101,8 @@ export default function AdminDashboard() {
           { icon: "👥", title: "Kelola Users", desc: "Lihat dan ubah role pengguna", href: "/admin/users" },
           { icon: "⭐", title: "Moderasi Ulasan", desc: "Hapus ulasan yang melanggar", href: "/admin/reviews" },
           { icon: "💬", title: "Moderasi Forum", desc: "Hapus thread atau balasan yang melanggar", href: "/admin/forum" },
+          { icon: "🚩", title: "Antrean Laporan", desc: "Tinjau laporan dari pengguna", href: "/admin/reports" },
+          { icon: "🏆", title: "Featured & Lelang", desc: "Pantau bid & jalankan settlement", href: "/admin/featured" },
         ].map(a => (
           <Link key={a.href} href={a.href} className="action-card" style={{ textDecoration: "none", textAlign: "center" }}>
             <p className="action-icon">{a.icon}</p>

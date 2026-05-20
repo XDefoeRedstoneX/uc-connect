@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export type AdminNavId = "dash" | "vendors" | "users" | "reviews" | "forum" | "reports";
+export type AdminNavId = "dash" | "vendors" | "users" | "reviews" | "forum" | "reports" | "featured";
 
 const ITEMS: { href: string; label: string; id: AdminNavId }[] = [
   { href: "/admin",          label: "📊 Dashboard",        id: "dash" },
@@ -9,6 +9,7 @@ const ITEMS: { href: string; label: string; id: AdminNavId }[] = [
   { href: "/admin/reviews",  label: "⭐ Ulasan",            id: "reviews" },
   { href: "/admin/forum",    label: "💬 Forum",            id: "forum" },
   { href: "/admin/reports",  label: "🚩 Laporan",          id: "reports" },
+  { href: "/admin/featured", label: "🏆 Featured",         id: "featured" },
 ];
 
 export default function AdminNav({ current }: { current: AdminNavId }) {

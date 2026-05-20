@@ -9,6 +9,7 @@ import SiteLayout from "@/components/SiteLayout";
 import { useLanguage } from "@/lib/language-context";
 import { toPublicAuthErrorMessage } from "@/lib/public-errors";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { normalizeIndonesianPhoneToLocal as normalizeIndonesianPhone } from "@/lib/phone";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -23,33 +24,13 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
 
   function normalizeIndonesianPhoneToLocal(phoneRaw: string): { phone: string | null; error: string | null } {
-    const trimmed = phoneRaw.trim();
-    if (!trimmed) return { phone: null, error: null };
-
-    let cleaned = trimmed.replace(/[\s\-()]/g, "");
-    cleaned = cleaned.replace(/[^0-9+]/g, "");
-    if (cleaned.startsWith("+")) {
-      if (!cleaned.startsWith("+62")) {
-        return { phone: null, error: t("pages.register.errors.phoneRequired") };
-      }
-      cleaned = `0${cleaned.slice(3)}`;
-    } else if (cleaned.startsWith("62")) {
-      cleaned = `0${cleaned.slice(2)}`;
-    } else if (cleaned.startsWith("8")) {
-      cleaned = `0${cleaned}`;
-    } else if (!cleaned.startsWith("0")) {
-      return { phone: null, error: t("pages.register.errors.phoneInvalidFormat") };
-    }
-
-    if (!/^\d+$/.test(cleaned)) {
-      return { phone: null, error: t("pages.register.errors.phoneOnlyDigits") };
-    }
-
-    if (cleaned.length < 10 || cleaned.length > 13) {
-      return { phone: null, error: t("pages.register.errors.phoneInvalidLength") };
-    }
-
-    return { phone: cleaned, error: null };
+    const { phone, errorCode } = normalizeIndonesianPhone(phoneRaw);
+    const messageFor: Record<NonNullable<typeof errorCode>, string> = {
+      format: t("pages.register.errors.phoneInvalidFormat"),
+      digits: t("pages.register.errors.phoneOnlyDigits"),
+      length: t("pages.register.errors.phoneInvalidLength"),
+    };
+    return { phone, error: errorCode ? messageFor[errorCode] : null };
   }
 
   const phonePreview = normalizeIndonesianPhoneToLocal(phone);

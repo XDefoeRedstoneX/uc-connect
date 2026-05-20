@@ -5,11 +5,13 @@ export type Vendor = {
   tagline?: string | null;
   category: string | null;
   city: string | null;
+  address?: string | null;
   is_verified: boolean;
   description: string | null;
   whatsapp: string | null;
   website_url?: string | null;
   hero_image_url?: string | null;
+  logo_url?: string | null;
   university?: string | null;
   sales_system?: string | null;
   delivery_methods?: string | null;
@@ -105,6 +107,7 @@ export type VendorReview = {
   user_id: string;
   rating: number;
   content: string | null;
+  image_url?: string | null;
   vendor_reply: string | null;
   vendor_reply_at: string | null;
   created_at: string;
@@ -131,7 +134,10 @@ export type NotificationType =
   | "vendor_approved"
   | "content_removed"
   | "report_received"
-  | "report_resolved";
+  | "report_resolved"
+  | "bid_won"
+  | "bid_lost"
+  | "topup_credited";
 
 export type Notification = {
   id: string;
@@ -139,5 +145,54 @@ export type Notification = {
   type: NotificationType;
   payload: Record<string, unknown>;
   read_at: string | null;
+  created_at: string;
+};
+
+export type Wallet = {
+  user_id: string;
+  balance_idr: number;
+  updated_at: string;
+};
+
+export type WalletTransaction = {
+  id: string;
+  user_id: string;
+  type: "topup" | "bid_charge" | "refund" | "adjustment";
+  amount_idr: number;
+  balance_after: number;
+  reference: string | null;
+  created_at: string;
+};
+
+export type Topup = {
+  id: string;
+  user_id: string;
+  order_id: string;
+  amount_idr: number;
+  status: "pending" | "settled" | "failed" | "expired";
+  snap_token: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type FeaturedBid = {
+  id: string;
+  vendor_id: string;
+  user_id: string;
+  round_date: string;
+  amount_idr: number;
+  status: "active" | "won" | "lost" | "withdrawn";
+  created_at: string;
+  updated_at: string;
+};
+
+export type FeaturedSlot = {
+  id: string;
+  vendor_id: string;
+  round_date: string;
+  rank: number;
+  amount_charged_idr: number;
+  starts_at: string;
+  ends_at: string;
   created_at: string;
 };

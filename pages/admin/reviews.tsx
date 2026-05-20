@@ -13,6 +13,7 @@ type AdminReview = {
   user_id: string;
   rating: number;
   content: string | null;
+  image_url: string | null;
   vendor_reply: string | null;
   vendor_reply_at: string | null;
   created_at: string;
@@ -106,6 +107,9 @@ export default function AdminReviewsPage() {
                   </div>
                   {r.content && (
                     <p style={{ color: "var(--text)", fontSize: "0.88rem", margin: "0 0 0.3rem", lineHeight: 1.5 }}>{r.content}</p>
+                  )}
+                  {r.image_url && (
+                    <img src={r.image_url} alt="Foto ulasan" style={{ maxHeight: 120, borderRadius: 6, objectFit: "cover", margin: "0 0 0.3rem" }} />
                   )}
                   {r.vendor_reply && (
                     <p style={{ color: "var(--pacific)", fontSize: "0.82rem", margin: "0 0 0.3rem", fontStyle: "italic" }}>

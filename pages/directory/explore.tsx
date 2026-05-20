@@ -22,18 +22,23 @@ const CATEGORIES = [
 
 type Props = {
   initialVendors: Vendor[];
+  initialFeatured: Vendor[];
   initialError: string | null;
 };
 
-export default function ExplorePage({ initialVendors, initialError }: Props) {
+export default function ExplorePage({ initialVendors, initialFeatured, initialError }: Props) {
   const { t } = useLanguage();
   const [q, setQ] = useState("");
   const [activeCategory, setActiveCategory] = useState("");
   const [vendors, setVendors] = useState<Vendor[]>(initialVendors);
+  const [featured, setFeatured] = useState<Vendor[]>(initialFeatured);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(initialError);
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
   const [token, setToken] = useState<string | null>(null);
+
+  // Sponsored row only makes sense on the unfiltered browse view.
+  const showFeatured = activeCategory === "" && q.trim() === "" && featured.length > 0;
 
   // Load favorites for logged-in user
   useEffect(() => {
@@ -87,6 +92,7 @@ export default function ExplorePage({ initialVendors, initialError }: Props) {
     }
 
     setVendors(data.vendors ?? []);
+    setFeatured(data.featured ?? []);
     setLoading(false);
   }
 
@@ -149,6 +155,38 @@ export default function ExplorePage({ initialVendors, initialError }: Props) {
         </div>
       </section>
 
+      {/* ── Sponsored row (paid featured) ── */}
+      {showFeatured && (
+        <section className="card compact-top" aria-label="Sponsored vendors"
+          style={{ background: "linear-gradient(135deg, rgba(232,97,0,0.06), rgba(28,169,201,0.06))", border: "1.5px solid var(--orange-light)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "1.1rem" }}>⭐</span>
+            <h2 style={{ margin: 0, fontSize: "1.1rem" }}>Vendor Sponsor</h2>
+            <span className="badge gold" style={{ fontSize: "0.72rem" }}>Bersponsor</span>
+          </div>
+          <ul className="vendor-grid vendor-grid--explore">
+            {featured.map((vendor) => (
+              <VendorCard
+                key={`sp-${vendor.id}`}
+                title={vendor.name}
+                meta={vendor.tagline ?? `${vendor.category ?? "Uncategorized"} · ${vendor.city ?? "Unknown city"}`}
+                href={`/directory/vendor/${vendor.id}`}
+                imageSrc={vendor.hero_image_url ?? "/images/vendor-placeholder.svg"}
+                imageAlt={`Placeholder image for ${vendor.name}`}
+                description={vendor.description ?? "No description yet."}
+                badges={[
+                  { tone: "gold" as const, text: "Sponsor" },
+                  ...(vendor.is_verified ? [{ tone: "success" as const, text: t("pages.explore.verifiedBadge") }] : []),
+                ]}
+                ctaLabel={t("pages.explore.viewDetail")}
+                isFavorited={favIds.has(vendor.id)}
+                onToggleFavorite={token ? () => toggleFav(vendor.id) : undefined}
+              />
+            ))}
+          </ul>
+        </section>
+      )}
+
       {/* ── Results ── */}
       <section className="card compact-top" aria-label="Vendor results">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
@@ -203,6 +241,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async () => {
     return {
       props: {
         initialVendors: [],
+        initialFeatured: [],
         initialError: "Layanan vendor sementara tidak tersedia.",
       },
     };
@@ -214,9 +253,28 @@ export const getServerSideProps: GetServerSideProps<Props> = async () => {
     .order("created_at", { ascending: false })
     .limit(50);
 
+  // Active paid featured winners, ordered by rank.
+  const { data: slots } = await supabase
+    .from("featured_slots")
+    .select("vendor_id,rank,ends_at")
+    .gt("ends_at", new Date().toISOString())
+    .order("rank", { ascending: true });
+
+  const featuredIds = (slots ?? []).map((s) => s.vendor_id);
+  let initialFeatured: Vendor[] = [];
+  if (featuredIds.length > 0) {
+    const { data: fv } = await supabase
+      .from("vendors")
+      .select("id,name,tagline,category,city,is_verified,description,whatsapp,hero_image_url,created_at")
+      .in("id", featuredIds);
+    const byId = new Map((fv ?? []).map((v) => [v.id, v as Vendor]));
+    initialFeatured = featuredIds.map((id) => byId.get(id)).filter(Boolean) as Vendor[];
+  }
+
   return {
     props: {
       initialVendors: (data ?? []) as Vendor[],
+      initialFeatured,
       initialError: error ? "Tidak dapat memuat daftar vendor saat ini." : null,
     },
   };

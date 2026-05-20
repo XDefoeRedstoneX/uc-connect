@@ -8,7 +8,7 @@ import {
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 
 const REVIEW_COLUMNS =
-  "id,vendor_id,user_id,rating,content,vendor_reply,vendor_reply_at,created_at,profiles:user_id(full_name,avatar_url)";
+  "id,vendor_id,user_id,rating,content,image_url,vendor_reply,vendor_reply_at,created_at,profiles:user_id(full_name,avatar_url)";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const vendorId = req.query.id as string;
@@ -41,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const { supabase, userId } = authContext;
-    const { rating, content } = req.body as { rating?: number; content?: string };
+    const { rating, content, image_url } = req.body as { rating?: number; content?: string; image_url?: string };
 
     if (!rating || rating < 1 || rating > 5) {
       return res.status(400).json({ error: "Rating harus antara 1-5" });
@@ -66,8 +66,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         user_id: userId,
         rating: Math.round(rating),
         content: content?.trim() || null,
+        image_url: image_url?.trim() || null,
       })
-      .select("id,vendor_id,user_id,rating,content,vendor_reply,vendor_reply_at,created_at")
+      .select("id,vendor_id,user_id,rating,content,image_url,vendor_reply,vendor_reply_at,created_at")
       .single();
 
     if (insertError) {

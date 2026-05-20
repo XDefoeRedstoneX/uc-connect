@@ -123,6 +123,48 @@ async function attachVendorOwner(vendorUserId) {
   console.log(`  linked vendor "${orphan.name}" → vendor@ucconnect.test`);
 }
 
+async function seedForum(customerId, vendorId) {
+  // Categories come from seeder.sql; pick the first one to attach threads to.
+  const { data: category } = await supabase
+    .from("forum_categories")
+    .select("id")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (!category) {
+    console.log("  no forum category found — run seeder.sql first, skipping forum seed");
+    return;
+  }
+
+  // Idempotent: skip if any thread already exists.
+  const { count } = await supabase
+    .from("forum_threads")
+    .select("id", { count: "exact", head: true });
+  if ((count ?? 0) > 0) {
+    console.log("  forum already has threads — skipping forum seed");
+    return;
+  }
+
+  const { data: thread, error: threadError } = await supabase
+    .from("forum_threads")
+    .insert({
+      category_id: category.id,
+      author_id: customerId,
+      title: "Rekomendasi vendor makanan dekat kampus?",
+      content: "Halo semua! Lagi cari vendor makanan mahasiswa yang enak dan ramah kantong. Ada rekomendasi?",
+    })
+    .select("id")
+    .single();
+  if (threadError) throw threadError;
+
+  await supabase.from("forum_replies").insert([
+    { thread_id: thread.id, author_id: vendorId, content: "Mampir ke toko kami ya, ada paket hemat untuk anak kos!" },
+    { thread_id: thread.id, author_id: customerId, content: "Makasih, langsung cek!" },
+  ]);
+
+  console.log("  seeded 1 forum thread + 2 replies");
+}
+
 (async () => {
   console.log(`Seeding users against ${url}\n`);
   const created = {};
@@ -132,6 +174,10 @@ async function attachVendorOwner(vendorUserId) {
 
   if (created.vendor) {
     await attachVendorOwner(created.vendor.id);
+  }
+
+  if (created.customer && created.vendor) {
+    await seedForum(created.customer.id, created.vendor.id);
   }
 
   console.log("\n✓ Seed complete. Default password for all three accounts: " + PASSWORD);

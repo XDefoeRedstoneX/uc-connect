@@ -44,4 +44,11 @@ if (!envValues.SUPABASE_SERVICE_ROLE_KEY) {
   console.warn("SUPABASE_SERVICE_ROLE_KEY is not set. API routes will use public key fallback.");
 }
 
+if (!envValues.MIDTRANS_SERVER_KEY || !envValues.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY) {
+  console.warn(
+    "Midtrans keys missing (MIDTRANS_SERVER_KEY / NEXT_PUBLIC_MIDTRANS_CLIENT_KEY). " +
+    "Wallet top-up + featured bidding will be disabled until they are set.",
+  );
+}
+
 console.log("Supabase env check passed.");

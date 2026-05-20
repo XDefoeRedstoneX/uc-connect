@@ -10,12 +10,14 @@ import TabEditProfile from "@/components/vendor/TabEditProfile";
 import TabItems from "@/components/vendor/TabItems";
 import TabHours from "@/components/vendor/TabHours";
 import TabReviews from "@/components/vendor/TabReviews";
+import TabFeatured from "@/components/vendor/TabFeatured";
 
 export type VendorProfile = {
   id: string; slug: string; name: string; tagline: string | null;
-  category: string | null; city: string | null; description: string | null;
-  whatsapp: string | null; website_url: string | null; hero_image_url: string | null;
+  category: string | null; city: string | null; address: string | null; description: string | null;
+  whatsapp: string | null; website_url: string | null; hero_image_url: string | null; logo_url: string | null;
   is_verified: boolean; whatsapp_clicks: number;
+  university?: string | null; sales_system?: string | null; delivery_methods?: string | null;
 };
 export type VendorHour = {
   id?: string; day_of_week: number; opens_at: string | null;
@@ -33,6 +35,7 @@ const TABS = [
   { id: "items", label: "📦 Produk & Layanan" },
   { id: "hours", label: "🕐 Jam Operasional" },
   { id: "reviews", label: "⭐ Ulasan" },
+  { id: "featured", label: "🏆 Featured & Dompet" },
 ];
 
 const DEFAULT_HOURS: VendorHour[] = Array.from({ length: 7 }, (_, i) => ({
@@ -121,6 +124,7 @@ export default function VendorDashboardPage() {
         {activeTab === "items" && token && <TabItems items={items} vendor={vendor} token={token} onItemsChange={setItems} />}
         {activeTab === "hours" && token && <TabHours hours={hours} token={token} onSaved={setHours} />}
         {activeTab === "reviews" && token && <TabReviews vendorId={vendor.id} token={token} />}
+        {activeTab === "featured" && token && <TabFeatured vendorId={vendor.id} token={token} />}
       </div>
     </SiteLayout>
   );

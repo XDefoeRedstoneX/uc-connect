@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let query = supabase
       .from("vendor_reviews")
       .select(
-        "id,vendor_id,user_id,rating,content,vendor_reply,vendor_reply_at,created_at," +
+        "id,vendor_id,user_id,rating,content,image_url,vendor_reply,vendor_reply_at,created_at," +
         "vendors:vendor_id(id,name,slug)," +
         "profiles:user_id(full_name,username,avatar_url)"
       )
