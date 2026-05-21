@@ -107,10 +107,8 @@ export default function Home({ sponsoredVendors, featuredVendors }: HomeProps) {
                 href={`/directory/vendor/${vendor.slug || vendor.id}`}
                 imageSrc={vendor.hero_image_url || undefined}
                 imageAlt={`${vendor.name} cover`}
-                badges={[
-                  { text: "Sponsor", tone: "gold" as const },
-                  ...(vendor.is_verified ? [{ text: "Verified", tone: "success" as const }] : []),
-                ]}
+                highlight
+                badges={vendor.is_verified ? [{ text: "Verified", tone: "success" as const }] : []}
                 ctaLabel="Lihat Detail"
               />
             ))}
@@ -183,7 +181,8 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async () => {
     const { data: sv } = await supabase
       .from("vendors")
       .select("id,slug,name,tagline,category,city,is_verified,hero_image_url")
-      .in("id", sponsoredIds);
+      .in("id", sponsoredIds)
+      .eq("is_verified", true);
     const byId = new Map((sv ?? []).map((v) => [v.id, v as Vendor]));
     sponsoredVendors = sponsoredIds.map((id) => byId.get(id)).filter(Boolean) as Vendor[];
   }

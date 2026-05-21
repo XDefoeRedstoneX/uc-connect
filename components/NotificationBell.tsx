@@ -8,22 +8,24 @@ const POLL_INTERVAL_MS = 30_000;
 
 export default function NotificationBell() {
   const [open, setOpen] = useState(false);
-  const [token, setToken] = useState<string | null>(null);
+  const [signedIn, setSignedIn] = useState(false);
   const [notifs, setNotifs] = useState<Notification[]>([]);
   const [unread, setUnread] = useState(0);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
-  // Resolve token once.
-  useEffect(() => {
+  // Always read a fresh access token from the live session — it auto-refreshes,
+  // so capturing it once would go stale and 401 silently.
+  const currentToken = useCallback(async (): Promise<string | null> => {
     const supabase = getSupabaseBrowserClient();
-    if (!supabase) return;
-    void (async () => {
-      const { data } = await supabase.auth.getSession();
-      setToken(data.session?.access_token ?? null);
-    })();
+    if (!supabase) return null;
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token ?? null;
   }, []);
 
-  const fetchNotifications = useCallback(async (tok: string) => {
+  const fetchNotifications = useCallback(async () => {
+    const tok = await currentToken();
+    setSignedIn(Boolean(tok));
+    if (!tok) return;
     try {
       const res = await fetch("/api/notifications?limit=15", { headers: { Authorization: `Bearer ${tok}` } });
       if (!res.ok) return;
@@ -33,14 +35,13 @@ export default function NotificationBell() {
     } catch {
       // network blip — ignore, next tick will retry
     }
-  }, []);
+  }, [currentToken]);
 
   useEffect(() => {
-    if (!token) return;
-    void fetchNotifications(token);
-    const id = setInterval(() => void fetchNotifications(token), POLL_INTERVAL_MS);
+    void fetchNotifications();
+    const id = setInterval(() => void fetchNotifications(), POLL_INTERVAL_MS);
     return () => clearInterval(id);
-  }, [token, fetchNotifications]);
+  }, [fetchNotifications]);
 
   // Close dropdown on outside-click.
   useEffect(() => {
@@ -53,7 +54,9 @@ export default function NotificationBell() {
   }, [open]);
 
   async function markAll() {
-    if (!token || unread === 0) return;
+    if (unread === 0) return;
+    const token = await currentToken();
+    if (!token) return;
     await fetch("/api/notifications", {
       method: "PATCH",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -64,6 +67,7 @@ export default function NotificationBell() {
   }
 
   async function markOne(id: string) {
+    const token = await currentToken();
     if (!token) return;
     await fetch("/api/notifications", {
       method: "PATCH",
@@ -72,7 +76,7 @@ export default function NotificationBell() {
     });
   }
 
-  if (!token) return null;
+  if (!signedIn) return null;
 
   return (
     <div ref={dropdownRef} style={{ position: "relative" }}>

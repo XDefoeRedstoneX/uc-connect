@@ -5,6 +5,7 @@ import {
   sendMethodNotAllowed,
   sendServiceUnavailable,
 } from "@/lib/api-response";
+import { rateLimited } from "@/lib/rate-limit";
 
 const MIN_BID = 1_000;
 
@@ -44,6 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === "POST") {
+    if (rateLimited(res, `bid:${userId}`, { limit: 20, windowMs: 60_000 })) return;
     if (!vendor) return res.status(404).json({ error: "Kamu belum punya vendor" });
     if (!vendor.is_verified) return res.status(403).json({ error: "Vendor harus terverifikasi dulu untuk ikut lelang featured" });
 
@@ -84,9 +86,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json({ bid: updated });
     }
 
+    // Target the next unsettled round so a manual settlement can't orphan this bid.
+    const { data: roundData } = await supabase.rpc("next_bid_round");
+    const round_date = (roundData as string | null) ?? undefined;
+
     const { data: created, error } = await supabase
       .from("featured_bids")
-      .insert({ vendor_id: vendor.id, user_id: userId, amount_idr: amount })
+      .insert({ vendor_id: vendor.id, user_id: userId, amount_idr: amount, ...(round_date ? { round_date } : {}) })
       .select("id,vendor_id,round_date,amount_idr,status,created_at,updated_at")
       .single();
     if (error) {

@@ -12,6 +12,12 @@ import { ForumCategory, ForumThread, ForumReply, UserProfile } from "@/types/dom
 const EDIT_WINDOW_MS = 15 * 60 * 1000;
 const isWithinEditWindow = (createdAt: string) => Date.now() - new Date(createdAt).getTime() < EDIT_WINDOW_MS;
 
+// Links to the author's public profile when they have a username.
+function AuthorLink({ username, children, style }: { username?: string | null; children: React.ReactNode; style?: React.CSSProperties }) {
+  if (!username) return <span style={style}>{children}</span>;
+  return <Link href={`/u/${username}`} style={{ textDecoration: "none", color: "inherit", ...style }}>{children}</Link>;
+}
+
 type ReplyWithAuthor = ForumReply & { profiles?: UserProfile | null };
 type ThreadWithAuthor = ForumThread & { profiles?: UserProfile | null };
 
@@ -140,7 +146,7 @@ export default function ThreadPage({ category, thread: initialThread, replies: i
     const compressed = await compressAndResize(file, 1200, 900, 400);
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
     const ext = compressed.type === "image/png" ? "png" : "jpg";
-    const path = `forum/${userId}/${Date.now()}.${ext}`;
+    const path = `${userId}/forum/${Date.now()}.${ext}`;
     // Use user's session token so Supabase Storage recognises the request as authenticated
     const supabase = getSupabaseBrowserClient();
     const session = supabase ? (await supabase.auth.getSession()).data.session : null;
@@ -240,19 +246,23 @@ export default function ThreadPage({ category, thread: initialThread, replies: i
         }}>
           <h1 style={{ margin: "0 0 0.75rem", fontSize: "1.35rem" }}>{thread.title}</h1>
           <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "1rem" }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: "50%",
-              background: "var(--gradient-main)", display: "flex", alignItems: "center", justifyContent: "center",
-              color: "#fff", fontWeight: 700, fontSize: "0.85rem", flexShrink: 0,
-              overflow: "hidden",
-            }}>
-              {thread.profiles?.avatar_url
-                ? <img src={thread.profiles.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                : (thread.profiles?.full_name?.[0] ?? "?")
-              }
-            </div>
+            <AuthorLink username={thread.profiles?.username} style={{ display: "flex" }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: "50%",
+                background: "var(--gradient-main)", display: "flex", alignItems: "center", justifyContent: "center",
+                color: "#fff", fontWeight: 700, fontSize: "0.85rem", flexShrink: 0,
+                overflow: "hidden",
+              }}>
+                {thread.profiles?.avatar_url
+                  ? <img src={thread.profiles.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  : (thread.profiles?.full_name?.[0] ?? "?")
+                }
+              </div>
+            </AuthorLink>
             <div>
-              <p style={{ margin: 0, fontWeight: 700, fontSize: "0.9rem" }}>{thread.profiles?.full_name ?? "Pengguna Anonim"}</p>
+              <AuthorLink username={thread.profiles?.username}>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: "0.9rem" }}>{thread.profiles?.full_name ?? "Pengguna Anonim"}</p>
+              </AuthorLink>
               <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--muted)" }}>{timeAgo(thread.created_at)}</p>
             </div>
           </div>
@@ -335,19 +345,23 @@ export default function ThreadPage({ category, thread: initialThread, replies: i
               background: "var(--bg)", border: "1px solid var(--border)",
             }}>
               <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem" }}>
-                <div style={{
-                  width: 30, height: 30, borderRadius: "50%",
-                  background: "var(--gradient-subtle)", display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "var(--muted)", fontWeight: 700, fontSize: "0.75rem", flexShrink: 0,
-                  overflow: "hidden",
-                }}>
-                  {r.profiles?.avatar_url
-                    ? <img src={r.profiles.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    : (r.profiles?.full_name?.[0] ?? "?")
-                  }
-                </div>
+                <AuthorLink username={r.profiles?.username} style={{ display: "flex" }}>
+                  <div style={{
+                    width: 30, height: 30, borderRadius: "50%",
+                    background: "var(--gradient-subtle)", display: "flex", alignItems: "center", justifyContent: "center",
+                    color: "var(--muted)", fontWeight: 700, fontSize: "0.75rem", flexShrink: 0,
+                    overflow: "hidden",
+                  }}>
+                    {r.profiles?.avatar_url
+                      ? <img src={r.profiles.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                      : (r.profiles?.full_name?.[0] ?? "?")
+                    }
+                  </div>
+                </AuthorLink>
                 <div>
-                  <span style={{ fontWeight: 700, fontSize: "0.85rem" }}>{r.profiles?.full_name ?? "Pengguna Anonim"}</span>
+                  <AuthorLink username={r.profiles?.username}>
+                    <span style={{ fontWeight: 700, fontSize: "0.85rem" }}>{r.profiles?.full_name ?? "Pengguna Anonim"}</span>
+                  </AuthorLink>
                   <span style={{ color: "var(--muted)", fontSize: "0.78rem", marginLeft: "0.5rem" }}>{timeAgo(r.created_at)}</span>
                 </div>
               </div>
@@ -439,7 +453,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
 
   const { data: threadAuthor } = await supabase
     .from("profiles")
-    .select("id,full_name,avatar_url")
+    .select("id,full_name,avatar_url,username")
     .eq("id", threadData.author_id)
     .single();
 
@@ -453,7 +467,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
   const { data: replyProfiles } = replyAuthorIds.length > 0
     ? await supabase
         .from("profiles")
-        .select("id,full_name,avatar_url")
+        .select("id,full_name,avatar_url,username")
         .in("id", replyAuthorIds)
     : { data: [] as Array<Pick<UserProfile, "id" | "full_name" | "avatar_url">> };
 

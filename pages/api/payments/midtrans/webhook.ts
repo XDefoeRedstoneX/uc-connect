@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { sendMethodNotAllowed } from "@/lib/api-response";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 import { verifyMidtransSignature, mapMidtransStatus } from "@/lib/midtrans";
+import { log } from "@/lib/logger";
 
 // Midtrans posts JSON server-to-server. No bearer token — trust is established
 // purely by the SHA-512 signature, so verification is mandatory.
@@ -11,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const body = (req.body ?? {}) as Record<string, string>;
 
   if (!verifyMidtransSignature(body)) {
-    console.warn("[midtrans webhook] rejected: bad signature", body.order_id);
+    log.warn("midtrans_webhook_bad_signature", { order_id: body.order_id });
     return res.status(403).json({ error: "Invalid signature" });
   }
 
@@ -30,9 +31,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       p_callback: body,
     });
     if (error) {
-      console.error("[midtrans webhook] settle_topup", error);
+      log.error("midtrans_settle_topup_failed", { order_id: orderId, message: error.message });
       return res.status(500).json({ error: "settle failed" });
     }
+    log.info("midtrans_topup_settled", { order_id: orderId, credited: credited === true });
     return res.status(200).json({ received: true, credited: credited === true });
   }
 

@@ -51,7 +51,7 @@ export default function NewDiscussion() {
   async function uploadImage(userId: string, file: File): Promise<string | null> {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
     const ext = file.type === "image/png" ? "png" : "jpg";
-    const path = `forum/${userId}/${Date.now()}.${ext}`;
+    const path = `${userId}/forum/${Date.now()}.${ext}`;
     // Use user's session token so Supabase Storage recognises the request as authenticated
     const session = supabase ? (await supabase.auth.getSession()).data.session : null;
     const token = session?.access_token ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";

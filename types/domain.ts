@@ -67,6 +67,8 @@ export type UserProfile = {
   full_name: string | null;
   phone: string | null;
   avatar_url: string | null;
+  major: string | null;
+  graduation_year: number | null;
   role: "customer" | "vendor" | "admin";
   updated_at: string;
 };

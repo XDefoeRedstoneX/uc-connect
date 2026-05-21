@@ -1348,3 +1348,49 @@ button:disabled,
   0% { opacity: 0; transform: translateY(-1rem); }
   100% { opacity: 1; transform: translateY(0); }
 }
+
+/* ── Phase 16: mobile responsive helpers ── */
+
+/* Form + sticky preview side-by-side that stacks on small screens. */
+.split-main-aside {
+  display: grid;
+  grid-template-columns: 1fr min(340px, 40%);
+  gap: 1.25rem;
+  align-items: start;
+}
+@media (max-width: 768px) {
+  .split-main-aside { grid-template-columns: 1fr; }
+  /* drop the sticky preview's stickiness when stacked */
+  .split-main-aside > .dash-card[style*="sticky"] { position: static !important; }
+}
+
+/* Vendor operating-hours row: 5-up on desktop, stacked on phones. */
+.hours-row {
+  display: grid;
+  grid-template-columns: 80px auto 1fr 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+}
+@media (max-width: 560px) {
+  .hours-row { grid-template-columns: 1fr 1fr; }
+  .hours-row > :first-child { grid-column: 1 / -1; }   /* day name full width */
+  .hours-row > :last-child { grid-column: 1 / -1; }    /* apply-to-all full width */
+}
+
+/* Dashboard / admin tab bars: wrap on desktop, swipe horizontally on phones. */
+.scroll-tabs {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+@media (max-width: 560px) {
+  .scroll-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 0.25rem;
+  }
+  .scroll-tabs::-webkit-scrollbar { display: none; }
+  .scroll-tabs > * { flex: 0 0 auto; }
+}

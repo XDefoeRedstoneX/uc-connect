@@ -61,7 +61,7 @@ export default function VendorOnboardingPage() {
   async function uploadKtm(file: File): Promise<string | null> {
     if (!userId || !token) return null;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-    const path = `ktm/${userId}/ktm.${file.type === "image/png" ? "png" : "jpg"}`;
+    const path = `${userId}/ktm.${file.type === "image/png" ? "png" : "jpg"}`;
 
     // Use the user's session token — Supabase Storage RLS rejects the anon key.
     const res = await fetch(`${supabaseUrl}/storage/v1/object/vendor-documents/${path}`, {
@@ -79,7 +79,9 @@ export default function VendorOnboardingPage() {
       return null;
     }
 
-    return `${supabaseUrl}/storage/v1/object/public/vendor-documents/${path}`;
+    // vendor-documents is a PRIVATE bucket — store the object path, not a public
+    // URL. The admin UI resolves a short-lived signed URL on demand.
+    return path;
   }
 
   async function handleComplete(values: Record<string, unknown>) {

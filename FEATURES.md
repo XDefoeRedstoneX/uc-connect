@@ -1,213 +1,65 @@
 # UC Connect — Features
 
-> **Last Updated:** May 8, 2026
-> **Stack:** Next.js 16 (Pages Router) · Supabase · TypeScript · Tailwind CSS + Custom Design System
+> **Stack:** Next.js 16 (Pages Router) · Supabase (Postgres + Auth + Storage) · TypeScript · Tailwind + custom design system · Midtrans (payments)
+> **Status:** Phases 7–13 delivered. See `tasklist.md` for the live bug/issue tracker and `IMPLEMENTATION_GUIDE.md` for architecture.
+
+UC Connect is a community-based directory that connects student-owned businesses ("vendors") to the wider community, with a forum, reviews, and a paid "featured placement" auction. There are three roles: **customer**, **vendor**, **admin**.
 
 ---
 
-## ✅ Authentication System
+## Authentication
+- Email + password sign-in/up via Supabase Auth (Bearer-token flow).
+- Indonesian phone normalization (shared `lib/phone.ts`, used by register + vendor onboarding).
+- Set-username step, forgot-password, email confirmation.
+- Account self-delete (profile "danger zone") and admin-initiated account removal.
 
-### Login (`/auth/login`)
-- Email + password sign-in via Supabase Auth
-- Session token management (Bearer)
-- Profile auto-fetch after login → redirect to set-username if missing
-- Redirect to `?next=` path or homepage on success
-- Error handling with user-friendly Indonesian messages
+## Public / Customer
+- **Home** — hero, "how it works", **Vendor Sponsor** row (paid featured winners), "Vendor Pilihan" (recent verified).
+- **Explore** (`/directory/explore`) — search + category chips; sponsored vendors pinned on top of the unfiltered view; favorite toggle.
+- **Vendor detail** (`/directory/vendor/[id]`) — banner + logo, verified/category/location badges, address, university/sales-system/delivery info, WhatsApp CTA with click tracking, menu/products, operating hours, **reviews with photos + vendor replies**, report button, `LocalBusiness` JSON-LD.
+- **Forum** — categories, threads, replies, image attachments; **author edit (15-min window) + delete own**; report buttons.
+- **Favorites**, **Ulasan Saya** (my reviews), **Diskusi Saya** (my threads/replies).
+- **Notifications** — in-app bell (30s polling) + `/notifications` page.
+- Legal (privacy/terms), support.
 
-### Registration (`/auth/register`)
-- Full name, email, password (min 8 chars), confirm password
-- Indonesian phone number normalization (+62 / 0812 → local format)
-- Live international format preview
-- Supabase Auth sign-up with user metadata
-- Email confirmation flow
+## Vendor
+- **Onboarding wizard** — KTM upload (private bucket), university, WhatsApp (validated/required), business details, category, sales system + delivery method (with "Lainnya" option). Pending admin approval.
+- **Dashboard tabs:**
+  - **Overview** — banner, verified/pending state, WhatsApp clicks, item counts, today's hours.
+  - **Edit Profil** — logo + banner upload (owner-scoped storage), Lokasi + detail address, category, description, university, sales system (dropdown), delivery method (checkboxes + Lainnya), live preview.
+  - **Produk & Layanan** — items with images, type inferred from category, active toggle.
+  - **Jam Operasional** — 7-day grid, apply-to-all.
+  - **Ulasan** — list reviews, reply inline.
+  - **Featured & Dompet** — Midtrans top-up (Snap), wallet balance + ledger, place/raise/withdraw bid, refresh balance.
+  - **Analitik** — snapshot: clicks, rating, favorites, items, featured wins, bid spend, wallet.
 
-### Forgot Password (`/auth/forgot-password`)
-- Password reset email via Supabase
+## Admin
+- **Dashboard** — KPI stats + quick actions.
+- **Verifikasi Vendor** — approve/reject, view KTM via short-lived signed URL.
+- **Users** — list, change role, delete account.
+- **Ulasan** — moderate/delete reviews (filter low-rated).
+- **Forum** — delete threads/replies.
+- **Laporan** — report queue (resolve/dismiss).
+- **Featured** — active slots, ranked bids, manual "run settlement".
 
-### Set Username (`/auth/set-username`)
-- Post-registration username selection
-- Uniqueness check
+## Featured bidding + wallet (revenue path)
+- Vendors top up a **wallet** via Midtrans Snap → webhook (signature-verified, idempotent) credits balance through an append-only ledger.
+- **Sealed daily auction:** top 5 bids (with sufficient balance) win a 24h featured slot; charged on win (pay-on-win). Settled by **pg_cron** daily, or admin manual trigger. `next_bid_round()` ensures bids never land on an already-settled round.
+- Winners appear in the Home "Vendor Sponsor" row + top of Explore.
 
----
+## Notifications (in-app)
+Fan-out Postgres triggers create notifications for: new review on your vendor, new reply on your thread, vendor approved, admin removed your content, new report (to admins), report resolved, bid won/lost, top-up credited.
 
-## ✅ Public Pages
-
-### Homepage (`/`)
-- Hero section with bubble decorations + gradient background
-- "How It Works" 3-step cards (Temukan Vendor → Hubungi → Komunitas)
-- Featured vendors grid (verified vendors from DB)
-- Empty state with vendor registration CTA
-- Bottom CTA with gradient + animated bubbles
-
-### Explore Directory (`/directory/explore`)
-- Full-text search with server-side filtering
-- **Working category filter chips** (Makanan, Kreatif, Jasa, Fashion)
-- Vendor count label
-- VendorCard grid with verified/campus badges
-- Styled empty state
-
-### Vendor Detail (`/directory/vendor/[id]`)
-- Hero banner + verified/category/city badges
-- WhatsApp button (branded green) with **click tracking** → increments `whatsapp_clicks`
-- About section with description
-- Stats tiles (rating, response rate, reply time) — hidden when no metrics
-- Menu/product/service items with pricing in IDR
-- Operating hours table with open/closed color coding
-- Sidebar with contact + quick response badge
-
-### Community Forum (`/community`)
-- Category grid with auto-detected emoji icons
-- Hero section with badge
-
-### Forum Category (`/community/[slug]`)
-- Thread list with `thread-card` design
-- "New Thread" button
-
-### Thread Detail (`/community/[slug]/[thread_id]`)
-- Original post display
-- Replies with `reply-card` + `reply-avatar` styling
-- Reply submission form
-
-### New Discussion (`/community/[slug]/new`)
-- Auth guard (redirects to login if not authenticated)
-- Title + content textarea
-- Auto-links to category
+## Security & hardening
+- RLS on every table; money functions (`credit_wallet`, `settle_topup`, `settle_featured_auction`) revoked from public/anon/authenticated, granted only to `service_role`.
+- Storage uploads scoped to the uploader's `${auth.uid()}/…` folder; KTM bucket private with signed-URL admin access.
+- Best-effort in-memory rate limiting on top-up/bids/reports/reviews.
+- Structured JSON logging with request IDs; 500s return a correlatable `requestId`.
+- SEO: dynamic `robots.txt` + `sitemap.xml`, `LocalBusiness` JSON-LD.
 
 ---
 
-## ✅ Customer Features
-
-### Customer Profile (`/customer/profile`)
-- Avatar upload with canvas compression (1200×1200, 500KB max)
-- Profile fields: username, full name, phone
-- Language switcher (ID/EN)
-- Logout with redirect
-- Link to favorites tab
-
-### Favorites System (`/customer/favorites`)
-- `GET/POST/DELETE` endpoints for managing favorites
-- Heart toggle button on `VendorCard` and vendor detail pages
-- Optimistic UI updates
-- Grid view of all favorited vendors with empty state
-
----
-
-## ✅ Vendor Features
-
-### Vendor Onboarding (`/vendor/onboarding`)
-- Multi-step wizard form (react-hook-form + zod validation)
-- KTM file upload with compression
-- Business details: name, category, university, WhatsApp
-- Sales system + delivery method selection
-- Draft persistence in sessionStorage
-
-### Vendor Dashboard (`/vendor/dashboard`) — 4 Tabs
-
-#### Tab 1: Overview
-- Banner preview + verified/pending badge
-- **WhatsApp click count** (replaces removed vendor_metrics)
-- Total items + active items count
-- Today's open/close status
-- WhatsApp Insights card with link
-- Quick action buttons → Edit Profile / Manage Items / Hours
-
-#### Tab 2: Edit Profile
-- **Banner image upload** — auto-compressed to 1200×400, max 300KB via canvas
-- All fields: name, tagline, category (dropdown), city, description, WhatsApp, website
-- **Live preview panel** (sticky on desktop) showing how profile will appear
-- Uploads to Supabase Storage
-
-#### Tab 3: Products & Services
-- **Auto-infers item type from vendor category:**
-  - `Makanan & Minuman` → `menu` items
-  - `Jasa & Layanan` → `service` items
-  - Everything else → `product` items
-- Inline add/edit form
-- Toggle active/inactive per item
-- Delete with confirmation
-- Price in IDR format
-
-#### Tab 4: Operating Hours
-- 7-day grid (Mon–Sun) with checkbox open/close toggle
-- Time pickers for opens_at / closes_at
-- "Terapkan ke Semua" (Apply to All open days) shortcut
-- Batch save via upsert
-
----
-
-## ✅ Admin Panel
-
-### Admin Dashboard (`/admin`)
-- KPI stats grid: Total Users, Total Vendors, Pending Verifications, Threads, Replies
-- Orange-highlighted pending vendor alert card
-- Quick action cards → Vendor / Users / Forum
-
-### Vendor Verification (`/admin/vendors`)
-- Filter chips: Pending / Verified / All
-- Vendor cards with owner name, category, city, date
-- **Approve ✓** button (sets `is_verified = true`)
-- **Reject ✕** button (deletes vendor + resets owner to customer role)
-- View button → links to public vendor detail page
-
-### User Management (`/admin/users`)
-- Filter by role (All / Customer / Vendor / Admin)
-- User list with avatar, name, username, phone
-- Role badge (color-coded per role)
-- Inline role change dropdown (Customer / Vendor / Admin)
-
-### Forum Moderation (`/admin/forum`)
-- Tabs: Threads / Replies
-- Content preview with author + category + date
-- Delete button with confirmation
-
-### Access Control
-- Admin nav link (`🛡 Admin`) appears only when `profile.role === 'admin'`
-- All admin API routes use `requireAdmin()` middleware
-- RLS policies: `is_admin()` SQL function for row-level security
-
----
-
-## ✅ Legal & Support
-
-### Privacy Policy (`/legal/privacy`)
-- 5-section policy covering data collection, usage, security, rights, and contact.
-
-### Terms of Service (`/legal/terms`)
-- 7-section ToS covering account rules, content, vendors, liability, and changes.
-
-### Support (`/support`)
-- FAQ accordion with common questions
-- Styled 2-column contact form
-
----
-
-## ✅ Design System (Pacific Blue → Spanish Orange)
-
-- **CSS Variables**: `--pacific`, `--orange`, `--gradient-main/warm/cool/subtle`
-- **Topbar**: Pacific → Orange gradient with glow shadow
-- **Buttons**: Gradient backgrounds, glow on hover
-- **Hero sections**: Floating bubble pseudo-elements with `float-bubble` keyframe
-- **Auth panels**: Gradient background + animated bubbles
-- **Cards**: Tonal layering without borders ("No-Line" philosophy)
-- **Mobile**: Hamburger drawer menu at `< 960px`
-- **Component classes**: `dash-card`, `dash-stat`, `action-card`, `product-row`, `thread-card`, `reply-card`, `profile-header`, `profile-form`, `dropzone`, `section-cta`, `bubble-section`
-
----
-
-## ✅ Infrastructure
-
-- **Image Compression**: `lib/compress-image.ts` — canvas-based resize + iterative quality reduction
-  - Banner: 1200×400, 300KB
-  - Avatar: 400×400, 150KB
-  - Item image: 800×600, 200KB
-- **Auth**: Supabase Auth with Bearer token flow
-- **RLS**: Row-level security on all tables
-- **Translations**: `lib/translations.ts` (ID + EN)
-- **Deployment**: Vercel-ready with `vercel.json`
-- **SEO & Meta**: Global `og:title`, `og:description`, `og:image`, `twitter:card` tags via `SiteLayout`. Page-specific descriptions.
-- **Polish**: `LoadingSkeleton.tsx` for shimmer effects.
-
----
-
-**Total Features: 80+**
-**Status: Feature Complete (MVP) ✅**
+## Known gaps / deferred
+- Time-series vendor analytics (needs a `vendor_click_events` log; current Analitik is a snapshot).
+- Distributed rate limiting (current limiter is per-instance).
+- See `tasklist.md` for the authoritative open list.

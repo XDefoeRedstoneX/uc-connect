@@ -16,6 +16,7 @@ type VendorCardProps = {
   ctaLabel?: string;
   isFavorited?: boolean;
   onToggleFavorite?: () => void;
+  highlight?: boolean;
 };
 
 
@@ -30,9 +31,34 @@ export default function VendorCard({
   ctaLabel,
   isFavorited,
   onToggleFavorite,
+  highlight,
 }: VendorCardProps) {
   return (
-    <div style={{ position: "relative" }}>
+    <div
+      style={{
+        position: "relative",
+        ...(highlight
+          ? {
+              borderRadius: "var(--radius-md)",
+              boxShadow: "0 0 0 2px var(--orange), 0 10px 26px rgba(232,97,0,0.18)",
+            }
+          : {}),
+      }}
+    >
+      {highlight && (
+        <span
+          aria-hidden
+          style={{
+            position: "absolute", top: 10, left: -6, zIndex: 11,
+            background: "var(--gradient-main)", color: "#fff",
+            fontSize: "0.66rem", fontWeight: 800, letterSpacing: "0.04em",
+            padding: "0.2rem 0.55rem", borderRadius: "4px",
+            boxShadow: "0 3px 8px rgba(0,0,0,0.18)",
+          }}
+        >
+          ⭐ SPONSOR
+        </span>
+      )}
       {/* Heart toggle */}
       {onToggleFavorite && (
         <button

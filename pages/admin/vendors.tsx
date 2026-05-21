@@ -46,6 +46,14 @@ export default function AdminVendorsPage() {
 
   useEffect(() => { if (token) void loadVendors(token, filter); }, [filter]);
 
+  async function viewKtm(vendorId: string) {
+    if (!token) return;
+    const res = await fetch(`/api/admin/vendors/ktm?vendor_id=${vendorId}`, { headers: { Authorization: `Bearer ${token}` } });
+    const j = await res.json().catch(() => ({}));
+    if (res.ok && j.url) window.open(j.url, "_blank", "noopener,noreferrer");
+    else alert(j.error ?? "Gagal membuka KTM");
+  }
+
   async function act(vendorId: string, action: "approve" | "reject") {
     if (!token) return;
     if (action === "reject" && !confirm("Yakin ingin menolak dan menghapus vendor ini?")) return;
@@ -127,10 +135,10 @@ export default function AdminVendorsPage() {
                     </>
                   )}
                   {v.ktm_url && (
-                    <a href={v.ktm_url} target="_blank" rel="noopener noreferrer" className="btn ghost"
+                    <button type="button" onClick={() => void viewKtm(v.id)} className="btn ghost"
                       style={{ fontSize: "0.82rem", padding: "0.35rem 0.75rem" }}>
                       🪪 Lihat KTM
-                    </a>
+                    </button>
                   )}
                   <Link href={`/directory/vendor/${v.id}`} className="btn ghost"
                     style={{ fontSize: "0.82rem", padding: "0.35rem 0.75rem" }}>

@@ -6,6 +6,7 @@ import {
   sendServiceUnavailable,
 } from "@/lib/api-response";
 import type { ReportTargetType } from "@/types/domain";
+import { rateLimited } from "@/lib/rate-limit";
 
 const VALID_TYPES: ReportTargetType[] = ["vendor", "review", "thread", "reply"];
 
@@ -19,6 +20,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const { supabase, userId } = auth;
+  if (rateLimited(res, `report:${userId}`, { limit: 10, windowMs: 60_000 })) return;
+
   const { target_type, target_id, reason } = req.body as {
     target_type?: string;
     target_id?: string;

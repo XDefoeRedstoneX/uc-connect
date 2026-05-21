@@ -33,7 +33,7 @@ export default function SupportPage() {
         </p>
       </section>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr min(400px, 100%)", gap: "1.25rem", alignItems: "start" }}>
+      <div className="split-main-aside">
         {/* FAQ */}
         <section className="card compact-top">
           <h2 style={{ marginTop: 0, marginBottom: "1rem" }}>❓ Pertanyaan Umum (FAQ)</h2>

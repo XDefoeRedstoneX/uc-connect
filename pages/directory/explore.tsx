@@ -174,10 +174,8 @@ export default function ExplorePage({ initialVendors, initialFeatured, initialEr
                 imageSrc={vendor.hero_image_url ?? "/images/vendor-placeholder.svg"}
                 imageAlt={`Placeholder image for ${vendor.name}`}
                 description={vendor.description ?? "No description yet."}
-                badges={[
-                  { tone: "gold" as const, text: "Sponsor" },
-                  ...(vendor.is_verified ? [{ tone: "success" as const, text: t("pages.explore.verifiedBadge") }] : []),
-                ]}
+                highlight
+                badges={vendor.is_verified ? [{ tone: "success" as const, text: t("pages.explore.verifiedBadge") }] : []}
                 ctaLabel={t("pages.explore.viewDetail")}
                 isFavorited={favIds.has(vendor.id)}
                 onToggleFavorite={token ? () => toggleFav(vendor.id) : undefined}
@@ -266,7 +264,8 @@ export const getServerSideProps: GetServerSideProps<Props> = async () => {
     const { data: fv } = await supabase
       .from("vendors")
       .select("id,name,tagline,category,city,is_verified,description,whatsapp,hero_image_url,created_at")
-      .in("id", featuredIds);
+      .in("id", featuredIds)
+      .eq("is_verified", true);
     const byId = new Map((fv ?? []).map((v) => [v.id, v as Vendor]));
     initialFeatured = featuredIds.map((id) => byId.get(id)).filter(Boolean) as Vendor[];
   }

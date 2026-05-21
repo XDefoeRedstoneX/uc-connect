@@ -49,7 +49,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data: featuredVendors } = await supabase
       .from("vendors")
       .select("id,slug,name,tagline,category,city,is_verified,description,whatsapp,website_url,hero_image_url,created_at")
-      .in("id", featuredIds);
+      .in("id", featuredIds)
+      .eq("is_verified", true);
     // Preserve rank ordering.
     const byId = new Map((featuredVendors ?? []).map((v) => [v.id, v]));
     featured = featuredIds.map((id) => byId.get(id)).filter(Boolean) as typeof data;

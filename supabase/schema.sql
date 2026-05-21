@@ -41,6 +41,8 @@ create table public.profiles (
   full_name text,
   phone text,
   avatar_url text,
+  major text,
+  graduation_year smallint,
   role text not null default 'customer' check (role in ('customer', 'vendor', 'admin')),
   updated_at timestamptz not null default now()
 );
@@ -69,7 +71,9 @@ end; $$;
 -- ─── 3. Vendor tables ───────────────────────────────────────────────────────
 create table public.vendors (
   id uuid primary key default gen_random_uuid(),
-  owner_id uuid references auth.users(id) on delete set null,
+  -- FK targets profiles(id) (not auth.users) so PostgREST can embed the owner
+  -- profile in admin queries. profiles.id === auth.users.id (1:1).
+  owner_id uuid references public.profiles(id) on delete set null,
   slug text not null unique,
   name text not null,
   tagline text,
@@ -128,7 +132,7 @@ create table public.vendor_items (
 create table public.vendor_reviews (
   id uuid primary key default gen_random_uuid(),
   vendor_id uuid not null references public.vendors(id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
   rating smallint not null check (rating between 1 and 5),
   content text,
   image_url text,                     -- optional single photo on the review
@@ -157,7 +161,7 @@ create table public.forum_categories (
 create table public.forum_threads (
   id uuid primary key default gen_random_uuid(),
   category_id uuid not null references public.forum_categories(id) on delete cascade,
-  author_id uuid not null references auth.users(id) on delete cascade,
+  author_id uuid not null references public.profiles(id) on delete cascade,
   title text not null,
   content text not null,
   image_url text,
@@ -169,7 +173,7 @@ create table public.forum_threads (
 create table public.forum_replies (
   id uuid primary key default gen_random_uuid(),
   thread_id uuid not null references public.forum_threads(id) on delete cascade,
-  author_id uuid not null references auth.users(id) on delete cascade,
+  author_id uuid not null references public.profiles(id) on delete cascade,
   content text not null,
   image_url text,
   created_at timestamptz not null default now(),
@@ -194,7 +198,7 @@ create table public.reports (
   id uuid primary key default gen_random_uuid(),
   target_type text not null check (target_type in ('vendor', 'review', 'thread', 'reply')),
   target_id uuid not null,
-  reporter_id uuid not null references auth.users(id) on delete cascade,
+  reporter_id uuid not null references public.profiles(id) on delete cascade,
   reason text not null,
   status text not null default 'open' check (status in ('open', 'resolved', 'dismissed')),
   resolved_by uuid references auth.users(id) on delete set null,
@@ -324,6 +328,17 @@ begin
   return slot_rank;
 end; $$;
 
+-- Earliest future round (within 14 days) that hasn't been settled yet. Bids
+-- target this so they never land on an already-settled round (e.g. after a
+-- manual admin settlement).
+create or replace function public.next_bid_round()
+returns date language sql stable security definer set search_path = public as $$
+  select coalesce(min(d), current_date + 1) from (
+    select (current_date + g)::date as d from generate_series(1, 14) g
+  ) candidate
+  where not exists (select 1 from public.featured_slots fs where fs.round_date = candidate.d);
+$$;
+
 create or replace function public.settle_topup(p_order_id text, p_callback jsonb)
 returns boolean language plpgsql security definer set search_path = public as $$
 declare t record;
@@ -425,25 +440,44 @@ begin
   return new;
 end; $$;
 
--- ─── 9. Triggers ────────────────────────────────────────────────────────────
+-- ─── 9. Triggers (drop-if-exists first; the auth.users trigger survives the
+--        table drops above, so guards are required for a clean re-run) ───────
+drop trigger if exists touch_profiles_updated_at on public.profiles;
 create trigger touch_profiles_updated_at before update on public.profiles for each row execute function public.touch_updated_at();
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created after insert on auth.users for each row execute function public.handle_new_user();
+drop trigger if exists touch_vendors_updated_at on public.vendors;
 create trigger touch_vendors_updated_at before update on public.vendors for each row execute function public.touch_updated_at();
+drop trigger if exists touch_vendor_metrics_updated_at on public.vendor_metrics;
 create trigger touch_vendor_metrics_updated_at before update on public.vendor_metrics for each row execute function public.touch_updated_at();
+drop trigger if exists touch_forum_threads_updated_at on public.forum_threads;
 create trigger touch_forum_threads_updated_at before update on public.forum_threads for each row execute function public.touch_updated_at();
+drop trigger if exists touch_forum_replies_updated_at on public.forum_replies;
 create trigger touch_forum_replies_updated_at before update on public.forum_replies for each row execute function public.touch_updated_at();
+drop trigger if exists touch_wallets_updated_at on public.wallets;
 create trigger touch_wallets_updated_at before update on public.wallets for each row execute function public.touch_updated_at();
+drop trigger if exists touch_topups_updated_at on public.topups;
 create trigger touch_topups_updated_at before update on public.topups for each row execute function public.touch_updated_at();
+drop trigger if exists touch_featured_bids_updated_at on public.featured_bids;
 create trigger touch_featured_bids_updated_at before update on public.featured_bids for each row execute function public.touch_updated_at();
 
+drop trigger if exists trg_recalculate_vendor_rating on public.vendor_reviews;
 create trigger trg_recalculate_vendor_rating after insert or delete on public.vendor_reviews for each row execute function public.recalculate_vendor_rating();
+drop trigger if exists trg_notify_vendor_on_review on public.vendor_reviews;
 create trigger trg_notify_vendor_on_review after insert on public.vendor_reviews for each row execute function public.notify_vendor_on_review();
+drop trigger if exists trg_notify_thread_author_on_reply on public.forum_replies;
 create trigger trg_notify_thread_author_on_reply after insert on public.forum_replies for each row execute function public.notify_thread_author_on_reply();
+drop trigger if exists trg_notify_vendor_on_approval on public.vendors;
 create trigger trg_notify_vendor_on_approval after update of is_verified on public.vendors for each row execute function public.notify_vendor_on_approval();
+drop trigger if exists trg_notify_thread_removed_by_admin on public.forum_threads;
 create trigger trg_notify_thread_removed_by_admin before delete on public.forum_threads for each row execute function public.notify_thread_removed_by_admin();
+drop trigger if exists trg_notify_reply_removed_by_admin on public.forum_replies;
 create trigger trg_notify_reply_removed_by_admin before delete on public.forum_replies for each row execute function public.notify_reply_removed_by_admin();
+drop trigger if exists trg_notify_review_removed_by_admin on public.vendor_reviews;
 create trigger trg_notify_review_removed_by_admin before delete on public.vendor_reviews for each row execute function public.notify_review_removed_by_admin();
+drop trigger if exists trg_notify_admins_on_report on public.reports;
 create trigger trg_notify_admins_on_report after insert on public.reports for each row execute function public.notify_admins_on_report();
+drop trigger if exists trg_notify_reporter_on_resolution on public.reports;
 create trigger trg_notify_reporter_on_resolution after update of status on public.reports for each row execute function public.notify_reporter_on_resolution();
 
 -- ─── 10. Indexes ────────────────────────────────────────────────────────────

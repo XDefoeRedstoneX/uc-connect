@@ -37,6 +37,8 @@ export default function CustomerProfilePage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [username, setUsername] = useState("");
   const [fullName, setFullName] = useState("");
+  const [major, setMajor] = useState("");
+  const [graduationYear, setGraduationYear] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
@@ -120,6 +122,8 @@ export default function CustomerProfilePage() {
       setProfile(data.profile);
       setUsername(data.profile.username ?? "");
       setFullName(data.profile.full_name ?? "");
+      setMajor(data.profile.major ?? "");
+      setGraduationYear(data.profile.graduation_year ? String(data.profile.graduation_year) : "");
       setLoading(false);
     };
 
@@ -185,6 +189,8 @@ export default function CustomerProfilePage() {
         full_name: normalizedFullName,
         phone: profile?.phone ?? "",
         avatar_url: avatarUrl ?? "",
+        major: major.trim() || null,
+        graduation_year: graduationYear ? Number(graduationYear) : null,
       }),
     });
 
@@ -367,6 +373,31 @@ export default function CustomerProfilePage() {
               </div>
 
               <div className="profile-field">
+                <label htmlFor="major">Jurusan / Program Studi</label>
+                <input
+                  id="major"
+                  value={major}
+                  onChange={(event) => setMajor(event.target.value)}
+                  readOnly={!isEditing}
+                  placeholder="cth. Manajemen"
+                  style={!isEditing ? { background: 'var(--bg)', color: 'var(--muted)' } : {}}
+                />
+              </div>
+
+              <div className="profile-field">
+                <label htmlFor="graduationYear">Tahun Kelulusan</label>
+                <input
+                  id="graduationYear"
+                  type="number"
+                  value={graduationYear}
+                  onChange={(event) => setGraduationYear(event.target.value)}
+                  readOnly={!isEditing}
+                  placeholder="cth. 2026"
+                  style={!isEditing ? { background: 'var(--bg)', color: 'var(--muted)' } : {}}
+                />
+              </div>
+
+              <div className="profile-field">
                 <label htmlFor="language">{t("pages.editProfile.language")}</label>
                 <select
                   id="language"
@@ -392,11 +423,19 @@ export default function CustomerProfilePage() {
           </div>
         )}
 
-        {/* Favorites link */}
-        <div style={{ paddingLeft: '0.25rem', marginTop: '0.5rem' }}>
+        {/* Quick links */}
+        <div style={{ paddingLeft: '0.25rem', marginTop: '0.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
           <button type="button" className="ghost" onClick={() => void router.push("/customer/favorites")}
             style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            ❤️ Lihat Vendor Favorit
+            ❤️ Vendor Favorit
+          </button>
+          <button type="button" className="ghost" onClick={() => void router.push("/customer/reviews")}
+            style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            ⭐ Ulasan Saya
+          </button>
+          <button type="button" className="ghost" onClick={() => void router.push("/customer/threads")}
+            style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            💬 Diskusi Saya
           </button>
         </div>
 

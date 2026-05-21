@@ -48,9 +48,18 @@ function isFileList(value: unknown): value is FileList {
   return typeof FileList !== "undefined" && value instanceof FileList;
 }
 
+const CURRENT_YEAR = new Date().getFullYear();
+const GRAD_YEARS = Array.from({ length: 17 }, (_, i) => CURRENT_YEAR + 8 - i); // +8 … −8
+
 const vendorOnboardingSchema = z.object({
   fullName: z.string().min(2, "Nama lengkap wajib diisi").max(100, "Nama terlalu panjang"),
   university: z.string().min(2, "Asal universitas wajib diisi").max(120, "Asal universitas terlalu panjang"),
+  major: z.string().min(2, "Jurusan wajib diisi").max(80, "Jurusan terlalu panjang"),
+  graduationYear: z
+    .number({ message: "Pilih tahun kelulusan" })
+    .int()
+    .min(CURRENT_YEAR - 8, "Tahun tidak valid")
+    .max(CURRENT_YEAR + 8, "Tahun tidak valid"),
   whatsappNumber: z
     .string()
     .min(1, "Nomor WhatsApp wajib diisi — ini kontak utama pembeli")
@@ -83,7 +92,7 @@ type VendorOnboardingWizardProps = {
 };
 
 const stepFields: Record<1 | 2 | 3, (keyof VendorOnboardingValues)[]> = {
-  1: ["fullName", "university", "whatsappNumber", "ktmFile"],
+  1: ["fullName", "university", "major", "graduationYear", "whatsappNumber", "ktmFile"],
   2: ["businessName", "category", "description"],
   3: ["salesSystem", "deliveryMethod"],
 };
@@ -93,6 +102,8 @@ const stepLabels = ["Verifikasi", "Profil Bisnis", "Operasional"];
 const defaultValues: VendorOnboardingValues = {
   fullName: "",
   university: "",
+  major: "",
+  graduationYear: CURRENT_YEAR,
   whatsappNumber: "",
   ktmFile: undefined as unknown as File,
   businessName: "",
@@ -253,6 +264,36 @@ export default function VendorOnboardingWizard({ initialStep = 1, initialValues,
                     placeholder="Universitas"
                   />
                   {errors.university && <p className="mt-2 text-sm text-red-600">{errors.university.message}</p>}
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-gray-700" htmlFor="major">
+                    Jurusan / Program Studi
+                  </label>
+                  <input
+                    id="major"
+                    {...register("major")}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-(--brand-orange) focus:ring-2 focus:ring-orange-100"
+                    placeholder="cth. Manajemen, Informatika"
+                  />
+                  {errors.major && <p className="mt-2 text-sm text-red-600">{errors.major.message}</p>}
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-gray-700" htmlFor="graduationYear">
+                    Tahun Kelulusan (perkiraan)
+                  </label>
+                  <select
+                    id="graduationYear"
+                    {...register("graduationYear", { valueAsNumber: true })}
+                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-(--brand-orange) focus:ring-2 focus:ring-orange-100"
+                  >
+                    {GRAD_YEARS.map((y) => (
+                      <option key={y} value={y}>{y}{y <= CURRENT_YEAR ? " (sudah/alumni)" : ""}</option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">Boleh lulus tahun ini — kamu tetap bisa berjualan sebagai alumni.</p>
+                  {errors.graduationYear && <p className="mt-2 text-sm text-red-600">{errors.graduationYear.message}</p>}
                 </div>
 
                 <div>

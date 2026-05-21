@@ -14,6 +14,7 @@ const DELIVERY_OPTIONS = ["COD Kampus", "Digital Delivery"];
 type Props = {
   vendor: VendorProfile;
   token: string;
+  userId: string;
   onSaved: (v: VendorProfile) => void;
 };
 
@@ -37,7 +38,7 @@ function parseDelivery(raw: string | null): { selected: string[]; other: string 
   return { selected, other };
 }
 
-export default function TabEditProfile({ vendor, token, onSaved }: Props) {
+export default function TabEditProfile({ vendor, token, userId, onSaved }: Props) {
   const bannerRef = useRef<HTMLInputElement>(null);
   const logoRef = useRef<HTMLInputElement>(null);
   const { showToast } = useToast();
@@ -91,11 +92,13 @@ export default function TabEditProfile({ vendor, token, onSaved }: Props) {
       let hero_image_url = vendor.hero_image_url;
       let logo_url = vendor.logo_url;
 
+      // Paths are prefixed with the owner's user id so storage RLS can scope
+      // writes to the uploader (see others.sql storage policies).
       if (bannerFile) {
-        hero_image_url = await uploadImage(supabaseUrl, token, "vendor-assets", `vendor-banners/${vendor.id}/banner-${Date.now()}.jpg`, bannerFile);
+        hero_image_url = await uploadImage(supabaseUrl, token, "vendor-assets", `${userId}/banner-${Date.now()}.jpg`, bannerFile);
       }
       if (logoFile) {
-        logo_url = await uploadImage(supabaseUrl, token, "vendor-assets", `vendor-logos/${vendor.id}/logo-${Date.now()}.jpg`, logoFile);
+        logo_url = await uploadImage(supabaseUrl, token, "vendor-assets", `${userId}/logo-${Date.now()}.jpg`, logoFile);
       }
 
       const delivery_methods = [...deliverySelected, ...(deliveryOther.trim() ? [deliveryOther.trim()] : [])].join(", ");
@@ -117,7 +120,7 @@ export default function TabEditProfile({ vendor, token, onSaved }: Props) {
   }
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr min(340px, 40%)", gap: "1.25rem", alignItems: "start" }}>
+    <div className="split-main-aside">
       {/* Form */}
       <div className="dash-card">
         <h2 style={{ marginTop: 0 }}>Edit Profil Bisnis</h2>

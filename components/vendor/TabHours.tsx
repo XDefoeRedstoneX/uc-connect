@@ -49,9 +49,8 @@ export default function TabHours({ hours, token, onSaved }: Props) {
 
       <div style={{ display: "grid", gap: "0.75rem" }}>
         {local.map((h) => (
-          <div key={h.day_of_week} style={{
-            display: "grid", gridTemplateColumns: "80px auto 1fr 1fr auto", gap: "0.75rem",
-            alignItems: "center", padding: "0.75rem", borderRadius: "var(--radius-md)",
+          <div key={h.day_of_week} className="hours-row" style={{
+            padding: "0.75rem", borderRadius: "var(--radius-md)",
             background: h.is_closed ? "var(--bg)" : "var(--pacific-soft)",
             border: `1px solid ${h.is_closed ? "var(--border)" : "rgba(28,169,201,0.2)"}`,
             opacity: h.is_closed ? 0.7 : 1,

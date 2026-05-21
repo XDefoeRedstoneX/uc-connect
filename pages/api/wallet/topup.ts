@@ -6,6 +6,7 @@ import {
   sendServiceUnavailable,
 } from "@/lib/api-response";
 import { createSnapTransaction, isMidtransConfigured } from "@/lib/midtrans";
+import { rateLimited } from "@/lib/rate-limit";
 
 const MIN_TOPUP = 10_000;
 const MAX_TOPUP = 10_000_000;
@@ -23,6 +24,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const { supabase, userId, user } = auth;
+  if (rateLimited(res, `topup:${userId}`, { limit: 10, windowMs: 60_000 })) return;
+
   const { amount_idr } = req.body as { amount_idr?: number };
 
   const amount = Math.floor(Number(amount_idr));

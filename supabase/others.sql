@@ -170,32 +170,55 @@ grant execute on function public.settle_topup(text, jsonb) to service_role;
 grant execute on function public.settle_featured_auction(date) to service_role;
 
 -- ─── 12. Storage buckets ────────────────────────────────────────────────────
--- avatars, forum-images, vendor-assets (banner/logo/product) → public marketing.
--- vendor-documents holds KTM (student ID). NOTE: kept public so the existing
--- admin KTM link + public-URL upload path work. This exposes student IDs to
--- anyone with the URL — flagged for hardening (switch to private + signed URLs).
+-- Public marketing buckets: avatars, forum-images, vendor-assets (banner/logo/
+-- product/review photos). PRIVATE: vendor-documents (KTM = student ID) — read
+-- only by the owner or an admin; the admin UI fetches a signed URL on demand.
+--
+-- Every app upload writes under a `${auth.uid()}/...` first folder, so write
+-- access is scoped to the uploader (no overwriting another vendor's images).
 insert into storage.buckets (id, name, public) values
   ('avatars', 'avatars', true),
   ('forum-images', 'forum-images', true),
-  ('vendor-assets', 'vendor-assets', true),
-  ('vendor-documents', 'vendor-documents', true)
-on conflict (id) do nothing;
+  ('vendor-assets', 'vendor-assets', true)
+on conflict (id) do update set public = true;
 
--- Public read for all app buckets.
+insert into storage.buckets (id, name, public) values
+  ('vendor-documents', 'vendor-documents', false)
+on conflict (id) do update set public = false;
+
+-- Public read for the marketing buckets only.
 drop policy if exists "storage_public_read" on storage.objects;
 create policy "storage_public_read" on storage.objects for select
-  using (bucket_id in ('avatars', 'forum-images', 'vendor-assets', 'vendor-documents'));
+  using (bucket_id in ('avatars', 'forum-images', 'vendor-assets'));
 
--- Authenticated users may upload / overwrite / delete in the app buckets.
+-- KTM read: owner (first path folder = their uid) or admin. (Service-role
+-- signed-URL generation bypasses RLS, so the admin UI works regardless.)
+drop policy if exists "storage_ktm_read_own_or_admin" on storage.objects;
+create policy "storage_ktm_read_own_or_admin" on storage.objects for select to authenticated
+  using (
+    bucket_id = 'vendor-documents'
+    and ((storage.foldername(name))[1] = auth.uid()::text or public.is_admin())
+  );
+
+-- Writes (insert/update/delete): only within the uploader's own uid folder.
 drop policy if exists "storage_auth_insert" on storage.objects;
 create policy "storage_auth_insert" on storage.objects for insert to authenticated
-  with check (bucket_id in ('avatars', 'forum-images', 'vendor-assets', 'vendor-documents'));
+  with check (
+    bucket_id in ('avatars', 'forum-images', 'vendor-assets', 'vendor-documents')
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
 drop policy if exists "storage_auth_update" on storage.objects;
 create policy "storage_auth_update" on storage.objects for update to authenticated
-  using (bucket_id in ('avatars', 'forum-images', 'vendor-assets', 'vendor-documents'));
+  using (
+    bucket_id in ('avatars', 'forum-images', 'vendor-assets', 'vendor-documents')
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
 drop policy if exists "storage_auth_delete" on storage.objects;
 create policy "storage_auth_delete" on storage.objects for delete to authenticated
-  using (bucket_id in ('avatars', 'forum-images', 'vendor-assets', 'vendor-documents'));
+  using (
+    bucket_id in ('avatars', 'forum-images', 'vendor-assets', 'vendor-documents')
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
 
 -- ─── 13. pg_cron daily featured-auction settlement (best-effort) ────────────
 do $$

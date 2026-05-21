@@ -157,6 +157,10 @@ export default function TabFeatured({ vendorId, token }: Props) {
           <div>
             <p className="stat-label" style={{ margin: 0 }}>💳 Saldo Dompet</p>
             <p className="stat-value" style={{ margin: 0 }}>{rupiah(balance)}</p>
+            <button type="button" className="ghost" onClick={() => void refresh()}
+              style={{ fontSize: "0.72rem", padding: "0.15rem 0.5rem", marginTop: "0.25rem" }}>
+              ↻ Perbarui saldo
+            </button>
           </div>
           <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-end", flexWrap: "wrap" }}>
             <div>

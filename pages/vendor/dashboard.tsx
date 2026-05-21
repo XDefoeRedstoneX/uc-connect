@@ -11,6 +11,7 @@ import TabItems from "@/components/vendor/TabItems";
 import TabHours from "@/components/vendor/TabHours";
 import TabReviews from "@/components/vendor/TabReviews";
 import TabFeatured from "@/components/vendor/TabFeatured";
+import TabAnalytics from "@/components/vendor/TabAnalytics";
 
 export type VendorProfile = {
   id: string; slug: string; name: string; tagline: string | null;
@@ -36,6 +37,7 @@ const TABS = [
   { id: "hours", label: "🕐 Jam Operasional" },
   { id: "reviews", label: "⭐ Ulasan" },
   { id: "featured", label: "🏆 Featured & Dompet" },
+  { id: "analytics", label: "📈 Analitik" },
 ];
 
 const DEFAULT_HOURS: VendorHour[] = Array.from({ length: 7 }, (_, i) => ({
@@ -46,6 +48,7 @@ export default function VendorDashboardPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("overview");
   const [token, setToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [vendor, setVendor] = useState<VendorProfile | null>(null);
   const [hours, setHours] = useState<VendorHour[]>(DEFAULT_HOURS);
   const [items, setItems] = useState<VendorItem[]>([]);
@@ -65,6 +68,7 @@ export default function VendorDashboardPage() {
       if (!pr.ok || pj.profile?.role !== "vendor") { router.replace("/"); return; }
 
       setToken(tok);
+      setUserId(sd.session?.user?.id ?? null);
 
       const [vr, ir, hr] = await Promise.all([
         fetch("/api/vendor/profile", { headers: { Authorization: `Bearer ${tok}` } }),
@@ -104,7 +108,7 @@ export default function VendorDashboardPage() {
     <SiteLayout title={`${vendor.name} Dashboard | UC Connect`}>
       <div className="stack" style={{ gap: "1rem", marginTop: 0 }}>
         {/* Tab bar */}
-        <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap", borderBottom: "2px solid var(--border)", paddingBottom: "0.5rem" }}>
+        <div className="scroll-tabs" style={{ borderBottom: "2px solid var(--border)", paddingBottom: "0.5rem" }}>
           {TABS.map(t => (
             <button key={t.id} type="button" onClick={() => setActiveTab(t.id)}
               style={{
@@ -120,11 +124,12 @@ export default function VendorDashboardPage() {
         </div>
 
         {activeTab === "overview" && <TabOverview vendor={vendor} items={items} hours={hours} setActiveTab={setActiveTab} />}
-        {activeTab === "profile" && token && <TabEditProfile vendor={vendor} token={token} onSaved={setVendor} />}
-        {activeTab === "items" && token && <TabItems items={items} vendor={vendor} token={token} onItemsChange={setItems} />}
+        {activeTab === "profile" && token && userId && <TabEditProfile vendor={vendor} token={token} userId={userId} onSaved={setVendor} />}
+        {activeTab === "items" && token && userId && <TabItems items={items} vendor={vendor} token={token} userId={userId} onItemsChange={setItems} />}
         {activeTab === "hours" && token && <TabHours hours={hours} token={token} onSaved={setHours} />}
         {activeTab === "reviews" && token && <TabReviews vendorId={vendor.id} token={token} />}
         {activeTab === "featured" && token && <TabFeatured vendorId={vendor.id} token={token} />}
+        {activeTab === "analytics" && token && <TabAnalytics token={token} />}
       </div>
     </SiteLayout>
   );

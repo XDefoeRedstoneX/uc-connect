@@ -1,198 +1,112 @@
 # UC Connect — Implementation Guide
 
-> **Last Updated:** May 8, 2026
-> **Stack:** Next.js 16 (Pages Router) · Supabase · TypeScript · Tailwind CSS + CSS Variables
-
----
-
-## Project Overview
-
-UC Connect is a premium, community-based student business directory for universities in Indonesia. Registered student businesses are listed as verified vendors, and the platform includes a forum for community interaction.
+> **Stack:** Next.js 16 (Pages Router) · Supabase (Postgres + Auth + Storage) · TypeScript · Tailwind + CSS variables · Midtrans Snap
+> Companion docs: `FEATURES.md` (what exists), `tasklist.md` (open issues), `README.md` (run/deploy).
 
 ---
 
 ## Architecture
 
 ```
-pages/                    → Next.js Pages Router (SSR/SSG)
-  api/                    → Serverless API routes
-    admin/                → Admin-only endpoints (stats, vendors, users, forum)
-    vendor/               → Vendor-owner endpoints (profile, hours, items, whatsapp-click)
-    vendors/              → Public vendor endpoints (list, detail)
-  admin/                  → Admin panel pages
-  auth/                   → Login, register, forgot password, set username
-  community/              → Forum pages
-  customer/               → Customer profile
-  directory/              → Explore + vendor detail
-  vendor/                 → Vendor dashboard + onboarding
+pages/
+  api/
+    admin/          stats, vendors/{index,ktm}, users/{index,[id]}, reviews, forum, reports, featured/{index,settle}
+    vendor/         profile, hours, items/*, analytics, whatsapp-click, [id]/reviews/{index,[reviewId]}
+    vendors/        index (list + featured), [id] (detail)
+    wallet/         index (balance+ledger), topup
+    featured/       bids
+    payments/midtrans/  webhook
+    profile, profile/{reviews,threads}, reports, notifications, favorites, health
+  admin/            dashboard, vendors, users, reviews, forum, reports, featured
+  auth/             login, register, forgot-password, set-username
+  community/        index, [slug]/{index,new,[thread_id]}
+  customer/         profile, favorites, reviews, threads
+  directory/        explore, vendor/[id]
+  vendor/           onboarding, dashboard
+  notifications.tsx, robots.txt.ts, sitemap.xml.ts
 components/
-  vendor/                 → TabOverview, TabEditProfile, TabItems, TabHours
-  SiteLayout.tsx          → Global layout with auth-aware nav, mobile drawer
-  VendorOnboardingWizard  → Multi-step vendor registration
-  LoadingSkeleton.tsx     → Shimmer skeleton loading states
-  HeroSection, VendorCard, BottomCTA, AuthSplitLayout, FormField
+  admin/AdminNav · vendor/{TabOverview,TabEditProfile,TabItems,TabHours,TabReviews,TabFeatured,TabAnalytics}
+  SiteLayout · NotificationBell · ReportButton · VendorCard · VendorOnboardingWizard · HeroSection · …
 lib/
-  api-admin.ts            → requireAdmin() middleware
-  api-auth.ts             → resolveAuthedUser() + readBearerToken()
-  api-response.ts         → Shared HTTP response helpers
-  compress-image.ts       → Canvas-based image compression/resize
-  language-context.tsx     → React context for ID/EN translations
-  profile-image-upload.ts → Avatar upload to Supabase Storage
-  public-errors.ts        → User-facing error message mapper
-  supabase-browser.ts     → Browser-side Supabase client
-  supabase-server.ts      → Server-side Supabase client (service key)
-  translations.ts         → Translation strings (ID + EN)
-  vendor-registration-draft.ts → SessionStorage draft persistence
-styles/
-  globals.css             → Design system (CSS variables, tokens, components)
-supabase/
-  schema.sql              → Full database schema + RLS policies + migrations
-types/
-  domain.ts               → TypeScript types (Vendor, VendorItem, VendorHour, etc.)
+  api-auth (resolveAuthedUser) · api-admin (requireAdmin) · api-response (+ structured 500s)
+  supabase-browser · supabase-server (service role) · midtrans · rate-limit · logger · phone
+  compress-image · profile-image-upload · language-context · translations · public-errors
+types/domain.ts     all shared types
+supabase/           schema.sql · others.sql · seeder.sql  (the 3 canonical SQL files)
 ```
 
 ---
 
-## Environment Variables
+## Database — 3 SQL files (run in order)
 
-Create `.env` in project root:
+**Destructive rebuild model** (pre-launch). Run in the Supabase SQL editor:
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-```
-
----
-
-## Database
+1. **`schema.sql`** — DDL only: extensions, table drops + creates, all functions, triggers, indexes, profile backfill. All triggers are `drop ... if exists`-guarded so re-runs are clean (incl. `on_auth_user_created` on `auth.users`).
+2. **`others.sql`** — security + infra: RLS enable + all policies, money-function `revoke`/`grant`, storage buckets + storage policies, pg_cron settlement job. Idempotent.
+3. **`seeder.sql`** — demo data (truncate + insert). Then `npm run seed:users` for admin/vendor/customer accounts + sample forum content.
 
 ### Tables
 | Table | Purpose |
 |-------|---------|
-| `profiles` | User profiles (extends auth.users) — role: customer/vendor/admin |
-| `vendors` | Business listings — name, category, city, whatsapp, hero_image_url, whatsapp_clicks |
-| `vendor_hours` | Operating hours per day (0=Sunday–6=Saturday) |
-| `vendor_items` | Products/menu/services — item_type, price, is_active |
-| `forum_categories` | Forum category list |
-| `forum_threads` | Discussion threads |
-| `forum_replies` | Thread replies |
-| `favorites` | User → vendor favorites (DB exists, no frontend UI yet) |
-| `vendor_metrics` | Engagement metrics (DB exists, temporarily hidden in UI) |
+| `profiles` | extends auth.users; role customer/vendor/admin |
+| `vendors` | listings; +`logo_url`, `address`, `university`, `sales_system`, `delivery_methods`, `ktm_url`, `whatsapp_clicks` |
+| `vendor_metrics` | rating/response/review_count (auto-recalc trigger) |
+| `vendor_hours`, `vendor_items` | hours; products/menu/services |
+| `vendor_reviews` | rating + content + `image_url` + `vendor_reply` |
+| `favorites` | user↔vendor |
+| `forum_categories`, `forum_threads`, `forum_replies` | forum (+ `image_url`, `updated_at`) |
+| `notifications` | in-app, jsonb payload, 9 types |
+| `reports` | polymorphic moderation queue |
+| `wallets`, `wallet_transactions` | balance (bigint IDR) + append-only ledger |
+| `topups` | Midtrans orders |
+| `featured_bids`, `featured_slots` | sealed daily auction + winners |
 
-### RLS Policies
-- **Public read** on vendors (verified only), forum categories/threads/replies
-- **Self-update** on profiles (`auth.uid() = id`)
-- **Owner-write** on vendors, vendor_hours, vendor_items (via `owner_id`)
-- **Admin-all** via `is_admin()` SQL function — profiles, vendors, threads, replies
+### Key functions
+`is_admin()`, `touch_updated_at()`, `handle_new_user()`, `increment_whatsapp_clicks()`, `recalculate_vendor_rating()`, `credit_wallet()`, `settle_topup()`, `settle_featured_auction()`, `next_bid_round()`, and 7 `notify_*` fan-out triggers.
 
-### Required Migrations
-If starting from the base `schema.sql`, the following additions at the bottom must also be applied:
-1. `whatsapp_clicks` column on vendors
-2. `increment_whatsapp_clicks(uuid)` RPC function
-3. Vendor owner update/insert policies
-4. Admin RLS policies
+### RLS principles
+Public read on vendors/metrics/hours/active-items/reviews/forum/featured_slots. Owner-write on vendor-owned tables. `is_admin()` (SECURITY DEFINER, bypasses RLS internally — no recursion) gates admin policies. Money tables are read-own only; balances mutate only via service-role functions.
+
+> **PostgREST embedding caveat:** tables reference `auth.users(id)`, not `profiles(id)`. PostgREST cannot embed `profiles` through an `auth.users` FK, so author/owner names must be fetched in a **separate query keyed by the id** (or the FK retargeted to `profiles`). See `tasklist.md`.
 
 ---
 
-## API Routes
-
-### Public
-| Method | Endpoint | Purpose |
-|--------|----------|---------|
-| GET | `/api/vendors` | List vendors (filtered by search/category) |
-| GET | `/api/vendors/[id]` | Single vendor detail with hours + items |
-| POST | `/api/vendor/whatsapp-click` | Increment WhatsApp click counter |
-| GET | `/api/health` | Health check |
-
-### Authenticated (Bearer token)
-| Method | Endpoint | Purpose |
-|--------|----------|---------|
-| GET/PUT | `/api/profile` | Current user profile |
-| POST | `/api/vendor-onboarding` | Start vendor registration |
-| GET/PUT | `/api/vendor/profile` | Vendor's own profile |
-| GET/PUT | `/api/vendor/hours` | Vendor operating hours (batch upsert) |
-| GET/POST | `/api/vendor/items` | Vendor items list + create |
-| PUT/DELETE | `/api/vendor/items/[id]` | Update/delete single item |
-| GET/POST/DELETE | `/api/favorites` | Manage user favorites |
-
-### Admin Only (Bearer token + role=admin)
-| Method | Endpoint | Purpose |
-|--------|----------|---------|
-| GET | `/api/admin/stats` | KPI counts |
-| GET/PATCH | `/api/admin/vendors` | List + approve/reject vendors |
-| GET/PATCH | `/api/admin/users` | List + change user roles |
-| GET/DELETE | `/api/admin/forum` | List + delete threads/replies |
-
----
-
-## Design System
-
-Defined in `styles/globals.css` using CSS custom properties:
-
-```css
---pacific: #1CA9C9       /* Primary — Pacific Blue */
---orange: #E86100        /* Accent — Spanish Orange */
---gradient-main          /* Pacific → Orange */
---gradient-warm          /* Orange → Pacific */
---gradient-subtle        /* Low-opacity background gradient */
+## Environment variables
 ```
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY            # or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+SUPABASE_SERVICE_ROLE_KEY                # server-only; required for API routes/SSR
+MIDTRANS_SERVER_KEY                      # server-only
+NEXT_PUBLIC_MIDTRANS_CLIENT_KEY          # Snap.js
+MIDTRANS_IS_PRODUCTION / NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION
+```
+`npm run check:env` validates Supabase vars (Midtrans → warning).
 
-### Key Classes
-| Class | Usage |
-|-------|-------|
-| `.card` | Standard content card |
-| `.dash-card` | Dashboard-specific card |
-| `.dash-stat` | Stat tile (value + label) |
-| `.action-card` | Clickable action tile |
-| `.product-row` | Item row in vendor dashboard |
-| `.thread-card` | Forum thread card |
-| `.badge.pacific` / `.badge.success` | Color-coded badges |
-| `.chip` | Filter chip button |
-| `.hero` | Page hero section |
-| `.bubble-section` | Section with floating bubble decorations |
-| `.dropzone` | File upload dropzone |
-| `.btn` / `.btn.ghost` | Standard buttons |
+---
+
+## Auth & API conventions
+- `resolveAuthedUser(req)` validates the Bearer token and returns a **service-role** Supabase client (bypasses RLS — endpoints enforce ownership in code).
+- `requireAdmin(req,res)` → 403 unless `profiles.role = 'admin'`.
+- Responses via `lib/api-response`; 500s log a structured line + return a `requestId`.
+- Mutating endpoints (topup/bids/reports/reviews) pass through `lib/rate-limit`.
+
+## Storage
+Buckets: `avatars`, `forum-images`, `vendor-assets` (public), `vendor-documents` (private; KTM). Every upload path starts with `${auth.uid()}/…`; RLS scopes writes to that folder. Admin KTM view fetches a 120s signed URL via `/api/admin/vendors/ktm`.
+
+## Payments (Midtrans)
+Top-up → `POST /api/wallet/topup` creates a Snap transaction (server-generated order id + amount). `Snap.pay()` on the client. Midtrans → `POST /api/payments/midtrans/webhook` (SHA-512 signature verified) → `settle_topup()` credits the wallet exactly once. Set the Payment Notification URL to `/api/payments/midtrans/webhook`.
+
+## Featured auction
+Bids target `next_bid_round()` (next unsettled round). `settle_featured_auction(round)` picks the top 5 payable bids, charges wallets, writes `featured_slots` (24h), notifies winners/losers. Idempotent per round. Runs via pg_cron (00:01) or admin manual trigger.
 
 ---
 
 ## Development
-
 ```bash
-# Install
 npm install
-
-# Run dev server
-npm run dev
-
-# Type check
-npx tsc --noEmit
-
-# Node version (required for @tailwindcss/oxide)
-nvm use 21
+npm run dev            # or dev:ready (runs check:env first)
+npx tsc --noEmit       # type check
 ```
 
----
-
-## Deployment (Vercel)
-
-1. Push to GitHub
-2. Connect repo in Vercel dashboard
-3. Set environment variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`)
-4. Deploy — Vercel auto-detects Next.js
-
----
-
-## Security Checklist
-
-- [x] Bearer token auth on all mutating endpoints
-- [x] RLS policies on all tables
-- [x] Admin middleware (`requireAdmin`) checks profile role
-- [x] Image compression prevents oversized uploads
-- [x] Ownership verification on vendor item/hour updates
-- [x] No hardcoded secrets (all via `.env`)
-
----
-
-**Version:** 2.0.0
-**Status:** Feature Complete (MVP) ✅
+## Deploy
+See `README.md` → "Deploy runbook" (SQL order, env, Midtrans webhook, pg_cron, smoke-test checklist).

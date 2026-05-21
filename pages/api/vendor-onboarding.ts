@@ -41,6 +41,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ? body.deliveryMethod.filter((item): item is string => typeof item === "string")
     : [];
   const ktmUrl = typeof body.ktmUrl === "string" ? body.ktmUrl.trim() : null;
+  const major = typeof body.major === "string" ? body.major.trim() : "";
+  const graduationYearRaw = Number(body.graduationYear);
+  const graduationYear = Number.isInteger(graduationYearRaw) ? graduationYearRaw : null;
 
   if (!fullName || !university || !whatsappNumber || !businessName || !category || !description || !salesSystem || deliveryMethod.length === 0) {
     return res.status(400).json({ error: "Data vendor belum lengkap" });
@@ -51,6 +54,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     .update({
       full_name: fullName,
       phone: whatsappNumber,
+      major: major || null,
+      graduation_year: graduationYear,
       role: "vendor",
       updated_at: new Date().toISOString(),
     })
@@ -74,8 +79,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return sendInternalServerError(res, "Unable to save vendor data");
   }
 
+  const DELIVERY_LABELS: Record<string, string> = {
+    "cod-kampus": "COD Kampus",
+    "digital-delivery": "Digital Delivery",
+    lainnya: "Lainnya",
+  };
   const deliveryText = deliveryMethod
-    .map((item) => (item === "cod-kampus" ? "COD Kampus" : "Digital Delivery"))
+    .map((item) => DELIVERY_LABELS[item] ?? item)
     .join(", ");
 
   const vendorPayload = {

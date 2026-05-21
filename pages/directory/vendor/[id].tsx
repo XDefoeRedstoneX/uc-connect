@@ -1,6 +1,7 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { GetServerSideProps } from "next";
+import Head from "next/head";
 import SiteLayout from "@/components/SiteLayout";
 import LoadingScreen from "@/components/LoadingScreen";
 import ReportButton from "@/components/ReportButton";
@@ -27,6 +28,13 @@ function formatTimeRange(opensAt: string | null, closesAt: string | null) {
   if (!opensAt || !closesAt) return "-";
   return `${opensAt.slice(0, 5)} – ${closesAt.slice(0, 5)}`;
 }
+
+const SALES_SYSTEM_LABELS: Record<string, string> = {
+  "ready-stock": "Ready Stock",
+  "pre-order": "Pre-Order",
+  lainnya: "Lainnya",
+};
+const salesSystemLabel = (v: string) => SALES_SYSTEM_LABELS[v] ?? v;
 
 export default function VendorDetailPage() {
   const router = useRouter();
@@ -134,8 +142,26 @@ export default function VendorDetailPage() {
     );
   }
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name: vendor.name,
+    description: vendor.description ?? undefined,
+    image: vendor.hero_image_url ?? vendor.logo_url ?? undefined,
+    telephone: vendor.whatsapp ?? undefined,
+    address: vendor.address || vendor.city
+      ? { "@type": "PostalAddress", addressLocality: vendor.city ?? undefined, streetAddress: vendor.address ?? undefined, addressCountry: "ID" }
+      : undefined,
+    aggregateRating: vendor.metrics && vendor.metrics.review_count > 0
+      ? { "@type": "AggregateRating", ratingValue: Number(vendor.metrics.sample_rating).toFixed(1), reviewCount: vendor.metrics.review_count }
+      : undefined,
+  };
+
   return (
     <SiteLayout title={`${vendor.name} | UC Connect`}>
+      <Head>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      </Head>
       {/* ── Hero banner ── */}
       <section className="detail-hero" aria-labelledby="vendor-name-title">
         <img
@@ -216,7 +242,7 @@ export default function VendorDetailPage() {
               {vendor.sales_system && (
                 <div style={{ display: "flex", gap: "0.6rem", alignItems: "baseline", fontSize: "0.88rem" }}>
                   <span style={{ color: "var(--muted)", minWidth: "9rem", flexShrink: 0 }}>🧾 Sistem Penjualan</span>
-                  <span style={{ fontWeight: 600, color: "var(--text)" }}>{vendor.sales_system}</span>
+                  <span style={{ fontWeight: 600, color: "var(--text)" }}>{salesSystemLabel(vendor.sales_system)}</span>
                 </div>
               )}
               {vendor.delivery_methods && (
@@ -390,7 +416,7 @@ export default function VendorDetailPage() {
                   let imageUrl: string | null = null;
                   if (reviewImage && currentUserId) {
                     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-                    const path = `reviews/${vendor.id}/${currentUserId}-${Date.now()}.jpg`;
+                    const path = `${currentUserId}/reviews/${Date.now()}.jpg`;
                     const up = await fetch(`${supabaseUrl}/storage/v1/object/vendor-assets/${path}`, {
                       method: "POST",
                       headers: { Authorization: `Bearer ${token}`, "Content-Type": reviewImage.type, "x-upsert": "true" },

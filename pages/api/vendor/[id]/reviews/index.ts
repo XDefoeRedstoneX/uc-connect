@@ -6,6 +6,7 @@ import {
   sendServiceUnavailable,
 } from "@/lib/api-response";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
+import { rateLimited } from "@/lib/rate-limit";
 
 const REVIEW_COLUMNS =
   "id,vendor_id,user_id,rating,content,image_url,vendor_reply,vendor_reply_at,created_at,profiles:user_id(full_name,avatar_url)";
@@ -41,11 +42,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const { supabase, userId } = authContext;
+    if (rateLimited(res, `review:${userId}`, { limit: 10, windowMs: 60_000 })) return;
+
     const { rating, content, image_url } = req.body as { rating?: number; content?: string; image_url?: string };
 
     if (!rating || rating < 1 || rating > 5) {
       return res.status(400).json({ error: "Rating harus antara 1-5" });
     }
+
+    // Only accept image URLs that point at our own Supabase storage.
+    const storagePrefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""}/storage/v1/object/public/`;
+    const cleanImageUrl =
+      typeof image_url === "string" && image_url.startsWith(storagePrefix) ? image_url : null;
 
     const { data: vendor } = await supabase
       .from("vendors")
@@ -66,7 +74,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         user_id: userId,
         rating: Math.round(rating),
         content: content?.trim() || null,
-        image_url: image_url?.trim() || null,
+        image_url: cleanImageUrl,
       })
       .select("id,vendor_id,user_id,rating,content,image_url,vendor_reply,vendor_reply_at,created_at")
       .single();

@@ -7,6 +7,7 @@ type Props = {
   items: VendorItem[];
   vendor: VendorProfile;
   token: string;
+  userId: string;
   onItemsChange: (items: VendorItem[]) => void;
 };
 
@@ -23,10 +24,11 @@ function inferType(category: string | null): "menu" | "service" | "product" {
 
 const TYPE_LABELS: Record<string, string> = { menu: "Menu / Makanan", service: "Layanan / Jasa", product: "Produk" };
 
-async function uploadItemImage(token: string, vendorId: string, itemId: string, file: File): Promise<string> {
+async function uploadItemImage(token: string, userId: string, itemId: string, file: File): Promise<string> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   const ext = file.type === "image/png" ? "png" : "jpg";
-  const path = `vendor-items/${vendorId}/${itemId}-${Date.now()}.${ext}`;
+  // Prefixed with the owner's user id for storage RLS owner-scoping.
+  const path = `${userId}/items/${itemId}-${Date.now()}.${ext}`;
   // Use the user's session token — Supabase Storage RLS rejects the anon key.
   const res = await fetch(`${supabaseUrl}/storage/v1/object/vendor-assets/${path}`, {
     method: "POST",
@@ -37,7 +39,7 @@ async function uploadItemImage(token: string, vendorId: string, itemId: string, 
   return `${supabaseUrl}/storage/v1/object/public/vendor-assets/${path}`;
 }
 
-export default function TabItems({ items, vendor, token, onItemsChange }: Props) {
+export default function TabItems({ items, vendor, token, userId, onItemsChange }: Props) {
   const itemType = inferType(vendor.category);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -81,7 +83,7 @@ export default function TabItems({ items, vendor, token, onItemsChange }: Props)
     // Upload image if provided
     if (imageFile) {
       try {
-        const imageUrl = await uploadItemImage(token, vendor.id, savedItem.id, imageFile);
+        const imageUrl = await uploadItemImage(token, userId, savedItem.id, imageFile);
         // Update item with image URL
         await fetch(`/api/vendor/items/${savedItem.id}`, {
           method: "PUT",

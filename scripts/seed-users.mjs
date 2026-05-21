@@ -51,12 +51,12 @@ const supabase = createClient(url, serviceKey, {
   realtime: { transport: ws },
 });
 
-const PASSWORD = "ChangeMe123!";
+const PASSWORD = "asdasdasd";
 
 const USERS = [
-  { email: "admin@ucconnect.test",    role: "admin",    fullName: "UC Connect Admin",    username: "admin" },
-  { email: "vendor@ucconnect.test",   role: "vendor",   fullName: "Demo Vendor Owner",   username: "demo_vendor" },
-  { email: "customer@ucconnect.test", role: "customer", fullName: "Demo Customer",       username: "demo_customer" },
+  { email: "admin@asd.asd",    role: "admin",    fullName: "UC Connect Admin",    username: "admin" },
+  { email: "vendor@asd.asd",   role: "vendor",   fullName: "Demo Vendor Owner",   username: "demo_vendor" },
+  { email: "customer@asd.asd", role: "customer", fullName: "Demo Customer",       username: "demo_customer" },
 ];
 
 async function findUserByEmail(email) {

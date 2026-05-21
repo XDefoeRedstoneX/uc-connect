@@ -22,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === "GET") {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id,username,full_name,phone,avatar_url,role,updated_at")
+      .select("id,username,full_name,phone,avatar_url,major,graduation_year,role,updated_at")
       .eq("id", userId)
       .single();
 
@@ -56,7 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           },
           { onConflict: "id" },
         )
-        .select("id,username,full_name,phone,avatar_url,role,updated_at")
+        .select("id,username,full_name,phone,avatar_url,major,graduation_year,role,updated_at")
         .single();
 
       if (createError) {
@@ -71,12 +71,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === "PUT") {
-    const { username, full_name, phone, avatar_url } = req.body ?? {};
+    const { username, full_name, phone, avatar_url, major, graduation_year } = req.body ?? {};
 
     const cleanUsername = trimToNull(username);
     const cleanFullName = trimToNull(full_name);
     const cleanPhone = trimToNull(phone);
     const cleanAvatarUrl = trimToNull(avatar_url);
+    const cleanMajor = trimToNull(major);
+    const gradNum = Number(graduation_year);
+    const cleanGradYear = Number.isInteger(gradNum) && gradNum > 1900 && gradNum < 2100 ? gradNum : null;
 
     const { data, error } = await supabase
       .from("profiles")
@@ -87,11 +90,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           full_name: cleanFullName,
           phone: cleanPhone,
           avatar_url: cleanAvatarUrl,
+          major: cleanMajor,
+          graduation_year: cleanGradYear,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "id" },
       )
-      .select("id,username,full_name,phone,avatar_url,role,updated_at")
+      .select("id,username,full_name,phone,avatar_url,major,graduation_year,role,updated_at")
       .single();
 
     if (error) {
