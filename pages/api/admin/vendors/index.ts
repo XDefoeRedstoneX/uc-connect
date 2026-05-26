@@ -60,22 +60,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (action === "reject") {
-      // Read owner_id FIRST — before deleting, so we can reset their role
+      // Read owner_id FIRST so we can reset their role before deleting the
+      // vendor row. Role-reset runs first: if it fails, the vendor record is
+      // still intact and the admin can retry, instead of being orphaned with
+      // a stale "vendor" role and no vendor row.
       const { data: vendorToReject } = await supabase
         .from("vendors")
         .select("owner_id")
         .eq("id", vendor_id)
         .maybeSingle();
 
-      const { error } = await supabase.from("vendors").delete().eq("id", vendor_id);
-      if (error) return sendInternalServerError(res, "Failed to reject vendor");
-
-      // Reset the owner's role back to customer
       if (vendorToReject?.owner_id) {
-        await supabase
+        const { error: roleError } = await supabase
           .from("profiles")
           .update({ role: "customer" })
           .eq("id", vendorToReject.owner_id);
+        if (roleError) {
+          console.error("[api/admin/vendors reject] role reset failed", roleError);
+          return res.status(500).json({
+            error: "Gagal mereset role owner. Vendor belum dihapus, silakan coba lagi.",
+          });
+        }
+      }
+
+      const { error } = await supabase.from("vendors").delete().eq("id", vendor_id);
+      if (error) {
+        console.error("[api/admin/vendors reject] delete failed", error);
+        return res.status(500).json({
+          error: "Role owner sudah direset ke customer, tapi vendor gagal dihapus. Cek manual.",
+        });
       }
 
       return res.status(200).json({ success: true, deleted: true });

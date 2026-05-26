@@ -21,7 +21,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     .limit(50);
 
   if (typeof q === "string" && q.trim()) {
-    query = query.or(`name.ilike.%${q.trim()}%,description.ilike.%${q.trim()}%`);
+    // PostgREST .or() parses commas + parens as delimiters and treats `*` as
+    // a wildcard. Strip those so user input can't break out of the filter.
+    const safeQ = q.trim().replace(/[,()*]/g, " ").slice(0, 80);
+    if (safeQ) {
+      query = query.or(`name.ilike.%${safeQ}%,description.ilike.%${safeQ}%`);
+    }
   }
 
   if (typeof category === "string" && category.trim()) {
