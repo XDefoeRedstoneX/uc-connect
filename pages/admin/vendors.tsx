@@ -12,7 +12,8 @@ type AdminVendor = {
   category: string | null; city: string | null; whatsapp: string | null;
   is_verified: boolean; created_at: string; owner_id: string | null;
   university: string | null; ktm_url: string | null;
-  profiles: { full_name: string | null; email: string | null } | null;
+  owner_email: string | null;
+  profiles: { full_name: string | null; username: string | null } | null;
 };
 
 export default function AdminVendorsPage() {
@@ -118,7 +119,9 @@ export default function AdminVendorsPage() {
                     {v.whatsapp && <span style={{ color: "var(--muted)" }}>📱 {v.whatsapp}</span>}
                   </div>
                   <p style={{ fontSize: "0.78rem", color: "var(--muted)", marginTop: "0.35rem" }}>
-                    Owner: {v.profiles?.full_name ?? v.profiles?.email ?? "—"} · {new Date(v.created_at).toLocaleDateString("id-ID")}
+                    Owner: {v.profiles?.full_name ?? v.profiles?.username ?? "—"}
+                    {v.owner_email ? ` · ${v.owner_email}` : ""}
+                    {" · "}{new Date(v.created_at).toLocaleDateString("id-ID")}
                   </p>
                 </div>
                 <div style={{ display: "flex", gap: "0.4rem", flexShrink: 0 }}>
