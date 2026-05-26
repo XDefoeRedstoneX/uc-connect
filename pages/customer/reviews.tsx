@@ -5,6 +5,7 @@ import Link from "next/link";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import LoadingScreen from "@/components/LoadingScreen";
+import { useToast } from "@/components/ToastProvider";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type MyReview = {
@@ -20,6 +21,7 @@ type MyReview = {
 
 export default function MyReviewsPage() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [reviews, setReviews] = useState<MyReview[]>([]);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,7 +47,12 @@ export default function MyReviewsPage() {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
     const { error } = await supabase.from("vendor_reviews").delete().eq("id", reviewId);
-    if (!error) setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+    if (error) {
+      showToast(`Gagal menghapus ulasan: ${error.message}`, "error");
+      return;
+    }
+    setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+    showToast("Ulasan dihapus.");
   }
 
   if (loading) return <SiteLayout title="Ulasan Saya | UC Connect"><LoadingScreen message="Memuat ulasan..." /></SiteLayout>;

@@ -12,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const status = req.query.status as string | undefined; // "pending" | "verified" | "all"
     let query = supabase
       .from("vendors")
-      .select("id,slug,name,tagline,category,city,whatsapp,is_verified,created_at,owner_id,university,ktm_url,profiles!vendors_owner_id_fkey(full_name,email:username)")
+      .select("id,slug,name,tagline,category,city,whatsapp,is_verified,created_at,owner_id,university,ktm_url,profiles!vendors_owner_id_fkey(full_name,username)")
       .order("created_at", { ascending: false })
       .limit(100);
 
@@ -21,7 +21,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { data, error } = await query;
     if (error) return sendInternalServerError(res, "Failed to load vendors");
-    return res.status(200).json({ vendors: data ?? [] });
+
+    // Resolve the real auth.users.email per owner via service-role admin API.
+    // Cache per owner_id so duplicate owners don't trigger duplicate calls.
+    const uniqueOwnerIds = Array.from(
+      new Set((data ?? []).map((v) => v.owner_id).filter((id): id is string => Boolean(id))),
+    );
+    const emailByOwnerId = new Map<string, string | null>();
+    await Promise.all(
+      uniqueOwnerIds.map(async (ownerId) => {
+        const { data: userData, error: userErr } = await supabase.auth.admin.getUserById(ownerId);
+        if (userErr) {
+          console.warn("[api/admin/vendors] getUserById failed for", ownerId, userErr.message);
+          emailByOwnerId.set(ownerId, null);
+          return;
+        }
+        emailByOwnerId.set(ownerId, userData.user?.email ?? null);
+      }),
+    );
+
+    const vendors = (data ?? []).map((v) => ({
+      ...v,
+      owner_email: v.owner_id ? emailByOwnerId.get(v.owner_id) ?? null : null,
+    }));
+
+    return res.status(200).json({ vendors });
   }
 
   // PATCH — approve or reject vendor

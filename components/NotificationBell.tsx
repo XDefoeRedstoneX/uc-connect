@@ -252,6 +252,12 @@ function renderNotif(n: Notification): { icon: string; message: string; href: st
         message: `Top-up berhasil. Saldo bertambah Rp${Number(p.amount ?? 0).toLocaleString("id-ID")}.`,
         href: "/vendor/dashboard",
       };
+    default:
+      return {
+        icon: "🔔",
+        message: `Notifikasi baru (${n.type}).`,
+        href: null,
+      };
   }
 }
 

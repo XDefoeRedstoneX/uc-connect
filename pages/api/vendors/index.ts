@@ -43,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     .gt("ends_at", new Date().toISOString())
     .order("rank", { ascending: true });
 
-  const featuredIds = (slots ?? []).map((s) => s.vendor_id);
+  const featuredIds = Array.from(new Set((slots ?? []).map((s) => s.vendor_id)));
   let featured: typeof data = [];
   if (featuredIds.length > 0) {
     const { data: featuredVendors } = await supabase
