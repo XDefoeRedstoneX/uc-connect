@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { sendMethodNotAllowed } from "@/lib/api-response";
-import { getSupabaseServerClient } from "@/lib/supabase-server";
+import { getSupabaseServiceClient } from "@/lib/supabase-server";
 import { verifyMidtransSignature, mapMidtransStatus } from "@/lib/midtrans";
 import { log } from "@/lib/logger";
 
@@ -16,8 +16,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(403).json({ error: "Invalid signature" });
   }
 
-  const supabase = getSupabaseServerClient();
-  if (!supabase) return res.status(503).json({ error: "Service unavailable" });
+  // settle_topup RPC writes to wallet_ledger + topups under SECURITY DEFINER;
+  // without the service-role key the anon fallback would silently fail RLS,
+  // leaving payments unsettled. Hard-fail instead.
+  const supabase = getSupabaseServiceClient();
+  if (!supabase) {
+    log.error("midtrans_webhook_no_service_role", { order_id: body.order_id });
+    return res.status(503).json({ error: "Service unavailable" });
+  }
 
   const orderId = body.order_id;
   const mapped = mapMidtransStatus(body);

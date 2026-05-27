@@ -94,7 +94,8 @@ drop policy if exists "forum_threads_author_update" on public.forum_threads;
 create policy "forum_threads_author_update" on public.forum_threads for update
   using (auth.uid() = author_id and now() - created_at < interval '15 minutes') with check (auth.uid() = author_id);
 drop policy if exists "forum_threads_author_delete" on public.forum_threads;
-create policy "forum_threads_author_delete" on public.forum_threads for delete using (auth.uid() = author_id);
+create policy "forum_threads_author_delete" on public.forum_threads for delete
+  using (auth.uid() = author_id and now() - created_at < interval '15 minutes');
 drop policy if exists "forum_threads_admin_delete" on public.forum_threads;
 create policy "forum_threads_admin_delete" on public.forum_threads for delete using (public.is_admin());
 
@@ -106,7 +107,8 @@ drop policy if exists "forum_replies_author_update" on public.forum_replies;
 create policy "forum_replies_author_update" on public.forum_replies for update
   using (auth.uid() = author_id and now() - created_at < interval '15 minutes') with check (auth.uid() = author_id);
 drop policy if exists "forum_replies_author_delete" on public.forum_replies;
-create policy "forum_replies_author_delete" on public.forum_replies for delete using (auth.uid() = author_id);
+create policy "forum_replies_author_delete" on public.forum_replies for delete
+  using (auth.uid() = author_id and now() - created_at < interval '15 minutes');
 drop policy if exists "forum_replies_admin_delete" on public.forum_replies;
 create policy "forum_replies_admin_delete" on public.forum_replies for delete using (public.is_admin());
 

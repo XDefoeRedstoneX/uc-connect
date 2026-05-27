@@ -73,15 +73,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .maybeSingle();
 
     if (existing) {
+      // Guard against the cron-vs-request race: if settlement flipped the row
+      // to "settled" between our existence check and this update, the .eq
+      // filter returns zero rows and we surface a 409 so the client can refresh.
       const { data: updated, error } = await supabase
         .from("featured_bids")
         .update({ amount_idr: amount, updated_at: new Date().toISOString() })
         .eq("id", existing.id)
+        .eq("status", "active")
         .select("id,vendor_id,round_date,amount_idr,status,created_at,updated_at")
-        .single();
+        .maybeSingle();
       if (error) {
         console.error("[api/featured/bids POST update]", error);
         return sendInternalServerError(res, "Gagal memperbarui bid");
+      }
+      if (!updated) {
+        return res.status(409).json({ error: "Bid sudah masuk settlement, refresh dan submit ulang" });
       }
       return res.status(200).json({ bid: updated });
     }

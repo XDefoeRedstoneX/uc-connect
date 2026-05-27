@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { randomUUID } from "crypto";
 import { resolveAuthedUser } from "@/lib/api-auth";
 import {
   sendInternalServerError,
@@ -34,7 +35,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   // Server-generated order id — never trust the client for the amount or id.
-  const orderId = `ucc-topup-${userId.slice(0, 8)}-${Date.now()}`;
+  // randomUUID() instead of Date.now() so two top-ups created in the same
+  // millisecond can't collide on the topups.order_id unique constraint.
+  const orderId = `ucc-topup-${userId.slice(0, 8)}-${randomUUID()}`;
 
   const { error: insertError } = await supabase.from("topups").insert({
     user_id: userId,

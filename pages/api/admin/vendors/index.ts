@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { requireAdmin } from "@/lib/api-admin";
-import { sendMethodNotAllowed, sendInternalServerError } from "@/lib/api-response";
+import { sendMethodNotAllowed, sendInternalServerError, sendServiceUnavailable } from "@/lib/api-response";
+import { getSupabaseServiceClient } from "@/lib/supabase-server";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const ctx = await requireAdmin(req, res);
@@ -22,15 +23,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data, error } = await query;
     if (error) return sendInternalServerError(res, "Failed to load vendors");
 
-    // Resolve the real auth.users.email per owner via service-role admin API.
-    // Cache per owner_id so duplicate owners don't trigger duplicate calls.
+    // Resolve the real auth.users.email per owner via the strict service-role
+    // client. Cache per owner_id so duplicate owners don't trigger duplicate calls.
+    const serviceClient = getSupabaseServiceClient();
+    if (!serviceClient) return sendServiceUnavailable(res);
+
     const uniqueOwnerIds = Array.from(
       new Set((data ?? []).map((v) => v.owner_id).filter((id): id is string => Boolean(id))),
     );
     const emailByOwnerId = new Map<string, string | null>();
     await Promise.all(
       uniqueOwnerIds.map(async (ownerId) => {
-        const { data: userData, error: userErr } = await supabase.auth.admin.getUserById(ownerId);
+        const { data: userData, error: userErr } = await serviceClient.auth.admin.getUserById(ownerId);
         if (userErr) {
           console.warn("[api/admin/vendors] getUserById failed for", ownerId, userErr.message);
           emailByOwnerId.set(ownerId, null);
@@ -60,22 +64,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (action === "reject") {
-      // Read owner_id FIRST — before deleting, so we can reset their role
+      // Read owner_id FIRST so we can reset their role before deleting the
+      // vendor row. Role-reset runs first: if it fails, the vendor record is
+      // still intact and the admin can retry, instead of being orphaned with
+      // a stale "vendor" role and no vendor row.
       const { data: vendorToReject } = await supabase
         .from("vendors")
         .select("owner_id")
         .eq("id", vendor_id)
         .maybeSingle();
 
-      const { error } = await supabase.from("vendors").delete().eq("id", vendor_id);
-      if (error) return sendInternalServerError(res, "Failed to reject vendor");
-
-      // Reset the owner's role back to customer
       if (vendorToReject?.owner_id) {
-        await supabase
+        const { error: roleError } = await supabase
           .from("profiles")
           .update({ role: "customer" })
           .eq("id", vendorToReject.owner_id);
+        if (roleError) {
+          console.error("[api/admin/vendors reject] role reset failed", roleError);
+          return res.status(500).json({
+            error: "Gagal mereset role owner. Vendor belum dihapus, silakan coba lagi.",
+          });
+        }
+      }
+
+      const { error } = await supabase.from("vendors").delete().eq("id", vendor_id);
+      if (error) {
+        console.error("[api/admin/vendors reject] delete failed", error);
+        return res.status(500).json({
+          error: "Role owner sudah direset ke customer, tapi vendor gagal dihapus. Cek manual.",
+        });
       }
 
       return res.status(200).json({ success: true, deleted: true });

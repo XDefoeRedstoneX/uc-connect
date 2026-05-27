@@ -25,3 +25,22 @@ export function getSupabaseServerClient() {
     },
   });
 }
+
+/**
+ * Strict service-role client. Returns null when SUPABASE_SERVICE_ROLE_KEY is
+ * missing — callers MUST short-circuit (typically with 503) instead of silently
+ * falling back to an anon key that can't perform the privileged operation
+ * (auth.admin.*, RPCs that bypass RLS, etc.). Use this on routes where a misconfigured
+ * env should fail loudly, not return wrong-shaped data.
+ */
+export function getSupabaseServiceClient() {
+  if (!supabaseUrl || !supabaseServiceRole) {
+    return null;
+  }
+  return createClient(supabaseUrl, supabaseServiceRole, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+}

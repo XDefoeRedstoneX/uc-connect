@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { requireAdmin } from "@/lib/api-admin";
-import { sendInternalServerError, sendMethodNotAllowed } from "@/lib/api-response";
+import { sendInternalServerError, sendMethodNotAllowed, sendServiceUnavailable } from "@/lib/api-response";
+import { getSupabaseServiceClient } from "@/lib/supabase-server";
 
 // Returns a short-lived signed URL for a vendor's (private) KTM document.
 // vendor.ktm_url stores the object PATH within the vendor-documents bucket.
@@ -9,7 +10,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const ctx = await requireAdmin(req, res);
   if (!ctx) return;
-  const { supabase } = ctx;
+
+  // createSignedUrl on the private vendor-documents bucket needs service role —
+  // anon fallback would silently 404 the KTM and confuse admins doing verification.
+  const supabase = getSupabaseServiceClient();
+  if (!supabase) return sendServiceUnavailable(res);
 
   const vendorId = req.query.vendor_id as string;
   if (!vendorId) return res.status(400).json({ error: "vendor_id wajib" });

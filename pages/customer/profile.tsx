@@ -462,7 +462,8 @@ function DangerZone() {
 
       const res = await fetch("/api/profile", {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ confirm: "HAPUS" }),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));

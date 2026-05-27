@@ -294,10 +294,12 @@ export default function ThreadPage({ category, thread: initialThread, replies: i
                     ✏️ Edit
                   </button>
                 )}
-                <button type="button" style={{ fontSize: "0.78rem", padding: "0.25rem 0.6rem", background: "var(--error)" }}
-                  onClick={() => void deleteThread()}>
-                  🗑 Hapus
-                </button>
+                {isWithinEditWindow(thread.created_at) && (
+                  <button type="button" style={{ fontSize: "0.78rem", padding: "0.25rem 0.6rem", background: "var(--error)" }}
+                    onClick={() => void deleteThread()}>
+                    🗑 Hapus
+                  </button>
+                )}
               </>
             )}
             {currentUserId && currentUserId !== thread.author_id && (
@@ -392,10 +394,12 @@ export default function ThreadPage({ category, thread: initialThread, replies: i
                         ✏️ Edit
                       </button>
                     )}
-                    <button type="button" style={{ fontSize: "0.72rem", padding: "0.2rem 0.5rem", background: "var(--error)" }}
-                      onClick={() => void deleteReply(r.id)}>
-                      🗑 Hapus
-                    </button>
+                    {isWithinEditWindow(r.created_at) && (
+                      <button type="button" style={{ fontSize: "0.72rem", padding: "0.2rem 0.5rem", background: "var(--error)" }}
+                        onClick={() => void deleteReply(r.id)}>
+                        🗑 Hapus
+                      </button>
+                    )}
                   </>
                 )}
                 {currentUserId && currentUserId !== r.author_id && (
