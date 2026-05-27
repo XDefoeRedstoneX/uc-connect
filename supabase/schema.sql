@@ -62,11 +62,27 @@ begin
   meta_username := nullif(btrim(coalesce(new.raw_user_meta_data->>'username', '')), '');
   meta_full_name := nullif(btrim(coalesce(new.raw_user_meta_data->>'full_name', '')), '');
   meta_phone := nullif(btrim(coalesce(new.raw_user_meta_data->>'phone', '')), '');
+
+  -- Drop the metadata username on case-insensitive collision so the partial
+  -- unique index (lower(username)) can't fail this trigger and break signup.
+  -- The self-heal path in /api/profile lets the user pick a fresh one.
+  if meta_username is not null and exists (
+    select 1 from public.profiles where lower(username) = lower(meta_username)
+  ) then
+    meta_username := null;
+  end if;
+
   insert into public.profiles (id, username, full_name, phone, role, updated_at)
   values (new.id, meta_username, meta_full_name, meta_phone, 'customer', now())
   on conflict (id) do nothing;
   return new;
 end; $$;
+
+-- Case-insensitive uniqueness for usernames. Partial index (where username
+-- is not null) so newly-signed-up users with no username yet are still allowed.
+create unique index if not exists profiles_username_lower_uidx
+  on public.profiles (lower(username))
+  where username is not null;
 
 -- ─── 3. Vendor tables ───────────────────────────────────────────────────────
 create table public.vendors (
@@ -390,35 +406,11 @@ begin
   return new;
 end; $$;
 
-create or replace function public.notify_thread_removed_by_admin()
-returns trigger language plpgsql security definer set search_path = public as $$
-begin
-  if public.is_admin() and old.author_id <> auth.uid() then
-    insert into public.notifications (user_id, type, payload)
-    values (old.author_id, 'content_removed', jsonb_build_object('target_type', 'thread', 'preview', left(old.title, 140)));
-  end if;
-  return old;
-end; $$;
-
-create or replace function public.notify_reply_removed_by_admin()
-returns trigger language plpgsql security definer set search_path = public as $$
-begin
-  if public.is_admin() and old.author_id <> auth.uid() then
-    insert into public.notifications (user_id, type, payload)
-    values (old.author_id, 'content_removed', jsonb_build_object('target_type', 'reply', 'preview', left(old.content, 140)));
-  end if;
-  return old;
-end; $$;
-
-create or replace function public.notify_review_removed_by_admin()
-returns trigger language plpgsql security definer set search_path = public as $$
-begin
-  if public.is_admin() and old.user_id <> auth.uid() then
-    insert into public.notifications (user_id, type, payload)
-    values (old.user_id, 'content_removed', jsonb_build_object('target_type', 'review', 'preview', left(coalesce(old.content, ''), 140)));
-  end if;
-  return old;
-end; $$;
+-- NOTE: content_removed notifications are emitted from the admin API routes
+-- (/api/admin/forum, /api/admin/reviews) instead of via BEFORE DELETE triggers.
+-- A trigger gated on `is_admin()` failed silently when the service-role client
+-- (auth.uid() = NULL) performed the delete, so authors weren't notified. The
+-- API path runs the same insert with deterministic timing.
 
 create or replace function public.notify_admins_on_report()
 returns trigger language plpgsql security definer set search_path = public as $$
@@ -469,12 +461,15 @@ drop trigger if exists trg_notify_thread_author_on_reply on public.forum_replies
 create trigger trg_notify_thread_author_on_reply after insert on public.forum_replies for each row execute function public.notify_thread_author_on_reply();
 drop trigger if exists trg_notify_vendor_on_approval on public.vendors;
 create trigger trg_notify_vendor_on_approval after update of is_verified on public.vendors for each row execute function public.notify_vendor_on_approval();
+-- Legacy: BEFORE DELETE triggers for content_removed notifications have been
+-- removed; the admin API routes own that notification path now.
 drop trigger if exists trg_notify_thread_removed_by_admin on public.forum_threads;
-create trigger trg_notify_thread_removed_by_admin before delete on public.forum_threads for each row execute function public.notify_thread_removed_by_admin();
 drop trigger if exists trg_notify_reply_removed_by_admin on public.forum_replies;
-create trigger trg_notify_reply_removed_by_admin before delete on public.forum_replies for each row execute function public.notify_reply_removed_by_admin();
 drop trigger if exists trg_notify_review_removed_by_admin on public.vendor_reviews;
-create trigger trg_notify_review_removed_by_admin before delete on public.vendor_reviews for each row execute function public.notify_review_removed_by_admin();
+drop function if exists public.notify_thread_removed_by_admin();
+drop function if exists public.notify_reply_removed_by_admin();
+drop function if exists public.notify_review_removed_by_admin();
+
 drop trigger if exists trg_notify_admins_on_report on public.reports;
 create trigger trg_notify_admins_on_report after insert on public.reports for each row execute function public.notify_admins_on_report();
 drop trigger if exists trg_notify_reporter_on_resolution on public.reports;

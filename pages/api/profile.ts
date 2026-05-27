@@ -43,9 +43,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const now = new Date().toISOString();
 
       const meta = (user?.user_metadata ?? {}) as Record<string, unknown>;
-      const metaUsername = trimToNull(meta.username);
+      let metaUsername = trimToNull(meta.username);
       const metaFullName = trimToNull(meta.full_name);
       const metaPhone = trimToNull(meta.phone);
+
+      // If the signup metadata's username is already taken (case-insensitive),
+      // drop it on first profile create so the user lands without an error
+      // and can pick a fresh one on the profile page.
+      if (metaUsername) {
+        const { data: clash } = await supabase
+          .from("profiles")
+          .select("id")
+          .ilike("username", metaUsername)
+          .neq("id", userId)
+          .maybeSingle();
+        if (clash) metaUsername = null;
+      }
 
       const { data: created, error: createError } = await supabase
         .from("profiles")
@@ -84,6 +97,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const gradNum = Number(graduation_year);
     const cleanGradYear = Number.isInteger(gradNum) && gradNum > 1900 && gradNum < 2100 ? gradNum : null;
 
+    // Case-insensitive uniqueness check. The DB has a partial unique index on
+    // lower(username), but we want a clean 409 with a Bahasa message instead
+    // of a raw 23505 bubbling up to the client.
+    if (cleanUsername) {
+      const { data: clash } = await supabase
+        .from("profiles")
+        .select("id")
+        .ilike("username", cleanUsername)
+        .neq("id", userId)
+        .maybeSingle();
+      if (clash) {
+        return res.status(409).json({ error: "Username sudah dipakai. Pilih yang lain." });
+      }
+    }
+
     const { data, error } = await supabase
       .from("profiles")
       .upsert(
@@ -103,6 +131,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single();
 
     if (error) {
+      // Race past the SELECT above: another writer claimed the username
+      // between our check and the upsert. Translate the unique-violation into
+      // the same 409 the client already handles.
+      const code = (error as unknown as { code?: string }).code;
+      if (code === "23505") {
+        return res.status(409).json({ error: "Username sudah dipakai. Pilih yang lain." });
+      }
       console.error("[api/profile] failed to update profile", error);
       return sendInternalServerError(res, "Unable to save profile");
     }
