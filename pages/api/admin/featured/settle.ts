@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { requireAdmin } from "@/lib/api-admin";
-import { sendInternalServerError, sendMethodNotAllowed } from "@/lib/api-response";
+import { sendInternalServerError, sendMethodNotAllowed, sendServiceUnavailable } from "@/lib/api-response";
+import { getSupabaseServiceClient } from "@/lib/supabase-server";
 
 // Manual settlement trigger. pg_cron runs this daily; this lets an admin run a
 // round on demand (useful for demos and for recovering a missed cron run).
@@ -9,7 +10,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const ctx = await requireAdmin(req, res);
   if (!ctx) return;
-  const { supabase } = ctx;
+
+  // settle_featured_auction mutates featured_slots, wallet_ledger, and bid
+  // rows across owners — service-role only. Anon fallback would partial-settle.
+  const supabase = getSupabaseServiceClient();
+  if (!supabase) return sendServiceUnavailable(res);
 
   const { round_date } = req.body as { round_date?: string };
   // Default to "tomorrow" — the round most bids target (round_date = current_date + 1).

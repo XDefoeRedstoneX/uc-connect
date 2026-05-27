@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { requireAdmin } from "@/lib/api-admin";
-import { sendMethodNotAllowed, sendInternalServerError } from "@/lib/api-response";
+import { sendMethodNotAllowed, sendInternalServerError, sendServiceUnavailable } from "@/lib/api-response";
+import { getSupabaseServiceClient } from "@/lib/supabase-server";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const ctx = await requireAdmin(req, res);
@@ -22,15 +23,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { data, error } = await query;
     if (error) return sendInternalServerError(res, "Failed to load vendors");
 
-    // Resolve the real auth.users.email per owner via service-role admin API.
-    // Cache per owner_id so duplicate owners don't trigger duplicate calls.
+    // Resolve the real auth.users.email per owner via the strict service-role
+    // client. Cache per owner_id so duplicate owners don't trigger duplicate calls.
+    const serviceClient = getSupabaseServiceClient();
+    if (!serviceClient) return sendServiceUnavailable(res);
+
     const uniqueOwnerIds = Array.from(
       new Set((data ?? []).map((v) => v.owner_id).filter((id): id is string => Boolean(id))),
     );
     const emailByOwnerId = new Map<string, string | null>();
     await Promise.all(
       uniqueOwnerIds.map(async (ownerId) => {
-        const { data: userData, error: userErr } = await supabase.auth.admin.getUserById(ownerId);
+        const { data: userData, error: userErr } = await serviceClient.auth.admin.getUserById(ownerId);
         if (userErr) {
           console.warn("[api/admin/vendors] getUserById failed for", ownerId, userErr.message);
           emailByOwnerId.set(ownerId, null);

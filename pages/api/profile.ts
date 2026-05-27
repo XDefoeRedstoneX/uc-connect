@@ -1,6 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { sendInternalServerError, sendMethodNotAllowed, sendServiceUnavailable } from "@/lib/api-response";
 import { resolveAuthedUser } from "@/lib/api-auth";
+import { getSupabaseServiceClient } from "@/lib/supabase-server";
+import { rateLimited } from "@/lib/rate-limit";
+import { log } from "@/lib/logger";
 
 function trimToNull(value: unknown): string | null {
   if (typeof value !== "string") return null;
@@ -110,7 +113,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === "DELETE") {
     // Self-delete: hard-removes the auth user. Cascade deletes profile, vendor
     // ownership becomes null, threads/replies/reviews/favorites cascade-delete.
-    const { error } = await supabase.auth.admin.deleteUser(userId);
+
+    // Require an explicit "HAPUS" body gate so a stray DELETE (CSRF, mistapped
+    // fetch in the console) can't nuke an account without confirmation.
+    const { confirm } = (req.body ?? {}) as { confirm?: string };
+    if (confirm !== "HAPUS") {
+      return res.status(400).json({ error: 'Konfirmasi tidak valid. Kirim body { "confirm": "HAPUS" }.' });
+    }
+
+    if (rateLimited(res, `delete-account:${userId}`, { limit: 1, windowMs: 60 * 60 * 1000 })) return;
+
+    // auth.admin.* requires the service-role key — fail loud if it's missing.
+    const serviceClient = getSupabaseServiceClient();
+    if (!serviceClient) return sendServiceUnavailable(res);
+
+    log.warn("account_self_delete", { userId });
+    const { error } = await serviceClient.auth.admin.deleteUser(userId);
     if (error) {
       console.error("[api/profile] failed to delete auth user", error);
       return sendInternalServerError(res, "Gagal menghapus akun");
