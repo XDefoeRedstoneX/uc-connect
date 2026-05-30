@@ -401,15 +401,11 @@ begin
   return new;
 end; $$;
 
-create or replace function public.notify_vendor_on_approval()
-returns trigger language plpgsql security definer set search_path = public as $$
-begin
-  if new.is_verified = true and (old.is_verified is null or old.is_verified = false) and new.owner_id is not null then
-    insert into public.notifications (user_id, type, payload)
-    values (new.owner_id, 'vendor_approved', jsonb_build_object('vendor_id', new.id, 'vendor_name', new.name));
-  end if;
-  return new;
-end; $$;
+-- NOTE: vendor_approved notification is emitted from the admin API route
+-- (/api/admin/vendors PATCH approve) instead of via the trigger below. The
+-- trigger was unguarded against re-fires (any future is_verified flip-flop
+-- by a non-admin update would notify the owner), and the API path lets us
+-- log the action consistently with other admin operations.
 
 -- NOTE: content_removed notifications are emitted from the admin API routes
 -- (/api/admin/forum, /api/admin/reviews) instead of via BEFORE DELETE triggers.
@@ -464,8 +460,9 @@ drop trigger if exists trg_notify_vendor_on_review on public.vendor_reviews;
 create trigger trg_notify_vendor_on_review after insert on public.vendor_reviews for each row execute function public.notify_vendor_on_review();
 drop trigger if exists trg_notify_thread_author_on_reply on public.forum_replies;
 create trigger trg_notify_thread_author_on_reply after insert on public.forum_replies for each row execute function public.notify_thread_author_on_reply();
+-- Vendor approval trigger removed; the admin API owns this notification now.
 drop trigger if exists trg_notify_vendor_on_approval on public.vendors;
-create trigger trg_notify_vendor_on_approval after update of is_verified on public.vendors for each row execute function public.notify_vendor_on_approval();
+drop function if exists public.notify_vendor_on_approval();
 -- Legacy: BEFORE DELETE triggers for content_removed notifications have been
 -- removed; the admin API routes own that notification path now.
 drop trigger if exists trg_notify_thread_removed_by_admin on public.forum_threads;

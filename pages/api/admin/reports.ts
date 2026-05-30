@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { requireAdmin } from "@/lib/api-admin";
 import { sendInternalServerError, sendMethodNotAllowed } from "@/lib/api-response";
+import { log } from "@/lib/logger";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const ctx = await requireAdmin(req, res);
@@ -39,8 +40,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (error) {
       console.error("[api/admin/reports PATCH]", error);
+      log.error("admin_report_status_change_failed", { adminId: userId, reportId: report_id, status, message: error.message });
       return sendInternalServerError(res, "Gagal memperbarui status laporan");
     }
+    log.info("admin_report_status_change", { adminId: userId, reportId: report_id, status });
     return res.status(200).json({ success: true });
   }
 
@@ -51,8 +54,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { error } = await supabase.from("reports").delete().eq("id", report_id);
     if (error) {
       console.error("[api/admin/reports DELETE]", error);
+      log.error("admin_report_delete_failed", { adminId: userId, reportId: report_id, message: error.message });
       return sendInternalServerError(res, "Gagal menghapus laporan");
     }
+    log.warn("admin_report_delete", { adminId: userId, reportId: report_id });
     return res.status(200).json({ success: true });
   }
 
