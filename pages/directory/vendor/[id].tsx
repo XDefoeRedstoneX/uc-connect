@@ -450,7 +450,7 @@ export default function VendorDetailPage() {
           <p style={{ color: "var(--muted)", fontSize: "0.88rem", marginBottom: "1rem" }}>✅ Kamu sudah memberikan ulasan untuk vendor ini.</p>
         ) : !token ? (
           <p style={{ color: "var(--muted)", fontSize: "0.88rem", marginBottom: "1rem" }}>
-            <a href={`/auth/login?redirect=/directory/vendor/${vendor.id}`} style={{ color: "var(--pacific)" }}>Login</a> untuk memberikan ulasan.
+            <a href={`/auth/login?next=${encodeURIComponent(`/directory/vendor/${vendor.id}`)}`} style={{ color: "var(--pacific)" }}>Login</a> untuk memberikan ulasan.
           </p>
         ) : null}
 

@@ -385,13 +385,18 @@ end; $$;
 
 create or replace function public.notify_thread_author_on_reply()
 returns trigger language plpgsql security definer set search_path = public as $$
-declare thread_author uuid; thread_title text; replier_name text;
+declare thread_author uuid; thread_title text; thread_category_slug text; replier_name text;
 begin
-  select t.author_id, t.title into thread_author, thread_title from public.forum_threads t where t.id = new.thread_id;
+  select t.author_id, t.title, c.slug
+    into thread_author, thread_title, thread_category_slug
+  from public.forum_threads t
+  join public.forum_categories c on c.id = t.category_id
+  where t.id = new.thread_id;
   if thread_author is null or thread_author = new.author_id then return new; end if;
   select coalesce(p.full_name, p.username, 'Pengguna') into replier_name from public.profiles p where p.id = new.author_id;
   insert into public.notifications (user_id, type, payload)
   values (thread_author, 'forum_reply', jsonb_build_object('thread_id', new.thread_id, 'thread_title', thread_title,
+    'category_slug', thread_category_slug,
     'reply_id', new.id, 'preview', left(new.content, 140), 'replier_name', replier_name));
   return new;
 end; $$;

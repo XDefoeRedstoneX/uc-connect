@@ -21,6 +21,7 @@ const ROLE_BADGE: Record<string, { bg: string; color: string; label: string }> =
 export default function AdminUsersPage() {
   const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
+  const [myId, setMyId] = useState<string | null>(null);
   const [filter, setFilter] = useState<"" | "customer" | "vendor" | "admin">("");
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,6 +43,7 @@ export default function AdminUsersPage() {
       const tok = sd.session?.access_token;
       if (!tok) { void router.replace("/auth/login"); return; }
       setToken(tok);
+      setMyId(sd.session?.user?.id ?? null);
       await loadUsers(tok, filter);
     };
     void init();
@@ -121,8 +123,9 @@ export default function AdminUsersPage() {
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                     <span className="badge" style={{ background: rb.bg, color: rb.color, fontSize: "0.78rem" }}>{rb.label}</span>
-                    <select value={u.role} onChange={e => changeRole(u.id, e.target.value)}
-                      style={{ fontSize: "0.8rem", padding: "0.25rem 0.5rem", borderRadius: "6px", border: "1px solid var(--border)" }}>
+                    <select value={u.role} disabled={u.id === myId} onChange={e => changeRole(u.id, e.target.value)}
+                      title={u.id === myId ? "Admin tidak bisa mengubah role-nya sendiri" : undefined}
+                      style={{ fontSize: "0.8rem", padding: "0.25rem 0.5rem", borderRadius: "6px", border: "1px solid var(--border)", opacity: u.id === myId ? 0.5 : 1 }}>
                       <option value="customer">Customer</option>
                       <option value="vendor">Vendor</option>
                       <option value="admin">Admin</option>

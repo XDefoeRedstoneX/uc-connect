@@ -202,11 +202,17 @@ function renderNotif(n: Notification): { icon: string; message: string; href: st
         message: `${p.reviewer_name ?? "Pelanggan"} memberi rating ${p.rating ?? "?"} untuk ${p.vendor_name ?? "vendormu"}.`,
         href: p.vendor_id ? `/directory/vendor/${p.vendor_id}` : null,
       };
+    case "review_replied":
+      return {
+        icon: "💬",
+        message: `${p.vendor_name ?? "Vendor"} membalas ulasanmu.`,
+        href: p.vendor_id ? `/directory/vendor/${p.vendor_id}` : null,
+      };
     case "forum_reply":
       return {
         icon: "💬",
         message: `${p.replier_name ?? "Pengguna"} membalas thread "${p.thread_title ?? "milikmu"}".`,
-        href: p.thread_id ? `/community/_/${p.thread_id}` : null,
+        href: p.thread_id && p.category_slug ? `/community/${p.category_slug}/${p.thread_id}` : null,
       };
     case "vendor_approved":
       return {
