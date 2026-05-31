@@ -21,9 +21,24 @@ const ROLE_BADGE: Record<string, { bg: string; color: string; label: string }> =
 export default function AdminUsersPage() {
   const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
+  const [myId, setMyId] = useState<string | null>(null);
   const [filter, setFilter] = useState<"" | "customer" | "vendor" | "admin">("");
+  const [search, setSearch] = useState("");
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Client-side filter: matches against username, full_name, and phone. The
+  // API still returns the role-filtered set; this just narrows what's on
+  // screen so admins can find someone without a server-side LIKE query.
+  const visibleUsers = users.filter((u) => {
+    const needle = search.trim().toLowerCase();
+    if (!needle) return true;
+    return (
+      (u.username ?? "").toLowerCase().includes(needle) ||
+      (u.full_name ?? "").toLowerCase().includes(needle) ||
+      (u.phone ?? "").toLowerCase().includes(needle)
+    );
+  });
 
   async function loadUsers(tok: string, role: string) {
     setLoading(true);
@@ -42,6 +57,7 @@ export default function AdminUsersPage() {
       const tok = sd.session?.access_token;
       if (!tok) { void router.replace("/auth/login"); return; }
       setToken(tok);
+      setMyId(sd.session?.user?.id ?? null);
       await loadUsers(tok, filter);
     };
     void init();
@@ -84,7 +100,7 @@ export default function AdminUsersPage() {
 
       <div className="dash-card">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1rem" }}>
-          <h2 style={{ margin: 0 }}>👥 Users ({users.length})</h2>
+          <h2 style={{ margin: 0 }}>👥 Users ({visibleUsers.length}{search ? ` / ${users.length}` : ""})</h2>
           <div style={{ display: "flex", gap: "0.35rem" }}>
             {(["", "customer", "vendor", "admin"] as const).map(f => (
               <button key={f || "all"} type="button" className="chip" onClick={() => setFilter(f)}
@@ -100,13 +116,23 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Cari nama, username, atau nomor telepon…"
+          style={{ width: "100%", marginBottom: "0.75rem" }}
+        />
+
         {loading ? (
           <p style={{ color: "var(--muted)", textAlign: "center", padding: "2rem" }}>Memuat...</p>
-        ) : users.length === 0 ? (
-          <p style={{ color: "var(--muted)", textAlign: "center", padding: "2rem" }}>Tidak ada user ditemukan.</p>
+        ) : visibleUsers.length === 0 ? (
+          <p style={{ color: "var(--muted)", textAlign: "center", padding: "2rem" }}>
+            {search ? "Tidak ada user yang cocok dengan pencarian." : "Tidak ada user ditemukan."}
+          </p>
         ) : (
           <div style={{ display: "grid", gap: "0.5rem" }}>
-            {users.map(u => {
+            {visibleUsers.map(u => {
               const rb = ROLE_BADGE[u.role];
               return (
                 <div key={u.id} className="product-row">
@@ -121,8 +147,9 @@ export default function AdminUsersPage() {
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                     <span className="badge" style={{ background: rb.bg, color: rb.color, fontSize: "0.78rem" }}>{rb.label}</span>
-                    <select value={u.role} onChange={e => changeRole(u.id, e.target.value)}
-                      style={{ fontSize: "0.8rem", padding: "0.25rem 0.5rem", borderRadius: "6px", border: "1px solid var(--border)" }}>
+                    <select value={u.role} disabled={u.id === myId} onChange={e => changeRole(u.id, e.target.value)}
+                      title={u.id === myId ? "Admin tidak bisa mengubah role-nya sendiri" : undefined}
+                      style={{ fontSize: "0.8rem", padding: "0.25rem 0.5rem", borderRadius: "6px", border: "1px solid var(--border)", opacity: u.id === myId ? 0.5 : 1 }}>
                       <option value="customer">Customer</option>
                       <option value="vendor">Vendor</option>
                       <option value="admin">Admin</option>

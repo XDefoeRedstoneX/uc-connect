@@ -45,7 +45,10 @@ export default function AdminForumPage() {
       const tok = sd.session?.access_token;
       if (!tok) { void router.replace("/auth/login"); return; }
       setToken(tok);
-      await load(tok, tab);
+      // Allow deep-linking from the dashboard, e.g. /admin/forum?type=replies.
+      const initialTab = router.query.type === "replies" ? "replies" : "threads";
+      if (initialTab !== tab) setTab(initialTab);
+      await load(tok, initialTab);
     };
     void init();
   }, [router]);

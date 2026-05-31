@@ -2,11 +2,12 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { requireAdmin } from "@/lib/api-admin";
 import { sendMethodNotAllowed, sendInternalServerError, sendServiceUnavailable } from "@/lib/api-response";
 import { getSupabaseServiceClient } from "@/lib/supabase-server";
+import { log } from "@/lib/logger";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const ctx = await requireAdmin(req, res);
   if (!ctx) return;
-  const { supabase } = ctx;
+  const { supabase, userId: adminId } = ctx;
 
   // GET — list vendors with optional filter
   if (req.method === "GET") {
@@ -58,8 +59,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!vendor_id || !action) return res.status(400).json({ error: "vendor_id and action required" });
 
     if (action === "approve") {
-      const { error } = await supabase.from("vendors").update({ is_verified: true }).eq("id", vendor_id);
-      if (error) return sendInternalServerError(res, "Failed to approve vendor");
+      // Update only the still-unverified rows so a double-click can't fire two
+      // notifications. The update is observable so the second click is a no-op.
+      const { data: approved, error } = await supabase
+        .from("vendors")
+        .update({ is_verified: true })
+        .eq("id", vendor_id)
+        .eq("is_verified", false)
+        .select("id,owner_id,name")
+        .maybeSingle();
+      if (error) {
+        console.error("[api/admin/vendors approve]", error);
+        return sendInternalServerError(res, "Failed to approve vendor");
+      }
+      if (!approved) {
+        // Either the vendor doesn't exist or it was already verified — either
+        // way the admin's intent is satisfied. Return 200 without a re-notify.
+        log.info("admin_vendor_approve_noop", { adminId, vendorId: vendor_id });
+        return res.status(200).json({ success: true, is_verified: true, noop: true });
+      }
+      // Fire the vendor_approved notification from the API (not via DB
+      // trigger) so the admin path and the no-op short-circuit above can't
+      // double-send. The legacy trigger is dropped in this phase's migration.
+      if (approved.owner_id) {
+        await supabase.from("notifications").insert({
+          user_id: approved.owner_id,
+          type: "vendor_approved",
+          payload: { vendor_id: approved.id, vendor_name: approved.name },
+        });
+      }
+      log.info("admin_vendor_approve", { adminId, vendorId: vendor_id, ownerId: approved.owner_id });
       return res.status(200).json({ success: true, is_verified: true });
     }
 
@@ -81,6 +110,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           .eq("id", vendorToReject.owner_id);
         if (roleError) {
           console.error("[api/admin/vendors reject] role reset failed", roleError);
+          log.error("admin_vendor_reject_role_reset_failed", {
+            adminId,
+            vendorId: vendor_id,
+            ownerId: vendorToReject.owner_id,
+            message: roleError.message,
+          });
           return res.status(500).json({
             error: "Gagal mereset role owner. Vendor belum dihapus, silakan coba lagi.",
           });
@@ -90,11 +125,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { error } = await supabase.from("vendors").delete().eq("id", vendor_id);
       if (error) {
         console.error("[api/admin/vendors reject] delete failed", error);
+        log.error("admin_vendor_reject_delete_failed", {
+          adminId,
+          vendorId: vendor_id,
+          ownerId: vendorToReject?.owner_id,
+          message: error.message,
+        });
         return res.status(500).json({
           error: "Role owner sudah direset ke customer, tapi vendor gagal dihapus. Cek manual.",
         });
       }
 
+      log.warn("admin_vendor_reject", { adminId, vendorId: vendor_id, ownerId: vendorToReject?.owner_id });
       return res.status(200).json({ success: true, deleted: true });
     }
 

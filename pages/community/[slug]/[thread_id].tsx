@@ -186,7 +186,7 @@ export default function ThreadPage({ category, thread: initialThread, replies: i
     const { data: userData } = await supabase.auth.getUser();
     const user = userData?.user;
     if (!user) {
-      window.location.href = `/auth/login?redirect=/community/${categorySlug}/${threadId}`;
+      window.location.href = `/auth/login?next=${encodeURIComponent(`/community/${categorySlug}/${threadId}`)}`;
       setSubmitting(false);
       return;
     }

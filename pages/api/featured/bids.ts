@@ -111,14 +111,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === "DELETE") {
     if (!vendor) return res.status(404).json({ error: "Kamu belum punya vendor" });
-    const { error } = await supabase
+    // Same race window as POST update: a settlement that flipped the bid to
+    // "settled" between the user's intent and our DELETE means zero rows match.
+    // Surface 409 so the client knows the bid is already finalized (charge or
+    // refund is in the wallet ledger) instead of pretending the withdrawal worked.
+    const { data: deleted, error } = await supabase
       .from("featured_bids")
       .delete()
       .eq("vendor_id", vendor.id)
-      .eq("status", "active");
+      .eq("status", "active")
+      .select("id");
     if (error) {
       console.error("[api/featured/bids DELETE]", error);
       return sendInternalServerError(res, "Gagal menarik bid");
+    }
+    if (!deleted || deleted.length === 0) {
+      return res.status(409).json({ error: "Bid sudah masuk settlement, tidak bisa ditarik" });
     }
     return res.status(200).json({ success: true });
   }

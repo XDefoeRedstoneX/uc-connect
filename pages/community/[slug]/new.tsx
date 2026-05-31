@@ -29,7 +29,7 @@ export default function NewDiscussion() {
 
     supabase.auth.getSession().then(({ data }: { data: { session: Session | null } }) => {
       if (!data.session) {
-        void router.push(`/auth/login?redirect=/community/${slug}/new`);
+        void router.push(`/auth/login?next=${encodeURIComponent(`/community/${slug}/new`)}`);
       } else if (slug) {
         supabase
           .from("forum_categories")
