@@ -20,6 +20,14 @@ export default function AdminVendorsPage() {
   const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
   const [filter, setFilter] = useState<"pending" | "verified" | "all">("pending");
+
+  // Sync the filter from the URL once router is ready, so deep-links from the
+  // admin dashboard (e.g. /admin/vendors?status=verified) land on the right tab.
+  useEffect(() => {
+    if (!router.isReady) return;
+    const q = router.query.status;
+    if (q === "verified" || q === "all" || q === "pending") setFilter(q);
+  }, [router.isReady, router.query.status]);
   const [vendors, setVendors] = useState<AdminVendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState<string | null>(null);

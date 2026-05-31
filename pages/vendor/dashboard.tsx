@@ -104,23 +104,51 @@ export default function VendorDashboardPage() {
     </SiteLayout>
   );
 
+  // Featured-bidding requires a verified vendor (API rejects with 403 otherwise);
+  // preempt that by gating the tab in the UI so the only message the unverified
+  // vendor sees is the pending banner, not a 403 alert.
+  const featuredLocked = !vendor.is_verified;
+
   return (
     <SiteLayout title={`${vendor.name} Dashboard | UC Connect`}>
       <div className="stack" style={{ gap: "1rem", marginTop: 0 }}>
+        {!vendor.is_verified && (
+          <div className="dash-card" style={{ background: "var(--orange-soft)", border: "1.5px solid var(--orange-light)" }}>
+            <p style={{ fontWeight: 700, margin: "0 0 0.35rem", color: "var(--orange-dark)" }}>
+              ⏳ Vendor menunggu verifikasi admin
+            </p>
+            <p style={{ margin: 0, fontSize: "0.88rem", lineHeight: 1.5, color: "var(--text)" }}>
+              Tokomu belum tampil di direktori publik dan kamu belum bisa ikut lelang featured.
+              Selesaikan profil + jam operasional + item agar siap dipublikasikan. Admin akan
+              memverifikasi KTM dalam waktu dekat.
+            </p>
+          </div>
+        )}
+
         {/* Tab bar */}
         <div className="scroll-tabs" style={{ borderBottom: "2px solid var(--border)", paddingBottom: "0.5rem" }}>
-          {TABS.map(t => (
-            <button key={t.id} type="button" onClick={() => setActiveTab(t.id)}
-              style={{
-                background: activeTab === t.id ? "var(--gradient-main)" : "transparent",
-                color: activeTab === t.id ? "#fff" : "var(--muted)",
-                border: "none", borderRadius: "8px", padding: "0.45rem 1rem",
-                fontWeight: 700, cursor: "pointer", fontSize: "0.88rem",
-                transition: "all 0.2s ease",
-              }}>
-              {t.label}
-            </button>
-          ))}
+          {TABS.map(t => {
+            const locked = featuredLocked && t.id === "featured";
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => !locked && setActiveTab(t.id)}
+                disabled={locked}
+                title={locked ? "Tersedia setelah vendor diverifikasi" : undefined}
+                style={{
+                  background: activeTab === t.id ? "var(--gradient-main)" : "transparent",
+                  color: activeTab === t.id ? "#fff" : "var(--muted)",
+                  border: "none", borderRadius: "8px", padding: "0.45rem 1rem",
+                  fontWeight: 700, cursor: locked ? "not-allowed" : "pointer", fontSize: "0.88rem",
+                  opacity: locked ? 0.5 : 1,
+                  transition: "all 0.2s ease",
+                }}
+              >
+                {t.label}{locked ? " 🔒" : ""}
+              </button>
+            );
+          })}
         </div>
 
         {activeTab === "overview" && <TabOverview vendor={vendor} items={items} hours={hours} setActiveTab={setActiveTab} />}
@@ -128,7 +156,7 @@ export default function VendorDashboardPage() {
         {activeTab === "items" && token && userId && <TabItems items={items} vendor={vendor} token={token} userId={userId} onItemsChange={setItems} />}
         {activeTab === "hours" && token && <TabHours hours={hours} token={token} onSaved={setHours} />}
         {activeTab === "reviews" && token && <TabReviews vendorId={vendor.id} token={token} />}
-        {activeTab === "featured" && token && <TabFeatured vendorId={vendor.id} token={token} />}
+        {activeTab === "featured" && token && !featuredLocked && <TabFeatured vendorId={vendor.id} token={token} />}
         {activeTab === "analytics" && token && <TabAnalytics token={token} />}
       </div>
     </SiteLayout>
