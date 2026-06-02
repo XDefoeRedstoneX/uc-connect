@@ -67,6 +67,22 @@ Set the Midtrans **Payment Notification URL** in the Midtrans dashboard to `http
 
 The `check:env` script verifies the Supabase vars are present in `.env.local` before local dev or build starts (Midtrans keys produce a warning, not a failure).
 
+#### Running without Midtrans
+
+You can run and demo the whole app without Midtrans keys — leave the four `MIDTRANS_*` vars unset.
+
+| Feature | Without Midtrans |
+|---|---|
+| Browse / search / favorites | ✅ works |
+| Reviews + reports + forum | ✅ works |
+| Vendor onboarding + profile + items + hours | ✅ works |
+| Admin moderation + verification + settlement (manual) | ✅ works |
+| Wallet top-up | ❌ `503 Pembayaran belum dikonfigurasi` from `/api/wallet/topup` |
+| Featured bidding | 🟡 vendors with seeded wallet balance can still bid; new users can't fund their wallet |
+| `/api/payments/midtrans/webhook` | 🟡 returns `503` until `SUPABASE_SERVICE_ROLE_KEY` + `MIDTRANS_SERVER_KEY` are both set |
+
+The vendor **Featured & Dompet** tab shows a "Snap belum siap" banner when `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY` is missing, so users get a clear signal instead of a broken button.
+
 ### Featured-auction settlement (pg_cron)
 
 `others.sql` registers a daily `pg_cron` job (`settle-featured-daily`, 00:01) that calls `settle_featured_auction(current_date)`. If `pg_cron` is not enabled on your Supabase project, enable it under Database → Extensions, or just use the admin **"Jalankan Settlement"** button at `/admin/featured`. Settlement is idempotent per round.

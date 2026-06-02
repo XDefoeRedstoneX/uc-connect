@@ -1,4 +1,5 @@
 import SiteLayout from "@/components/SiteLayout";
+import Link from "next/link";
 import { GetServerSideProps } from "next";
 
 export default function TermsPage() {
@@ -77,7 +78,7 @@ export default function TermsPage() {
           <div>
             <h2 style={{ fontSize: "1.15rem", fontWeight: 700, color: "var(--pacific-dark)" }}>7. Kontak</h2>
             <p style={{ color: "var(--muted)", lineHeight: 1.7 }}>
-              Pertanyaan? Hubungi kami melalui halaman <a href="/support" style={{ color: "var(--pacific)" }}>Support</a>.
+              Pertanyaan? Hubungi kami melalui halaman <Link href="/support" style={{ color: "var(--pacific)" }}>Support</Link>.
             </p>
           </div>
         </div>

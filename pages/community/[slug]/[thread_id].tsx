@@ -18,8 +18,11 @@ function AuthorLink({ username, children, style }: { username?: string | null; c
   return <Link href={`/u/${username}`} style={{ textDecoration: "none", color: "inherit", ...style }}>{children}</Link>;
 }
 
-type ReplyWithAuthor = ForumReply & { profiles?: UserProfile | null };
-type ThreadWithAuthor = ForumThread & { profiles?: UserProfile | null };
+// SSR only selects id/full_name/avatar_url/username from profiles; widening to
+// the full UserProfile lies about what's available on the client.
+type ProfileSummary = Pick<UserProfile, "id" | "full_name" | "avatar_url" | "username">;
+type ReplyWithAuthor = ForumReply & { profiles?: ProfileSummary | null };
+type ThreadWithAuthor = ForumThread & { profiles?: ProfileSummary | null };
 
 type Props = {
   category: ForumCategory | null;
@@ -477,12 +480,12 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
 
   const replyProfileMap = new Map((replyProfiles ?? []).map((profile) => [profile.id, profile]));
   const threadWithAuthor: ThreadWithAuthor = {
-    ...(threadData as any),
-    profiles: (threadAuthor as UserProfile | null) ?? null,
+    ...(threadData as unknown as ForumThread),
+    profiles: (threadAuthor as ProfileSummary | null) ?? null,
   };
   const repliesWithAuthors: ReplyWithAuthor[] = (repliesData ?? []).map((reply) => ({
-    ...(reply as any),
-    profiles: replyProfileMap.get(reply.author_id) ?? null,
+    ...(reply as unknown as ForumReply),
+    profiles: (replyProfileMap.get(reply.author_id) as ProfileSummary | undefined) ?? null,
   }));
 
   return {
