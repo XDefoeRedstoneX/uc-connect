@@ -50,7 +50,10 @@ export type IconName =
   | "trash"
   | "eye"
   | "message-circle"
-  | "arrow-left";
+  | "arrow-left"
+  | "lock"
+  | "alert-triangle"
+  | "refresh-cw";
 
 // Each entry returns the inner SVG markup. Stroke inherits `currentColor`.
 const PATHS: Record<IconName, React.ReactNode> = {
@@ -99,6 +102,9 @@ const PATHS: Record<IconName, React.ReactNode> = {
   eye: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></>,
   "message-circle": <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />,
   "arrow-left": <><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></>,
+  lock: <><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></>,
+  "alert-triangle": <><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" x2="12" y1="9" y2="13" /><line x1="12" x2="12.01" y1="17" y2="17" /></>,
+  "refresh-cw": <><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M3 21v-5h5" /></>,
 };
 
 type IconProps = {

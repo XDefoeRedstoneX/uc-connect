@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import SiteLayout from "@/components/SiteLayout";
 import LoadingScreen from "@/components/LoadingScreen";
 import VendorOnboardingWizard from "@/components/VendorOnboardingWizard";
+import Icon from "@/components/ui/Icon";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { clearVendorRegistrationDraft, loadVendorRegistrationDraft, VendorRegistrationDraft } from "@/lib/vendor-registration-draft";
 
@@ -121,10 +122,17 @@ export default function VendorOnboardingPage() {
 
   return (
     <SiteLayout title="Vendor Onboarding | UC Connect">
-      <section className="card">
-        <h1>Vendor Onboarding</h1>
-        <p>Lengkapi data bisnis kamu untuk melanjutkan pendaftaran vendor.</p>
+      <section className="hero">
+        <span className="kicker" style={{ position: "relative", zIndex: 1 }}>
+          <Icon name="store" size={14} strokeWidth={2.6} /> Daftar Vendor
+        </span>
+        <h1 className="display" style={{ position: "relative", zIndex: 1, fontSize: "var(--fs-h1)", margin: "0.5rem 0 0" }}>Vendor Onboarding</h1>
+        <p style={{ color: "var(--muted)", position: "relative", zIndex: 1, marginTop: "0.5rem" }}>
+          Lengkapi data bisnis kamu untuk melanjutkan pendaftaran vendor.
+        </p>
+      </section>
 
+      <section className="card" style={{ marginTop: "1.75rem" }}>
         {loading && <LoadingScreen message="Memuat sesi..." />}
         {error && <p className="err">{error}</p>}
 

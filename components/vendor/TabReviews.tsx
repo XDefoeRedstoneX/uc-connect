@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import type { VendorReview } from "@/types/domain";
 import { useToast } from "@/components/ToastProvider";
+import Icon from "@/components/ui/Icon";
+import Button from "@/components/ui/Button";
+import Stat from "@/components/ui/Stat";
+import EmptyState from "@/components/ui/EmptyState";
 
 type Props = {
   vendorId: string;
@@ -70,10 +74,11 @@ export default function TabReviews({ vendorId, token }: Props) {
 
   if (reviews.length === 0) {
     return (
-      <div className="dash-card" style={{ textAlign: "center", padding: "2rem 1rem" }}>
-        <p style={{ fontSize: "2rem", margin: "0 0 0.35rem" }}>⭐</p>
-        <p className="muted" style={{ margin: 0 }}>Belum ada ulasan dari pelanggan.</p>
-      </div>
+      <EmptyState
+        icon="star"
+        title="Belum ada ulasan"
+        description="Ulasan dari pelanggan akan tampil di sini. Bagikan tokomu agar pelanggan mulai memberi ulasan."
+      />
     );
   }
 
@@ -81,10 +86,9 @@ export default function TabReviews({ vendorId, token }: Props) {
 
   return (
     <div className="stack" style={{ gap: "1rem" }}>
-      <div className="dash-card" style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-        <div>
-          <p className="stat-value" style={{ margin: 0 }}>{avg.toFixed(1)}</p>
-          <p className="stat-label" style={{ margin: 0 }}>⭐ Rata-rata · {reviews.length} ulasan</p>
+      <div className="dash-card" style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+        <div style={{ minWidth: "140px" }}>
+          <Stat tone="warm" icon="star" value={avg.toFixed(1)} label={`Rata-rata · ${reviews.length} ulasan`} />
         </div>
         <div style={{ marginLeft: "auto", color: "var(--muted)", fontSize: "0.85rem" }}>
           Balas ulasan untuk membangun reputasi tokomu.
@@ -98,8 +102,11 @@ export default function TabReviews({ vendorId, token }: Props) {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "0.5rem" }}>
               <div>
                 <strong style={{ fontSize: "0.95rem" }}>{rv.profiles?.full_name ?? "Pelanggan"}</strong>
-                <span style={{ marginLeft: "0.5rem", color: "#f59e0b", letterSpacing: "0.05em" }}>
-                  {"★".repeat(rv.rating)}{"☆".repeat(5 - rv.rating)}
+                <span style={{ display: "inline-flex", gap: "0.05rem", marginLeft: "0.5rem", verticalAlign: "middle" }}>
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Icon key={s} name="star" size={14} filled={s <= rv.rating}
+                      style={{ color: s <= rv.rating ? "#f59e0b" : "#d1d5db" }} />
+                  ))}
                 </span>
               </div>
               <span className="muted" style={{ fontSize: "0.78rem" }}>
@@ -125,23 +132,23 @@ export default function TabReviews({ vendorId, token }: Props) {
                   placeholder="Tulis balasanmu…"
                   style={{ width: "100%" }}
                 />
-                <div style={{ display: "flex", gap: "0.5rem" }}>
-                  <button type="button" disabled={saving} onClick={() => saveReply(rv.id)}>
+                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                  <Button icon="check" disabled={saving} onClick={() => saveReply(rv.id)}>
                     {saving ? "Menyimpan…" : rv.vendor_reply ? "Perbarui Balasan" : "Kirim Balasan"}
-                  </button>
+                  </Button>
                   {rv.vendor_reply && (
-                    <button type="button" className="ghost" disabled={saving} onClick={() => { setDraft(""); void saveReply(rv.id); }}>
+                    <Button variant="ghost" icon="trash" disabled={saving} onClick={() => { setDraft(""); void saveReply(rv.id); }}>
                       Hapus Balasan
-                    </button>
+                    </Button>
                   )}
-                  <button type="button" className="ghost" disabled={saving} onClick={cancelReply}>Batal</button>
+                  <Button variant="ghost" disabled={saving} onClick={cancelReply}>Batal</Button>
                 </div>
               </div>
             ) : (
               <div>
-                <button type="button" className="ghost" onClick={() => startReply(rv)}>
-                  {rv.vendor_reply ? "✏️ Edit Balasan" : "💬 Balas Ulasan"}
-                </button>
+                <Button variant="ghost" size="sm" icon={rv.vendor_reply ? "edit" : "message-circle"} onClick={() => startReply(rv)}>
+                  {rv.vendor_reply ? "Edit Balasan" : "Balas Ulasan"}
+                </Button>
               </div>
             )}
           </div>

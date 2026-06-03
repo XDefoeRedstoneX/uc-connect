@@ -5,6 +5,9 @@ import Link from "next/link";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import AdminNav from "@/components/admin/AdminNav";
+import Icon from "@/components/ui/Icon";
+import Button from "@/components/ui/Button";
+import EmptyState from "@/components/ui/EmptyState";
 import { useToast } from "@/components/ToastProvider";
 import { useConfirm } from "@/components/ConfirmProvider";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -85,7 +88,9 @@ export default function AdminReviewsPage() {
 
       <div className="dash-card">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1rem" }}>
-          <h2 style={{ margin: 0 }}>⭐ Moderasi Ulasan</h2>
+          <h2 style={{ margin: 0, display: "flex", alignItems: "center", gap: "0.45rem" }}>
+            <Icon name="star" size={20} strokeWidth={2.2} /> Moderasi Ulasan
+          </h2>
           <div style={{ display: "flex", gap: "0.35rem" }}>
             {(["all", "low"] as const).map((f) => (
               <button key={f} type="button" className="chip" onClick={() => setFilter(f)}
@@ -103,7 +108,7 @@ export default function AdminReviewsPage() {
         {loading ? (
           <p style={{ color: "var(--muted)", textAlign: "center", padding: "2rem" }}>Memuat...</p>
         ) : reviews.length === 0 ? (
-          <p style={{ color: "var(--muted)", textAlign: "center", padding: "2rem" }}>Tidak ada ulasan.</p>
+          <EmptyState icon="star" title="Tidak ada ulasan" description="Tidak ada ulasan pada filter ini." />
         ) : (
           <div style={{ display: "grid", gap: "0.6rem" }}>
             {reviews.map((r) => (
@@ -113,8 +118,11 @@ export default function AdminReviewsPage() {
                     <Link href={`/directory/vendor/${r.vendor_id}`} style={{ fontWeight: 700, fontSize: "0.95rem", color: "var(--pacific)" }}>
                       {r.vendors?.name ?? "Vendor"}
                     </Link>
-                    <span style={{ color: "#f59e0b", letterSpacing: "0.04em" }}>
-                      {"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}
+                    <span style={{ display: "inline-flex", gap: "0.05rem" }}>
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Icon key={s} name="star" size={13} filled={s <= r.rating}
+                          style={{ color: s <= r.rating ? "#f59e0b" : "#d1d5db" }} />
+                      ))}
                     </span>
                   </div>
                   {r.content && (
@@ -124,8 +132,8 @@ export default function AdminReviewsPage() {
                     <img src={r.image_url} alt="Foto ulasan" style={{ maxHeight: 120, borderRadius: 6, objectFit: "cover", margin: "0 0 0.3rem" }} />
                   )}
                   {r.vendor_reply && (
-                    <p style={{ color: "var(--pacific)", fontSize: "0.82rem", margin: "0 0 0.3rem", fontStyle: "italic" }}>
-                      ↳ Vendor: {r.vendor_reply}
+                    <p style={{ color: "var(--pacific)", fontSize: "0.82rem", margin: "0 0 0.3rem", fontStyle: "italic", display: "flex", alignItems: "baseline", gap: "0.3rem" }}>
+                      <Icon name="message-circle" size={12} strokeWidth={2.2} style={{ alignSelf: "center" }} /> Vendor: {r.vendor_reply}
                     </p>
                   )}
                   <div className="row-wrap" style={{ gap: "0.4rem", fontSize: "0.78rem" }}>
@@ -135,10 +143,9 @@ export default function AdminReviewsPage() {
                     <span style={{ color: "var(--muted)" }}>{new Date(r.created_at).toLocaleDateString("id-ID")}</span>
                   </div>
                 </div>
-                <button onClick={() => remove(r.id)}
-                  style={{ fontSize: "0.82rem", padding: "0.35rem 0.75rem", background: "var(--error)", flexShrink: 0 }}>
-                  🗑 Hapus
-                </button>
+                <Button variant="danger" size="sm" icon="trash" onClick={() => remove(r.id)} style={{ flexShrink: 0 }}>
+                  Hapus
+                </Button>
               </div>
             ))}
           </div>

@@ -9,3 +9,4 @@ insert into public.forum_categories (id, name, slug, description, created_at) va
 ('44444444-dddd-dddd-dddd-dddddddddddd', 'Buy & Sell', 'buy-sell', 'Second-hand textbooks, preloved items, and campus thrifting.', now());
 
 commit;
+

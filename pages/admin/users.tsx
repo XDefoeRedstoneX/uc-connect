@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import AdminNav from "@/components/admin/AdminNav";
+import Icon, { type IconName } from "@/components/ui/Icon";
 import { useToast } from "@/components/ToastProvider";
 import { useConfirm } from "@/components/ConfirmProvider";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -14,10 +15,10 @@ type AdminUser = {
   role: "customer" | "vendor" | "admin"; updated_at: string;
 };
 
-const ROLE_BADGE: Record<string, { bg: string; color: string; label: string }> = {
-  admin: { bg: "var(--orange-soft)", color: "var(--orange-dark)", label: "🛡 Admin" },
-  vendor: { bg: "var(--pacific-soft)", color: "var(--pacific-dark)", label: "🏪 Vendor" },
-  customer: { bg: "#f1f5f9", color: "#475569", label: "👤 Customer" },
+const ROLE_BADGE: Record<string, { bg: string; color: string; label: string; icon: IconName }> = {
+  admin: { bg: "var(--orange-soft)", color: "var(--orange-dark)", label: "Admin", icon: "shield" },
+  vendor: { bg: "var(--pacific-soft)", color: "var(--pacific-dark)", label: "Vendor", icon: "store" },
+  customer: { bg: "#f1f5f9", color: "#475569", label: "Customer", icon: "user" },
 };
 
 export default function AdminUsersPage() {
@@ -112,17 +113,19 @@ export default function AdminUsersPage() {
 
       <div className="dash-card">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1rem" }}>
-          <h2 style={{ margin: 0 }}>👥 Users ({visibleUsers.length}{search ? ` / ${users.length}` : ""})</h2>
+          <h2 style={{ margin: 0, display: "flex", alignItems: "center", gap: "0.45rem" }}>
+            <Icon name="users" size={20} strokeWidth={2.2} /> Users ({visibleUsers.length}{search ? ` / ${users.length}` : ""})
+          </h2>
           <div style={{ display: "flex", gap: "0.35rem" }}>
             {(["", "customer", "vendor", "admin"] as const).map(f => (
               <button key={f || "all"} type="button" className="chip" onClick={() => setFilter(f)}
                 style={{
-                  cursor: "pointer",
+                  display: "inline-flex", alignItems: "center", gap: "0.3rem", cursor: "pointer",
                   background: filter === f ? "var(--pacific-soft)" : "#fff",
                   borderColor: filter === f ? "var(--pacific)" : undefined,
                   fontWeight: filter === f ? 700 : 600,
                 }}>
-                {f === "" ? "Semua" : ROLE_BADGE[f].label}
+                {f === "" ? "Semua" : <><Icon name={ROLE_BADGE[f].icon} size={13} strokeWidth={2.4} /> {ROLE_BADGE[f].label}</>}
               </button>
             ))}
           </div>
@@ -151,14 +154,16 @@ export default function AdminUsersPage() {
                   <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flex: 1 }}>
                     {u.avatar_url
                       ? <img src={u.avatar_url} alt="" style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover" }} />
-                      : <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--gradient-subtle)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.9rem" }}>👤</div>}
+                      : <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--gradient-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)" }}><Icon name="user" size={18} /></div>}
                     <div>
                       <p style={{ fontWeight: 700, margin: 0, fontSize: "0.9rem" }}>{u.full_name ?? u.username ?? "—"}</p>
                       <p style={{ color: "var(--muted)", margin: 0, fontSize: "0.8rem" }}>@{u.username ?? "no-username"} · {u.phone ?? "no phone"}</p>
                     </div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <span className="badge" style={{ background: rb.bg, color: rb.color, fontSize: "0.78rem" }}>{rb.label}</span>
+                    <span className="badge" style={{ background: rb.bg, color: rb.color, fontSize: "0.78rem", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+                      <Icon name={rb.icon} size={12} strokeWidth={2.6} /> {rb.label}
+                    </span>
                     <select value={u.role} disabled={u.id === myId} onChange={e => changeRole(u.id, e.target.value)}
                       title={u.id === myId ? "Admin tidak bisa mengubah role-nya sendiri" : undefined}
                       style={{ fontSize: "0.8rem", padding: "0.25rem 0.5rem", borderRadius: "6px", border: "1px solid var(--border)", opacity: u.id === myId ? 0.5 : 1 }}>
@@ -166,9 +171,9 @@ export default function AdminUsersPage() {
                       <option value="vendor">Vendor</option>
                       <option value="admin">Admin</option>
                     </select>
-                    <button type="button" onClick={() => void deleteUser(u)} title="Hapus akun"
-                      style={{ fontSize: "0.78rem", padding: "0.25rem 0.55rem", background: "var(--error)" }}>
-                      🗑
+                    <button type="button" onClick={() => void deleteUser(u)} title="Hapus akun" aria-label="Hapus akun"
+                      className="btn--danger" style={{ display: "inline-flex", fontSize: "0.78rem", padding: "0.3rem 0.5rem" }}>
+                      <Icon name="trash" size={15} />
                     </button>
                   </div>
                 </div>

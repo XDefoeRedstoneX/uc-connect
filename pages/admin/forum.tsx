@@ -4,6 +4,9 @@ import { useRouter } from "next/router";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import AdminNav from "@/components/admin/AdminNav";
+import Icon from "@/components/ui/Icon";
+import Button from "@/components/ui/Button";
+import EmptyState from "@/components/ui/EmptyState";
 import { useConfirm } from "@/components/ConfirmProvider";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
@@ -82,16 +85,20 @@ export default function AdminForumPage() {
 
       <div className="dash-card">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1rem" }}>
-          <h2 style={{ margin: 0 }}>💬 Forum Moderation</h2>
+          <h2 style={{ margin: 0, display: "flex", alignItems: "center", gap: "0.45rem" }}>
+            <Icon name="chat" size={20} strokeWidth={2.2} /> Forum Moderation
+          </h2>
           <div style={{ display: "flex", gap: "0.35rem" }}>
             {(["threads", "replies"] as const).map(t => (
               <button key={t} type="button" className="chip" onClick={() => setTab(t)}
                 style={{
-                  cursor: "pointer", background: tab === t ? "var(--pacific-soft)" : "#fff",
+                  display: "inline-flex", alignItems: "center", gap: "0.3rem", cursor: "pointer",
+                  background: tab === t ? "var(--pacific-soft)" : "#fff",
                   borderColor: tab === t ? "var(--pacific)" : undefined,
                   fontWeight: tab === t ? 700 : 600,
                 }}>
-                {t === "threads" ? "📝 Threads" : "💬 Replies"}
+                <Icon name={t === "threads" ? "file-text" : "message-circle"} size={13} strokeWidth={2.4} />
+                {t === "threads" ? "Threads" : "Replies"}
               </button>
             ))}
           </div>
@@ -101,7 +108,7 @@ export default function AdminForumPage() {
           <p style={{ color: "var(--muted)", textAlign: "center", padding: "2rem" }}>Memuat...</p>
         ) : tab === "threads" ? (
           threads.length === 0 ? (
-            <p style={{ color: "var(--muted)", textAlign: "center", padding: "2rem" }}>Tidak ada thread.</p>
+            <EmptyState icon="file-text" title="Tidak ada thread" description="Belum ada thread untuk dimoderasi." />
           ) : (
             <div style={{ display: "grid", gap: "0.5rem" }}>
               {threads.map(t => (
@@ -114,21 +121,22 @@ export default function AdminForumPage() {
                     <div className="row-wrap" style={{ gap: "0.4rem", fontSize: "0.78rem" }}>
                       <span className="badge pacific">{t.forum_categories?.name ?? "—"}</span>
                       <span style={{ color: "var(--muted)" }}>by @{t.profiles?.username ?? "anon"}</span>
-                      <span style={{ color: "var(--muted)" }}>👁 {t.view_count}</span>
+                      <span style={{ color: "var(--muted)", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+                        <Icon name="eye" size={12} strokeWidth={2.2} /> {t.view_count}
+                      </span>
                       <span style={{ color: "var(--muted)" }}>{new Date(t.created_at).toLocaleDateString("id-ID")}</span>
                     </div>
                   </div>
-                  <button onClick={() => remove("thread", t.id)}
-                    style={{ fontSize: "0.82rem", padding: "0.35rem 0.75rem", background: "var(--error)", flexShrink: 0 }}>
-                    🗑 Hapus
-                  </button>
+                  <Button variant="danger" size="sm" icon="trash" onClick={() => remove("thread", t.id)} style={{ flexShrink: 0 }}>
+                    Hapus
+                  </Button>
                 </div>
               ))}
             </div>
           )
         ) : (
           replies.length === 0 ? (
-            <p style={{ color: "var(--muted)", textAlign: "center", padding: "2rem" }}>Tidak ada balasan.</p>
+            <EmptyState icon="message-circle" title="Tidak ada balasan" description="Belum ada balasan untuk dimoderasi." />
           ) : (
             <div style={{ display: "grid", gap: "0.5rem" }}>
               {replies.map(r => (
@@ -142,10 +150,9 @@ export default function AdminForumPage() {
                       <span style={{ color: "var(--muted)" }}>{new Date(r.created_at).toLocaleDateString("id-ID")}</span>
                     </div>
                   </div>
-                  <button onClick={() => remove("reply", r.id)}
-                    style={{ fontSize: "0.82rem", padding: "0.35rem 0.75rem", background: "var(--error)", flexShrink: 0 }}>
-                    🗑 Hapus
-                  </button>
+                  <Button variant="danger" size="sm" icon="trash" onClick={() => remove("reply", r.id)} style={{ flexShrink: 0 }}>
+                    Hapus
+                  </Button>
                 </div>
               ))}
             </div>

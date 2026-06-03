@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { VendorHour } from "@/pages/vendor/dashboard";
 import { useToast } from "@/components/ToastProvider";
+import Icon from "@/components/ui/Icon";
+import Button from "@/components/ui/Button";
 
 const DAYS = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
 
@@ -39,8 +41,10 @@ export default function TabHours({ hours, token, onSaved }: Props) {
   return (
     <div className="dash-card">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem", flexWrap: "wrap", gap: "0.5rem" }}>
-        <h2 style={{ margin: 0 }}>Jam Operasional</h2>
-        <button onClick={save} disabled={saving}>{saving ? "Menyimpan..." : "Simpan"}</button>
+        <h2 style={{ margin: 0, display: "flex", alignItems: "center", gap: "0.45rem" }}>
+          <Icon name="clock" size={20} strokeWidth={2.2} /> Jam Operasional
+        </h2>
+        <Button icon="check" onClick={save} disabled={saving}>{saving ? "Menyimpan..." : "Simpan"}</Button>
       </div>
 
       <p style={{ color: "var(--muted)", fontSize: "0.88rem", marginBottom: "1rem" }}>
@@ -85,8 +89,8 @@ export default function TabHours({ hours, token, onSaved }: Props) {
             {!h.is_closed && (
               <button type="button" className="ghost"
                 onClick={() => applyToAll(h.day_of_week)}
-                style={{ fontSize: "0.72rem", padding: "0.25rem 0.5rem", whiteSpace: "nowrap" }}>
-                Terapkan ke Semua
+                style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", fontSize: "0.72rem", padding: "0.25rem 0.5rem", whiteSpace: "nowrap" }}>
+                <Icon name="check" size={13} strokeWidth={2.4} /> Terapkan ke Semua
               </button>
             )}
             {h.is_closed && <span />}

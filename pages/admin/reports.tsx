@@ -5,6 +5,9 @@ import Link from "next/link";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import AdminNav from "@/components/admin/AdminNav";
+import Icon, { type IconName } from "@/components/ui/Icon";
+import Button from "@/components/ui/Button";
+import EmptyState from "@/components/ui/EmptyState";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { ReportTargetType } from "@/types/domain";
 
@@ -24,10 +27,17 @@ type AdminReport = {
 };
 
 const TARGET_LABEL: Record<ReportTargetType, string> = {
-  vendor: "🏪 Vendor",
-  review: "⭐ Ulasan",
-  thread: "📝 Thread",
-  reply: "💬 Balasan",
+  vendor: "Vendor",
+  review: "Ulasan",
+  thread: "Thread",
+  reply: "Balasan",
+};
+
+const TARGET_ICON: Record<ReportTargetType, IconName> = {
+  vendor: "store",
+  review: "star",
+  thread: "file-text",
+  reply: "chat",
 };
 
 const MODERATION_FALLBACK: Record<ReportTargetType, string> = {
@@ -96,7 +106,9 @@ export default function AdminReportsPage() {
 
       <div className="dash-card">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1rem" }}>
-          <h2 style={{ margin: 0 }}>🚩 Antrean Laporan</h2>
+          <h2 style={{ margin: 0, display: "flex", alignItems: "center", gap: "0.45rem" }}>
+            <Icon name="flag" size={20} strokeWidth={2.2} /> Antrean Laporan
+          </h2>
           <div style={{ display: "flex", gap: "0.35rem" }}>
             {(["open", "resolved", "dismissed", "all"] as const).map((s) => (
               <button key={s} type="button" className="chip" onClick={() => setStatus(s)}
@@ -114,7 +126,7 @@ export default function AdminReportsPage() {
         {loading ? (
           <p style={{ color: "var(--muted)", textAlign: "center", padding: "2rem" }}>Memuat…</p>
         ) : reports.length === 0 ? (
-          <p style={{ color: "var(--muted)", textAlign: "center", padding: "2rem" }}>Tidak ada laporan.</p>
+          <EmptyState icon="flag" title="Tidak ada laporan" description="Antrean laporan kosong pada filter ini." />
         ) : (
           <div style={{ display: "grid", gap: "0.6rem" }}>
             {reports.map((r) => {
@@ -123,7 +135,9 @@ export default function AdminReportsPage() {
               return (
                 <div key={r.id} className="product-row" style={{ alignItems: "flex-start", flexDirection: "column", gap: "0.5rem" }}>
                   <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "baseline", width: "100%" }}>
-                    <Link href={href} style={{ fontWeight: 700, color: "var(--pacific)" }}>{label}</Link>
+                    <Link href={href} style={{ fontWeight: 700, color: "var(--pacific)", display: "inline-flex", alignItems: "center", gap: "0.3rem" }}>
+                      <Icon name={TARGET_ICON[r.target_type]} size={14} strokeWidth={2.3} /> {label}
+                    </Link>
                     {!r.target_exists && (
                       <span className="badge" style={{ background: "#fee2e2", color: "#b91c1c", fontSize: "0.7rem" }}>
                         konten dihapus
@@ -151,14 +165,12 @@ export default function AdminReportsPage() {
                   <p style={{ margin: 0, fontSize: "0.88rem", lineHeight: 1.5 }}>{r.reason}</p>
                   {r.status === "open" && (
                     <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.25rem" }}>
-                      <button type="button" onClick={() => void setReportStatus(r.id, "resolved")}
-                        style={{ fontSize: "0.82rem", padding: "0.35rem 0.75rem", background: "var(--pacific)" }}>
-                        ✓ Tandai Selesai
-                      </button>
-                      <button type="button" className="ghost" onClick={() => void setReportStatus(r.id, "dismissed")}
-                        style={{ fontSize: "0.82rem", padding: "0.35rem 0.75rem" }}>
-                        ✕ Tolak
-                      </button>
+                      <Button size="sm" icon="check" onClick={() => void setReportStatus(r.id, "resolved")}>
+                        Tandai Selesai
+                      </Button>
+                      <Button size="sm" variant="ghost" icon="x" onClick={() => void setReportStatus(r.id, "dismissed")}>
+                        Tolak
+                      </Button>
                     </div>
                   )}
                 </div>

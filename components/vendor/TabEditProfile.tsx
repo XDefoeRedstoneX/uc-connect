@@ -2,6 +2,9 @@ import { useRef, useState } from "react";
 import type { VendorProfile } from "@/pages/vendor/dashboard";
 import { compressBanner, compressAndResize } from "@/lib/compress-image";
 import { useToast } from "@/components/ToastProvider";
+import Icon from "@/components/ui/Icon";
+import Button from "@/components/ui/Button";
+import Badge from "@/components/ui/Badge";
 
 const CATEGORIES = ["Makanan & Minuman","Jasa & Layanan","Fashion","Kreatif & Desain","Elektronik","Kesehatan & Kecantikan","Lainnya"];
 const SALES_SYSTEMS = [
@@ -131,7 +134,7 @@ export default function TabEditProfile({ vendor, token, userId, onSaved }: Props
             <label style={{ fontWeight: 600, fontSize: "0.88rem", color: "var(--muted)", display: "block", marginBottom: "0.5rem" }}>Logo</label>
             <div className="dropzone" onClick={() => logoRef.current?.click()}
               style={{ width: "90px", height: "90px", borderRadius: "50%", backgroundImage: logoPreview ? `url(${logoPreview})` : undefined, backgroundSize: "cover", backgroundPosition: "center", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {!logoPreview && <span style={{ color: "var(--muted)", fontSize: "0.7rem", textAlign: "center" }}>Klik</span>}
+              {!logoPreview && <span style={{ color: "var(--muted)" }}><Icon name="camera" size={22} /></span>}
               <input ref={logoRef} type="file" accept="image/*" style={{ display: "none" }}
                 onChange={e => handleLogo(e.target.files?.[0] ?? null)} />
             </div>
@@ -141,8 +144,8 @@ export default function TabEditProfile({ vendor, token, userId, onSaved }: Props
               Banner (1200×400, maks 300 KB)
             </label>
             <div className="dropzone" onClick={() => bannerRef.current?.click()}
-              style={{ height: "90px", backgroundImage: bannerPreview ? `url(${bannerPreview})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }}>
-              {!bannerPreview && <span style={{ color: "var(--muted)" }}>Klik untuk upload banner</span>}
+              style={{ height: "90px", backgroundImage: bannerPreview ? `url(${bannerPreview})` : undefined, backgroundSize: "cover", backgroundPosition: "center", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}>
+              {!bannerPreview && <span style={{ color: "var(--muted)", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}><Icon name="camera" size={18} /> Klik untuk upload banner</span>}
               <input ref={bannerRef} type="file" accept="image/*" style={{ display: "none" }}
                 onChange={e => handleBanner(e.target.files?.[0] ?? null)} />
             </div>
@@ -209,14 +212,16 @@ export default function TabEditProfile({ vendor, token, userId, onSaved }: Props
           </div>
         </div>
 
-        <button onClick={save} disabled={saving} style={{ marginTop: "1rem", width: "100%" }}>
+        <Button icon="check" onClick={save} disabled={saving} fullWidth style={{ marginTop: "1rem" }}>
           {saving ? "Menyimpan..." : "Simpan Perubahan"}
-        </button>
+        </Button>
       </div>
 
       {/* Live Preview */}
       <div className="dash-card" style={{ position: "sticky", top: "5rem" }}>
-        <h2 style={{ marginTop: 0, fontSize: "0.95rem", color: "var(--muted)" }}>👁 Preview Profil</h2>
+        <h2 style={{ marginTop: 0, fontSize: "0.95rem", color: "var(--muted)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+          <Icon name="eye" size={16} strokeWidth={2.2} /> Preview Profil
+        </h2>
         {bannerPreview && (
           <img src={bannerPreview} alt="Banner preview"
             style={{ width: "100%", height: "100px", objectFit: "cover", borderRadius: "var(--radius-md)", marginBottom: "0.75rem" }} />
@@ -230,14 +235,18 @@ export default function TabEditProfile({ vendor, token, userId, onSaved }: Props
         </div>
         {form.tagline && <p style={{ color: "var(--muted)", margin: "0 0 0.5rem", fontSize: "0.88rem" }}>{form.tagline}</p>}
         <div className="row-wrap" style={{ gap: "0.35rem", marginBottom: "0.5rem" }}>
-          {form.category && <span className="badge pacific">{form.category}</span>}
-          {form.city && <span className="badge pacific">📍 {form.city}</span>}
+          {form.category && <Badge tone="pacific">{form.category}</Badge>}
+          {form.city && <Badge tone="pacific" icon="map-pin">{form.city}</Badge>}
         </div>
-        {form.address && <p style={{ fontSize: "0.8rem", color: "var(--muted)", margin: "0 0 0.5rem" }}>📍 {form.address}</p>}
+        {form.address && (
+          <p style={{ fontSize: "0.8rem", color: "var(--muted)", margin: "0 0 0.5rem", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+            <Icon name="map-pin" size={13} /> {form.address}
+          </p>
+        )}
         {form.description && <p style={{ fontSize: "0.85rem", color: "var(--muted)", lineHeight: 1.5 }}>{form.description.slice(0, 120)}{form.description.length > 120 ? "..." : ""}</p>}
         {form.whatsapp && (
-          <div style={{ marginTop: "0.75rem", padding: "0.5rem 0.75rem", background: "#e7fce9", borderRadius: "8px", fontSize: "0.85rem", fontWeight: 600, color: "#1a6b2e" }}>
-            📱 {form.whatsapp}
+          <div style={{ marginTop: "0.75rem", padding: "0.5rem 0.75rem", background: "#e7fce9", borderRadius: "8px", fontSize: "0.85rem", fontWeight: 600, color: "#1a6b2e", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            <Icon name="phone" size={14} strokeWidth={2.4} /> {form.whatsapp}
           </div>
         )}
       </div>

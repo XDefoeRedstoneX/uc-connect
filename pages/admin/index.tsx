@@ -5,6 +5,11 @@ import Link from "next/link";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import AdminNav from "@/components/admin/AdminNav";
+import Icon, { type IconName } from "@/components/ui/Icon";
+import Button from "@/components/ui/Button";
+import Stat from "@/components/ui/Stat";
+import EmptyState from "@/components/ui/EmptyState";
+import LoadingScreen from "@/components/LoadingScreen";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type Stats = {
@@ -44,18 +49,13 @@ export default function AdminDashboard() {
 
   if (loading) return (
     <SiteLayout title="Admin | UC Connect">
-      <div style={{ textAlign: "center", padding: "4rem" }}>
-        <p style={{ fontSize: "2rem" }}>⏳</p>
-        <p style={{ color: "var(--muted)" }}>Memverifikasi akses admin...</p>
-      </div>
+      <LoadingScreen message="Memverifikasi akses admin..." />
     </SiteLayout>
   );
 
   if (error) return (
     <SiteLayout title="Admin | UC Connect">
-      <div className="card" style={{ textAlign: "center" }}>
-        <p className="err">{error}</p>
-      </div>
+      <EmptyState icon="alert-triangle" title={error} description="Coba muat ulang halaman." />
     </SiteLayout>
   );
 
@@ -66,22 +66,15 @@ export default function AdminDashboard() {
       {/* KPIs */}
       {stats && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}>
-          {[
-            { label: "Total Users", value: stats.totalUsers, icon: "👥", href: "/admin/users" },
-            { label: "Total Vendors", value: stats.totalVendors, icon: "🏪", href: "/admin/vendors?status=verified" },
-            { label: "Pending Verifikasi", value: stats.pendingVendors, icon: "⏳", href: "/admin/vendors?status=pending", highlight: stats.pendingVendors > 0 },
-            { label: "Forum Threads", value: stats.totalThreads, icon: "📝", href: "/admin/forum" },
-            { label: "Forum Replies", value: stats.totalReplies, icon: "💬", href: "/admin/forum?type=replies" },
-          ].map(s => (
-            <Link
-              key={s.label}
-              href={s.href}
-              className="dash-stat"
-              style={{ textDecoration: "none", color: "inherit", display: "block", ...(s.highlight ? { border: "2px solid var(--orange)", background: "var(--orange-soft)" } : {}) }}
-            >
-              <p style={{ fontSize: "1.5rem", margin: "0 0 0.25rem" }}>{s.icon}</p>
-              <p className="dash-stat-value">{s.value}</p>
-              <p className="dash-stat-label">{s.label}</p>
+          {([
+            { label: "Total Users", value: stats.totalUsers, icon: "users", href: "/admin/users" },
+            { label: "Total Vendors", value: stats.totalVendors, icon: "store", href: "/admin/vendors?status=verified" },
+            { label: "Pending Verifikasi", value: stats.pendingVendors, icon: "clock", href: "/admin/vendors?status=pending", highlight: stats.pendingVendors > 0 },
+            { label: "Forum Threads", value: stats.totalThreads, icon: "file-text", href: "/admin/forum" },
+            { label: "Forum Replies", value: stats.totalReplies, icon: "chat", href: "/admin/forum?type=replies" },
+          ] as { label: string; value: number; icon: IconName; href: string; highlight?: boolean }[]).map(s => (
+            <Link key={s.label} href={s.href} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+              <Stat icon={s.icon} value={s.value} label={s.label} tone={s.highlight ? "warm" : "default"} />
             </Link>
           ))}
         </div>
@@ -90,27 +83,29 @@ export default function AdminDashboard() {
       {/* Quick actions */}
       {stats && stats.pendingVendors > 0 && (
         <div className="dash-card" style={{ background: "var(--orange-soft)", border: "1.5px solid var(--orange-light)" }}>
-          <p style={{ fontWeight: 700, marginBottom: "0.5rem" }}>⚠️ {stats.pendingVendors} vendor menunggu verifikasi</p>
+          <p style={{ fontWeight: 700, marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.4rem", color: "var(--orange-dark)" }}>
+            <Icon name="alert-triangle" size={16} strokeWidth={2.4} /> {stats.pendingVendors} vendor menunggu verifikasi
+          </p>
           <p style={{ color: "var(--muted)", fontSize: "0.88rem", marginBottom: "0.75rem" }}>
             Periksa dan verifikasi vendor baru untuk menampilkannya di direktori.
           </p>
-          <Link href="/admin/vendors" className="btn" style={{ background: "var(--orange)" }}>
-            Lihat Vendor →
-          </Link>
+          <Button href="/admin/vendors" iconRight="arrow-right" style={{ background: "var(--orange)" }}>
+            Lihat Vendor
+          </Button>
         </div>
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.75rem", marginTop: "1rem" }}>
-        {[
-          { icon: "🏪", title: "Verifikasi Vendor", desc: "Setujui atau tolak vendor baru", href: "/admin/vendors" },
-          { icon: "👥", title: "Kelola Users", desc: "Lihat dan ubah role pengguna", href: "/admin/users" },
-          { icon: "⭐", title: "Moderasi Ulasan", desc: "Hapus ulasan yang melanggar", href: "/admin/reviews" },
-          { icon: "💬", title: "Moderasi Forum", desc: "Hapus thread atau balasan yang melanggar", href: "/admin/forum" },
-          { icon: "🚩", title: "Antrean Laporan", desc: "Tinjau laporan dari pengguna", href: "/admin/reports" },
-          { icon: "🏆", title: "Featured & Lelang", desc: "Pantau bid & jalankan settlement", href: "/admin/featured" },
-        ].map(a => (
+        {([
+          { icon: "store", title: "Verifikasi Vendor", desc: "Setujui atau tolak vendor baru", href: "/admin/vendors" },
+          { icon: "users", title: "Kelola Users", desc: "Lihat dan ubah role pengguna", href: "/admin/users" },
+          { icon: "star", title: "Moderasi Ulasan", desc: "Hapus ulasan yang melanggar", href: "/admin/reviews" },
+          { icon: "chat", title: "Moderasi Forum", desc: "Hapus thread atau balasan yang melanggar", href: "/admin/forum" },
+          { icon: "flag", title: "Antrean Laporan", desc: "Tinjau laporan dari pengguna", href: "/admin/reports" },
+          { icon: "trophy", title: "Featured & Lelang", desc: "Pantau bid & jalankan settlement", href: "/admin/featured" },
+        ] as { icon: IconName; title: string; desc: string; href: string }[]).map(a => (
           <Link key={a.href} href={a.href} className="action-card" style={{ textDecoration: "none", textAlign: "center" }}>
-            <p className="action-icon">{a.icon}</p>
+            <span className="action-icon" style={{ color: "var(--pacific)" }}><Icon name={a.icon} size={26} strokeWidth={2.2} /></span>
             <p className="action-label">{a.title}</p>
             <p style={{ color: "var(--muted)", fontSize: "0.8rem", margin: 0 }}>{a.desc}</p>
           </Link>
