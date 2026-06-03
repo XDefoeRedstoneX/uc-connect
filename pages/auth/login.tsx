@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { GetServerSideProps } from "next";
 import AuthSplitLayout from "@/components/AuthSplitLayout";
 import AuthTabs from "@/components/AuthTabs";
@@ -24,6 +24,33 @@ export default function LoginPage() {
     : "/";
 
   const setUsernamePath = `/auth/set-username?next=${encodeURIComponent(nextPath)}`;
+
+  // Arriving here already authenticated — e.g. clicking the email-confirmation
+  // link (detectSessionInUrl establishes the session) — should continue the
+  // journey, not show a login form to a logged-in user. Route to set-username
+  // if it's still missing, otherwise to `next`.
+  useEffect(() => {
+    let cancelled = false;
+    const continueIfAuthed = async () => {
+      const supabase = getSupabaseBrowserClient();
+      if (!supabase) return;
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token || cancelled) return;
+      const resp = await fetch("/api/profile", { headers: { Authorization: `Bearer ${token}` } });
+      const json = await resp.json().catch(() => ({}));
+      if (cancelled) return;
+      if (resp.ok && json.profile && !json.profile.username) {
+        await router.replace(setUsernamePath);
+      } else {
+        await router.replace(nextPath);
+      }
+    };
+    void continueIfAuthed();
+    return () => { cancelled = true; };
+    // Run once on mount; nextPath/setUsernamePath derive from the initial query.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function onLogin(e: FormEvent) {
     e.preventDefault();
@@ -82,7 +109,7 @@ export default function LoginPage() {
           </>
         }
       >
-        <AuthTabs currentPage="login" />
+        <AuthTabs currentPage="login" next={nextPath} />
 
         <h1 id="login-title">{t("pages.login.title")}</h1>
         <p className="muted">{t("pages.login.subtitle")}</p>
@@ -113,7 +140,9 @@ export default function LoginPage() {
 
         <div className="row-gap">
           <Link href="/auth/forgot-password">{t("pages.login.forgotPassword")}</Link>
-          <Link href="/auth/register">{t("pages.login.noAccount")}</Link>
+          <Link href={nextPath === "/" ? "/auth/register" : `/auth/register?next=${encodeURIComponent(nextPath)}`}>
+            {t("pages.login.noAccount")}
+          </Link>
         </div>
 
         {message && <p className="ok">{message}</p>}

@@ -11,7 +11,7 @@ export default function BottomCTA() {
 
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
-      await router.push("/auth/register?type=vendor");
+      await router.push("/auth/register?next=/vendor/onboarding");
       return;
     }
 
@@ -19,7 +19,7 @@ export default function BottomCTA() {
     const token = sessionData.session?.access_token;
 
     if (!token) {
-      await router.push("/auth/register?type=vendor");
+      await router.push("/auth/register?next=/vendor/onboarding");
       setLoading(false);
       return;
     }
@@ -30,7 +30,7 @@ export default function BottomCTA() {
     const data = await response.json();
 
     if (!response.ok || !data.profile) {
-      await router.push("/auth/login");
+      await router.push("/auth/login?next=/vendor/onboarding");
       setLoading(false);
       return;
     }
