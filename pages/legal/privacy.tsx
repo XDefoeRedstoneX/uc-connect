@@ -1,4 +1,5 @@
 import SiteLayout from "@/components/SiteLayout";
+import Link from "next/link";
 import { GetServerSideProps } from "next";
 
 export default function PrivacyPage() {
@@ -60,7 +61,7 @@ export default function PrivacyPage() {
           <div>
             <h2 style={{ fontSize: "1.15rem", fontWeight: 700, color: "var(--pacific-dark)" }}>5. Kontak</h2>
             <p style={{ color: "var(--muted)", lineHeight: 1.7 }}>
-              Untuk pertanyaan terkait privasi, hubungi kami melalui halaman <a href="/support" style={{ color: "var(--pacific)" }}>Support</a>.
+              Untuk pertanyaan terkait privasi, hubungi kami melalui halaman <Link href="/support" style={{ color: "var(--pacific)" }}>Support</Link>.
             </p>
           </div>
         </div>

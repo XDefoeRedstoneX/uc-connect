@@ -5,6 +5,8 @@ import Link from "next/link";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import AdminNav from "@/components/admin/AdminNav";
+import { useToast } from "@/components/ToastProvider";
+import { useConfirm } from "@/components/ConfirmProvider";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type AdminVendor = {
@@ -18,6 +20,8 @@ type AdminVendor = {
 
 export default function AdminVendorsPage() {
   const router = useRouter();
+  const { showToast } = useToast();
+  const confirm = useConfirm();
   const [token, setToken] = useState<string | null>(null);
   const [filter, setFilter] = useState<"pending" | "verified" | "all">("pending");
 
@@ -60,12 +64,20 @@ export default function AdminVendorsPage() {
     const res = await fetch(`/api/admin/vendors/ktm?vendor_id=${vendorId}`, { headers: { Authorization: `Bearer ${token}` } });
     const j = await res.json().catch(() => ({}));
     if (res.ok && j.url) window.open(j.url, "_blank", "noopener,noreferrer");
-    else alert(j.error ?? "Gagal membuka KTM");
+    else showToast(j.error ?? "Gagal membuka KTM", "error");
   }
 
   async function act(vendorId: string, action: "approve" | "reject") {
     if (!token) return;
-    if (action === "reject" && !confirm("Yakin ingin menolak dan menghapus vendor ini?")) return;
+    if (action === "reject") {
+      const ok = await confirm({
+        title: "Tolak & hapus vendor ini?",
+        message: "Vendor akan dihapus dan role pemiliknya dikembalikan ke customer.",
+        confirmLabel: "Tolak Vendor",
+        destructive: true,
+      });
+      if (!ok) return;
+    }
     setActionId(vendorId);
     const res = await fetch("/api/admin/vendors", {
       method: "PATCH",

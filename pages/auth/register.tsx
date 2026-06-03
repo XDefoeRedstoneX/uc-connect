@@ -36,6 +36,17 @@ export default function RegisterPage() {
   const phonePreview = normalizeIndonesianPhoneToLocal(phone);
   const phoneInternational = phonePreview.phone ? `+62${phonePreview.phone.slice(1)}` : null;
 
+  // Preserve a post-auth destination across the email-confirmation gap. The
+  // "Daftar Sebagai Vendor" funnel passes ?next=/vendor/onboarding; we thread
+  // it through the confirmation email (emailRedirectTo) and the login link so
+  // the vendor intent survives sign-up → verify → login.
+  const nextPath = typeof router.query.next === "string" && router.query.next.startsWith("/")
+    ? router.query.next
+    : "/";
+  const loginHref = nextPath === "/"
+    ? "/auth/login"
+    : `/auth/login?next=${encodeURIComponent(nextPath)}`;
+
   async function onRegister(e: FormEvent) {
     e.preventDefault();
     setMessage(null);
@@ -74,6 +85,9 @@ export default function RegisterPage() {
       password,
       options: {
         data: { full_name: normalizedFullName, phone: normalizedPhone.phone },
+        // After the user confirms their email, land them on login with the
+        // same `next` so the vendor (or any deep-link) intent isn't lost.
+        emailRedirectTo: `${window.location.origin}${loginHref}`,
       },
     });
 
@@ -99,7 +113,7 @@ export default function RegisterPage() {
           </>
         }
       >
-        <AuthTabs currentPage="register" />
+        <AuthTabs currentPage="register" next={nextPath} />
 
         <h1 id="register-title">{t("pages.register.title")}</h1>
         <p className="muted">{t("pages.register.subtitle")}</p>
@@ -158,7 +172,7 @@ export default function RegisterPage() {
         </form>
 
         <div className="row-gap">
-          <Link href="/auth/login">{t("pages.register.haveAccount")}</Link>
+          <Link href={loginHref}>{t("pages.register.haveAccount")}</Link>
         </div>
 
         {message && <p className="ok">{message}</p>}
