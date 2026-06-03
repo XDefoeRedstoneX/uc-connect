@@ -9,7 +9,7 @@ export default createHandler({
 
       const { data: vendor, error: vendorError } = await supabase
         .from("vendors")
-        .select("id,slug,name,tagline,category,city,address,is_verified,description,whatsapp,website_url,hero_image_url,logo_url,university,sales_system,delivery_methods,whatsapp_clicks,created_at")
+        .select("id,slug,name,tagline,category,city,address,is_verified,description,whatsapp,website_url,hero_image_url,logo_url,university,sales_system,delivery_methods,whatsapp_clicks,owner_id,created_at")
         .eq("id", id)
         .single();
 

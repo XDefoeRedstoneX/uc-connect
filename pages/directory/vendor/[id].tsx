@@ -402,8 +402,13 @@ export default function VendorDetailPage() {
           </div>
         )}
 
-        {/* Review form */}
-        {token && !hasReviewed && !reviews.some(r => r.user_id === currentUserId) ? (
+        {/* Review form — gate self-reviews on the client so vendors don't
+            see a form that will 403 on submit. Server still enforces. */}
+        {token && currentUserId === vendor.owner_id ? (
+          <p style={{ color: "var(--muted)", fontSize: "0.88rem", marginBottom: "1rem" }}>
+            🏪 Ini tokomu sendiri — kamu tidak bisa menulis ulasan untuk vendor sendiri.
+          </p>
+        ) : token && !hasReviewed && !reviews.some(r => r.user_id === currentUserId) ? (
           <div style={{ padding: "1.1rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", marginBottom: "1.25rem" }}>
             <h3 style={{ margin: "0 0 0.6rem", fontSize: "1rem" }}>Tulis Ulasan</h3>
             <div role="radiogroup" aria-label="Rating" style={{ display: "flex", gap: "0.2rem", marginBottom: "0.6rem" }}>
@@ -469,9 +474,13 @@ export default function VendorDetailPage() {
                     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
                     body: JSON.stringify({ rating: reviewRating, content: reviewContent.trim() || null, image_url: imageUrl }),
                   });
-                  const json = await res.json();
+                  const json = await res.json().catch(() => ({}));
                   if (!res.ok) {
-                    showToast(json.error ?? "Gagal mengirim ulasan.", "error");
+                    // Log the raw status + body so devs can see the source of
+                    // unexpected error shapes (e.g. PostgREST/Storage payloads
+                    // that don't follow our { error } convention).
+                    console.error("[review submit] failed", { status: res.status, body: json });
+                    showToast(json.error ?? json.message ?? `Gagal mengirim ulasan (${res.status}).`, "error");
                   } else {
                     showToast("Ulasan berhasil dikirim!");
                     setHasReviewed(true);
