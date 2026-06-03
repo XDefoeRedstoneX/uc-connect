@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import SiteLayout from "@/components/SiteLayout";
 import LoadingScreen from "@/components/LoadingScreen";
+import Icon from "@/components/ui/Icon";
 import { useToast } from "@/components/ToastProvider";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { compressAndResize } from "@/lib/compress-image";
@@ -120,10 +121,11 @@ export default function NewDiscussion() {
   return (
     <SiteLayout title={`Buat Diskusi Baru: ${category.name} | UC Connect`}>
       <section className="card" style={{ maxWidth: "640px", margin: "0 auto" }}>
-        <Link href={`/community/${slug}`} style={{ color: "var(--muted)", fontSize: "0.88rem", textDecoration: "none" }}>
-          ← Kembali ke {category.name}
+        <Link href={`/community/${slug}`} className="back-link">
+          <Icon name="arrow-left" size={15} /> Kembali ke {category.name}
         </Link>
-        <h1 style={{ margin: "0.75rem 0 0.35rem" }}>Buat Diskusi Baru</h1>
+        <span className="kicker" style={{ marginTop: "0.85rem" }}><Icon name="edit" size={14} strokeWidth={2.6} /> Diskusi Baru</span>
+        <h1 className="display" style={{ margin: "0.4rem 0 0.35rem", fontSize: "var(--fs-h2)" }}>Buat Diskusi Baru</h1>
         <p style={{ color: "var(--muted)", marginBottom: "1.5rem" }}>
           di kategori <strong style={{ color: "var(--pacific-dark)" }}>{category.name}</strong>
         </p>
@@ -160,14 +162,18 @@ export default function NewDiscussion() {
             <span style={{ fontWeight: 600, fontSize: "0.88rem", color: "var(--muted)", display: "block", marginBottom: "0.35rem" }}>Lampiran Gambar (opsional)</span>
             <div className="dropzone" onClick={() => imageRef.current?.click()}
               style={{ height: "80px", backgroundImage: imagePreview ? `url(${imagePreview})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }}>
-              {!imagePreview && <span style={{ color: "var(--muted)", fontSize: "0.85rem" }}>📷 Klik untuk upload gambar</span>}
+              {!imagePreview && (
+                <span style={{ color: "var(--muted)", fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
+                  <Icon name="camera" size={16} /> Klik untuk upload gambar
+                </span>
+              )}
               <input ref={imageRef} type="file" accept="image/*" style={{ display: "none" }}
                 onChange={e => handleImage(e.target.files?.[0] ?? null)} />
             </div>
             {imagePreview && (
               <button type="button" onClick={() => { setImageFile(null); setImagePreview(null); }}
-                style={{ marginTop: "0.5rem", background: "var(--error)", fontSize: "0.8rem", padding: "0.3rem 0.8rem" }}>
-                Hapus Gambar
+                className="btn btn--sm btn--danger" style={{ marginTop: "0.5rem", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+                <Icon name="trash" size={14} /> Hapus Gambar
               </button>
             )}
           </div>

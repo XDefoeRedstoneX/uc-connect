@@ -1,6 +1,8 @@
 import { FormEvent, useState } from "react";
 import SiteLayout from "@/components/SiteLayout";
 import { GetServerSideProps } from "next";
+import Icon from "@/components/ui/Icon";
+import Button from "@/components/ui/Button";
 
 const FAQ = [
   { q: "Bagaimana cara mendaftar sebagai vendor?", a: "Buka halaman profil Anda, lalu klik 'Daftar Sebagai Vendor'. Anda perlu mengupload KTM dan mengisi data bisnis. Setelah itu, admin akan memverifikasi pendaftaran Anda." },
@@ -27,8 +29,11 @@ export default function SupportPage() {
   return (
     <SiteLayout title="Support | UC Connect" description="Bantuan dan dukungan untuk pengguna UC Connect.">
       <section className="hero bubble-section">
-        <h1 style={{ position: "relative", zIndex: 1 }}>💬 Bantuan & Support</h1>
-        <p style={{ color: "var(--muted)", position: "relative", zIndex: 1 }}>
+        <span className="kicker" style={{ position: "relative", zIndex: 1 }}>
+          <Icon name="chat" size={14} strokeWidth={2.6} /> Bantuan
+        </span>
+        <h1 className="display" style={{ position: "relative", zIndex: 1, fontSize: "var(--fs-h1)", margin: "0.5rem 0 0" }}>Bantuan & Support</h1>
+        <p style={{ color: "var(--muted)", position: "relative", zIndex: 1, marginTop: "0.5rem" }}>
           Punya pertanyaan? Cek FAQ atau hubungi kami.
         </p>
       </section>
@@ -36,7 +41,9 @@ export default function SupportPage() {
       <div className="split-main-aside">
         {/* FAQ */}
         <section className="card compact-top">
-          <h2 style={{ marginTop: 0, marginBottom: "1rem" }}>❓ Pertanyaan Umum (FAQ)</h2>
+          <h2 style={{ marginTop: 0, marginBottom: "1rem", display: "flex", alignItems: "center", gap: "0.45rem" }}>
+            <Icon name="help-circle" size={20} strokeWidth={2.2} /> Pertanyaan Umum (FAQ)
+          </h2>
           <div className="stack" style={{ gap: "0.5rem" }}>
             {FAQ.map((item, i) => (
               <div key={i} style={{
@@ -53,7 +60,9 @@ export default function SupportPage() {
                     display: "flex", justifyContent: "space-between", alignItems: "center",
                   }}>
                   <span>{item.q}</span>
-                  <span style={{ fontSize: "0.75rem", color: "var(--muted)", transition: "transform 0.2s", transform: openFaq === i ? "rotate(180deg)" : "none" }}>▼</span>
+                  <span style={{ color: "var(--muted)", flexShrink: 0, transition: "transform 0.2s", transform: openFaq === i ? "rotate(180deg)" : "none" }}>
+                    <Icon name="chevron-down" size={16} strokeWidth={2.4} />
+                  </span>
                 </button>
                 {openFaq === i && (
                   <div style={{ padding: "0 1rem 0.85rem", color: "var(--muted)", fontSize: "0.88rem", lineHeight: 1.6 }}>
@@ -67,7 +76,9 @@ export default function SupportPage() {
 
         {/* Contact form */}
         <section className="card compact-top" style={{ position: "sticky", top: "5rem" }}>
-          <h2 style={{ marginTop: 0, marginBottom: "0.75rem" }}>📧 Hubungi Kami</h2>
+          <h2 style={{ marginTop: 0, marginBottom: "0.75rem", display: "flex", alignItems: "center", gap: "0.45rem" }}>
+            <Icon name="mail" size={20} strokeWidth={2.2} /> Hubungi Kami
+          </h2>
           <p style={{ color: "var(--muted)", fontSize: "0.88rem", marginBottom: "1rem" }}>
             Tidak menemukan jawaban? Kirim pesan dan kami akan segera merespon.
           </p>
@@ -82,7 +93,7 @@ export default function SupportPage() {
               <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={5} required
                 placeholder="Jelaskan pertanyaan atau masalah Anda..." style={{ marginTop: "0.3rem", width: "100%" }} />
             </label>
-            <button type="submit">Kirim Pesan</button>
+            <Button type="submit" icon="mail">Kirim Pesan</Button>
           </form>
           {status && <p className="ok" style={{ marginTop: "0.75rem" }}>{status}</p>}
         </section>

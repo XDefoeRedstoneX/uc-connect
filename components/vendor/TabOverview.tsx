@@ -1,4 +1,8 @@
 import type { VendorProfile, VendorHour, VendorItem } from "@/pages/vendor/dashboard";
+import Icon, { type IconName } from "@/components/ui/Icon";
+import Button from "@/components/ui/Button";
+import Badge from "@/components/ui/Badge";
+import Stat from "@/components/ui/Stat";
 
 const DAYS = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 
@@ -8,6 +12,12 @@ type Props = {
   hours: VendorHour[];
   setActiveTab: (tab: string) => void;
 };
+
+const QUICK_ACTIONS: { icon: IconName; label: string; tab: string }[] = [
+  { icon: "edit", label: "Edit Profil", tab: "profile" },
+  { icon: "package", label: "Kelola Item", tab: "items" },
+  { icon: "clock", label: "Jam Buka", tab: "hours" },
+];
 
 export default function TabOverview({ vendor, items, hours, setActiveTab }: Props) {
   const activeItems = items.filter(i => i.is_active).length;
@@ -25,52 +35,44 @@ export default function TabOverview({ vendor, items, hours, setActiveTab }: Prop
           )}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "0.75rem" }}>
             <div>
-              <h1 style={{ fontSize: "1.6rem", fontWeight: 900, margin: "0 0 0.25rem" }}>{vendor.name}</h1>
+              <h1 className="display" style={{ fontSize: "var(--fs-h2)", margin: "0 0 0.25rem" }}>{vendor.name}</h1>
               {vendor.tagline && <p style={{ color: "var(--muted)", margin: "0 0 0.5rem" }}>{vendor.tagline}</p>}
               <div className="row-wrap" style={{ gap: "0.4rem" }}>
                 {vendor.is_verified
-                  ? <span className="badge success">✓ Terverifikasi</span>
-                  : <span className="badge" style={{ background: "var(--orange-soft)", color: "var(--orange-dark)" }}>⏳ Menunggu Verifikasi</span>}
-                {vendor.category && <span className="badge pacific">{vendor.category}</span>}
-                {vendor.city && <span className="badge pacific">📍 {vendor.city}</span>}
+                  ? <Badge tone="success" icon="check">Terverifikasi</Badge>
+                  : <Badge tone="gold" icon="clock">Menunggu Verifikasi</Badge>}
+                {vendor.category && <Badge tone="pacific">{vendor.category}</Badge>}
+                {vendor.city && <Badge tone="pacific" icon="map-pin">{vendor.city}</Badge>}
               </div>
             </div>
-            <button onClick={() => setActiveTab("profile")} className="btn">✏️ Edit Profil</button>
+            <Button icon="edit" onClick={() => setActiveTab("profile")}>Edit Profil</Button>
           </div>
         </div>
       </div>
 
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "0.75rem" }}>
-        <div className="dash-stat">
-          <p className="dash-stat-value">{vendor.whatsapp_clicks}</p>
-          <p className="dash-stat-label">Klik WhatsApp</p>
-        </div>
-        <div className="dash-stat">
-          <p className="dash-stat-value">{items.length}</p>
-          <p className="dash-stat-label">Total Item</p>
-        </div>
-        <div className="dash-stat">
-          <p className="dash-stat-value">{activeItems}</p>
-          <p className="dash-stat-label">Item Aktif</p>
-        </div>
-        <div className="dash-stat">
-          <p className="dash-stat-value" style={{ fontSize: "1.1rem" }}>{isOpenToday ? "🟢 Buka" : "🔴 Tutup"}</p>
-          <p className="dash-stat-label">Hari Ini ({DAYS[new Date().getDay()]})</p>
-          {isOpenToday && todayHour.opens_at && (
-            <p style={{ fontSize: "0.78rem", color: "var(--muted)" }}>{todayHour.opens_at.slice(0,5)}–{todayHour.closes_at?.slice(0,5)}</p>
-          )}
-        </div>
+        <Stat tone="accent" icon="chat" value={vendor.whatsapp_clicks} label="Klik WhatsApp" />
+        <Stat icon="package" value={items.length} label="Total Item" />
+        <Stat icon="check-circle" value={activeItems} label="Item Aktif" />
+        <Stat
+          icon="clock"
+          value={<span style={{ color: isOpenToday ? "#16a34a" : "#dc2626" }}>{isOpenToday ? "Buka" : "Tutup"}</span>}
+          label={`Hari Ini (${DAYS[new Date().getDay()]})`}
+          hint={isOpenToday && todayHour.opens_at ? `${todayHour.opens_at.slice(0, 5)}–${todayHour.closes_at?.slice(0, 5)}` : undefined}
+        />
       </div>
 
       {/* WhatsApp insight */}
       {vendor.whatsapp && (
         <div className="dash-card" style={{ background: "var(--gradient-subtle)", border: "1px solid rgba(28,169,201,0.1)" }}>
-          <p style={{ fontWeight: 700, marginBottom: "0.35rem" }}>📱 WhatsApp Insights</p>
+          <p style={{ fontWeight: 700, marginBottom: "0.35rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            <Icon name="phone" size={16} strokeWidth={2.4} /> WhatsApp Insights
+          </p>
           <p style={{ color: "var(--muted)", fontSize: "0.9rem", marginBottom: "0.75rem" }}>
             <strong style={{ color: "var(--orange)", fontSize: "1.25rem" }}>{vendor.whatsapp_clicks}</strong> orang telah menekan tombol WhatsApp menuju bisnis Anda.
           </p>
-          <a href={`https://wa.me/${vendor.whatsapp.replace(/\D/g,"")}`} target="_blank" rel="noreferrer"
+          <a href={`https://wa.me/${vendor.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noreferrer"
             className="btn" style={{ background: "#25D366", fontSize: "0.85rem" }}>
             Buka WhatsApp
           </a>
@@ -79,13 +81,9 @@ export default function TabOverview({ vendor, items, hours, setActiveTab }: Prop
 
       {/* Quick actions */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "0.75rem" }}>
-        {[
-          { icon: "✏️", label: "Edit Profil", tab: "profile" },
-          { icon: "📦", label: "Kelola Item", tab: "items" },
-          { icon: "🕐", label: "Jam Buka", tab: "hours" },
-        ].map(a => (
+        {QUICK_ACTIONS.map(a => (
           <button key={a.tab} type="button" className="action-card" onClick={() => setActiveTab(a.tab)}>
-            <p className="action-icon">{a.icon}</p>
+            <span className="action-icon" style={{ color: "var(--pacific)" }}><Icon name={a.icon} size={26} strokeWidth={2.2} /></span>
             <p className="action-label">{a.label}</p>
           </button>
         ))}

@@ -1,9 +1,10 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { sendInternalServerError, sendMethodNotAllowed, sendServiceUnavailable } from "@/lib/api-response";
-import { resolveAuthedUser } from "@/lib/api-auth";
+import { createHandler, method } from "@/lib/api-handler";
+import { sendInternalServerError, sendServiceUnavailable } from "@/lib/api-response";
 import { getSupabaseServiceClient } from "@/lib/supabase-server";
-import { rateLimited } from "@/lib/rate-limit";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { log } from "@/lib/logger";
+
+const PROFILE_COLUMNS = "id,username,full_name,phone,avatar_url,major,graduation_year,role,updated_at";
 
 function trimToNull(value: unknown): string | null {
   if (typeof value !== "string") return null;
@@ -11,175 +12,142 @@ function trimToNull(value: unknown): string | null {
   return trimmed ? trimmed : null;
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const authContext = await resolveAuthedUser(req);
-  if (authContext.status === 503) {
-    return sendServiceUnavailable(res);
-  }
-  if (authContext.status !== 200 || !authContext.supabase || !authContext.userId) {
-    return res.status(authContext.status).json({ error: authContext.error ?? "Unauthorized" });
-  }
+export default createHandler({
+  GET: method({
+    auth: "user",
+    handler: async ({ supabase, userId, user, res }) => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select(PROFILE_COLUMNS)
+        .eq("id", userId)
+        .single();
 
-  const { supabase, userId, user } = authContext;
+      if (error) {
+        const errorCode = (error as unknown as { code?: string }).code;
+        const isMissingRow =
+          errorCode === "PGRST116" ||
+          (typeof error.message === "string" && /0 rows|No rows/i.test(error.message));
 
-  if (req.method === "GET") {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id,username,full_name,phone,avatar_url,major,graduation_year,role,updated_at")
-      .eq("id", userId)
-      .single();
+        if (!isMissingRow) return sendInternalServerError(res, "Unable to load profile", error);
 
-    if (error) {
-      const errorCode = (error as unknown as { code?: string }).code;
-      const isMissingRow =
-        errorCode === "PGRST116" ||
-        (typeof error.message === "string" && /0 rows|No rows/i.test(error.message));
+        const now = new Date().toISOString();
+        const meta = (user?.user_metadata ?? {}) as Record<string, unknown>;
+        let metaUsername = trimToNull(meta.username);
+        const metaFullName = trimToNull(meta.full_name);
+        const metaPhone = trimToNull(meta.phone);
 
-      if (!isMissingRow) {
-        console.error("[api/profile] failed to fetch profile", error);
-        return sendInternalServerError(res, "Unable to load profile");
+        // If the signup metadata's username is already taken (case-insensitive),
+        // drop it on first profile create so the user lands without an error.
+        if (metaUsername) {
+          const { data: clash } = await supabase
+            .from("profiles")
+            .select("id")
+            .ilike("username", metaUsername)
+            .neq("id", userId)
+            .maybeSingle();
+          if (clash) metaUsername = null;
+        }
+
+        const { data: created, error: createError } = await supabase
+          .from("profiles")
+          .upsert(
+            { id: userId, username: metaUsername, full_name: metaFullName, phone: metaPhone, updated_at: now },
+            { onConflict: "id" },
+          )
+          .select(PROFILE_COLUMNS)
+          .single();
+
+        if (createError) return sendInternalServerError(res, "Unable to save profile", createError);
+        return res.status(200).json({ profile: created });
       }
 
-      const now = new Date().toISOString();
+      return res.status(200).json({ profile: data });
+    },
+  }),
 
-      const meta = (user?.user_metadata ?? {}) as Record<string, unknown>;
-      let metaUsername = trimToNull(meta.username);
-      const metaFullName = trimToNull(meta.full_name);
-      const metaPhone = trimToNull(meta.phone);
+  PUT: method({
+    auth: "user",
+    handler: async ({ supabase, userId, body, res }) => {
+      const { username, full_name, phone, avatar_url, major, graduation_year } = (body ?? {}) as Record<string, unknown>;
 
-      // If the signup metadata's username is already taken (case-insensitive),
-      // drop it on first profile create so the user lands without an error
-      // and can pick a fresh one on the profile page.
-      if (metaUsername) {
+      const cleanUsername = trimToNull(username);
+      const cleanFullName = trimToNull(full_name);
+      const cleanPhone = trimToNull(phone);
+      const cleanAvatarUrl = trimToNull(avatar_url);
+      const cleanMajor = trimToNull(major);
+
+      // graduation_year: empty/absent clears the field; a provided-but-invalid
+      // value is a 400 (instead of silently saving NULL).
+      const gradProvided =
+        graduation_year !== undefined && graduation_year !== null && String(graduation_year).trim() !== "";
+      const gradNum = Number(graduation_year);
+      const gradValid = Number.isInteger(gradNum) && gradNum > 1900 && gradNum < 2100;
+      if (gradProvided && !gradValid) {
+        return res.status(400).json({ error: "Tahun lulus tidak valid (harus antara 1901–2099)." });
+      }
+      const cleanGradYear = gradProvided ? gradNum : null;
+
+      // Case-insensitive uniqueness check for a clean 409 instead of a raw 23505.
+      if (cleanUsername) {
         const { data: clash } = await supabase
           .from("profiles")
           .select("id")
-          .ilike("username", metaUsername)
+          .ilike("username", cleanUsername)
           .neq("id", userId)
           .maybeSingle();
-        if (clash) metaUsername = null;
+        if (clash) return res.status(409).json({ error: "Username sudah dipakai. Pilih yang lain." });
       }
 
-      const { data: created, error: createError } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
         .upsert(
           {
             id: userId,
-            username: metaUsername,
-            full_name: metaFullName,
-            phone: metaPhone,
-            updated_at: now,
+            username: cleanUsername,
+            full_name: cleanFullName,
+            phone: cleanPhone,
+            avatar_url: cleanAvatarUrl,
+            major: cleanMajor,
+            graduation_year: cleanGradYear,
+            updated_at: new Date().toISOString(),
           },
           { onConflict: "id" },
         )
-        .select("id,username,full_name,phone,avatar_url,major,graduation_year,role,updated_at")
+        .select(PROFILE_COLUMNS)
         .single();
 
-      if (createError) {
-        console.error("[api/profile] failed to create profile", createError);
-        return sendInternalServerError(res, "Unable to save profile");
+      if (error) {
+        // Race past the SELECT above: another writer claimed the username.
+        const code = (error as unknown as { code?: string }).code;
+        if (code === "23505") return res.status(409).json({ error: "Username sudah dipakai. Pilih yang lain." });
+        return sendInternalServerError(res, "Unable to save profile", error);
       }
 
-      return res.status(200).json({ profile: created });
-    }
+      return res.status(200).json({ profile: data });
+    },
+  }),
 
-    return res.status(200).json({ profile: data });
-  }
-
-  if (req.method === "PUT") {
-    const { username, full_name, phone, avatar_url, major, graduation_year } = req.body ?? {};
-
-    const cleanUsername = trimToNull(username);
-    const cleanFullName = trimToNull(full_name);
-    const cleanPhone = trimToNull(phone);
-    const cleanAvatarUrl = trimToNull(avatar_url);
-    const cleanMajor = trimToNull(major);
-
-    // graduation_year: empty/absent clears the field; a provided-but-invalid
-    // value is a 400 (instead of silently saving NULL, which made users think
-    // their input vanished).
-    const gradProvided =
-      graduation_year !== undefined && graduation_year !== null && String(graduation_year).trim() !== "";
-    const gradNum = Number(graduation_year);
-    const gradValid = Number.isInteger(gradNum) && gradNum > 1900 && gradNum < 2100;
-    if (gradProvided && !gradValid) {
-      return res.status(400).json({ error: "Tahun lulus tidak valid (harus antara 1901–2099)." });
-    }
-    const cleanGradYear = gradProvided ? gradNum : null;
-
-    // Case-insensitive uniqueness check. The DB has a partial unique index on
-    // lower(username), but we want a clean 409 with a Bahasa message instead
-    // of a raw 23505 bubbling up to the client.
-    if (cleanUsername) {
-      const { data: clash } = await supabase
-        .from("profiles")
-        .select("id")
-        .ilike("username", cleanUsername)
-        .neq("id", userId)
-        .maybeSingle();
-      if (clash) {
-        return res.status(409).json({ error: "Username sudah dipakai. Pilih yang lain." });
+  DELETE: method({
+    auth: "user",
+    handler: async ({ userId, body, res }) => {
+      // Require an explicit "HAPUS" body gate so a stray DELETE (CSRF, mistapped
+      // fetch in the console) can't nuke an account without confirmation. Checked
+      // before the rate limit so a wrong confirm doesn't consume the budget.
+      const { confirm } = (body ?? {}) as { confirm?: string };
+      if (confirm !== "HAPUS") {
+        return res.status(400).json({ error: 'Konfirmasi tidak valid. Kirim body { "confirm": "HAPUS" }.' });
       }
-    }
 
-    const { data, error } = await supabase
-      .from("profiles")
-      .upsert(
-        {
-          id: userId,
-          username: cleanUsername,
-          full_name: cleanFullName,
-          phone: cleanPhone,
-          avatar_url: cleanAvatarUrl,
-          major: cleanMajor,
-          graduation_year: cleanGradYear,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "id" },
-      )
-      .select("id,username,full_name,phone,avatar_url,major,graduation_year,role,updated_at")
-      .single();
+      if (await enforceRateLimit(res, `delete-account:${userId}`, { limit: 1, windowMs: 60 * 60 * 1000 })) return;
 
-    if (error) {
-      // Race past the SELECT above: another writer claimed the username
-      // between our check and the upsert. Translate the unique-violation into
-      // the same 409 the client already handles.
-      const code = (error as unknown as { code?: string }).code;
-      if (code === "23505") {
-        return res.status(409).json({ error: "Username sudah dipakai. Pilih yang lain." });
-      }
-      console.error("[api/profile] failed to update profile", error);
-      return sendInternalServerError(res, "Unable to save profile");
-    }
+      // auth.admin.* requires the service-role key — fail loud if it's missing.
+      const serviceClient = getSupabaseServiceClient();
+      if (!serviceClient) return sendServiceUnavailable(res);
 
-    return res.status(200).json({ profile: data });
-  }
-
-  if (req.method === "DELETE") {
-    // Self-delete: hard-removes the auth user. Cascade deletes profile, vendor
-    // ownership becomes null, threads/replies/reviews/favorites cascade-delete.
-
-    // Require an explicit "HAPUS" body gate so a stray DELETE (CSRF, mistapped
-    // fetch in the console) can't nuke an account without confirmation.
-    const { confirm } = (req.body ?? {}) as { confirm?: string };
-    if (confirm !== "HAPUS") {
-      return res.status(400).json({ error: 'Konfirmasi tidak valid. Kirim body { "confirm": "HAPUS" }.' });
-    }
-
-    if (rateLimited(res, `delete-account:${userId}`, { limit: 1, windowMs: 60 * 60 * 1000 })) return;
-
-    // auth.admin.* requires the service-role key — fail loud if it's missing.
-    const serviceClient = getSupabaseServiceClient();
-    if (!serviceClient) return sendServiceUnavailable(res);
-
-    log.warn("account_self_delete", { userId });
-    const { error } = await serviceClient.auth.admin.deleteUser(userId);
-    if (error) {
-      console.error("[api/profile] failed to delete auth user", error);
-      return sendInternalServerError(res, "Gagal menghapus akun");
-    }
-    return res.status(200).json({ success: true });
-  }
-
-  return sendMethodNotAllowed(res, "GET, PUT, DELETE");
-}
+      log.warn("account_self_delete", { userId });
+      const { error } = await serviceClient.auth.admin.deleteUser(userId);
+      if (error) return sendInternalServerError(res, "Gagal menghapus akun", error);
+      return res.status(200).json({ success: true });
+    },
+  }),
+});

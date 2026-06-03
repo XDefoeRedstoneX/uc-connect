@@ -3,6 +3,9 @@ import type { VendorProfile, VendorItem } from "@/pages/vendor/dashboard";
 import { useToast } from "@/components/ToastProvider";
 import { useConfirm } from "@/components/ConfirmProvider";
 import { compressAndResize } from "@/lib/compress-image";
+import Icon from "@/components/ui/Icon";
+import Button from "@/components/ui/Button";
+import EmptyState from "@/components/ui/EmptyState";
 
 type Props = {
   items: VendorItem[];
@@ -127,7 +130,7 @@ export default function TabItems({ items, vendor, token, userId, onItemsChange }
     <div className="dash-card">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
         <h2 style={{ margin: 0 }}>{TYPE_LABELS[itemType]} <span style={{ color: "var(--muted)", fontWeight: 400, fontSize: "0.9rem" }}>({items.length} item)</span></h2>
-        <button onClick={startAdd}>+ Tambah {TYPE_LABELS[itemType]}</button>
+        <Button icon="plus" onClick={startAdd}>Tambah {TYPE_LABELS[itemType]}</Button>
       </div>
 
       {/* Inline form */}
@@ -154,32 +157,37 @@ export default function TabItems({ items, vendor, token, userId, onItemsChange }
             <label>
               <span style={{ fontWeight: 600, fontSize: "0.85rem" }}>Gambar Produk</span>
               <div className="dropzone" onClick={() => imageRef.current?.click()}
-                style={{ marginTop: "0.3rem", height: "80px", backgroundImage: imagePreview ? `url(${imagePreview})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }}>
-                {!imagePreview && <span style={{ color: "var(--muted)", fontSize: "0.85rem" }}>📷 Klik untuk upload gambar</span>}
+                style={{ marginTop: "0.3rem", height: "80px", display: "flex", alignItems: "center", justifyContent: "center", backgroundImage: imagePreview ? `url(${imagePreview})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }}>
+                {!imagePreview && (
+                  <span style={{ color: "var(--muted)", fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
+                    <Icon name="camera" size={16} /> Klik untuk upload gambar
+                  </span>
+                )}
                 <input ref={imageRef} type="file" accept="image/*" style={{ display: "none" }}
                   onChange={e => handleImage(e.target.files?.[0] ?? null)} />
               </div>
             </label>
             {imagePreview && (
-              <button type="button" onClick={() => { setImageFile(null); setImagePreview(null); }}
-                style={{ background: "var(--error)", fontSize: "0.8rem", padding: "0.3rem 0.8rem", alignSelf: "flex-start" }}>
+              <Button variant="danger" size="sm" icon="trash" onClick={() => { setImageFile(null); setImagePreview(null); }} style={{ alignSelf: "flex-start" }}>
                 Hapus Gambar
-              </button>
+              </Button>
             )}
           </div>
           <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem" }}>
-            <button onClick={save} disabled={saving}>{saving ? "Menyimpan..." : "Simpan"}</button>
-            <button className="ghost" onClick={() => { setShowForm(false); setEditId(null); }}>Batal</button>
+            <Button icon="check" onClick={save} disabled={saving}>{saving ? "Menyimpan..." : "Simpan"}</Button>
+            <Button variant="ghost" onClick={() => { setShowForm(false); setEditId(null); }}>Batal</Button>
           </div>
         </div>
       )}
 
       {/* Items list */}
       {items.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "2.5rem", background: "var(--gradient-subtle)", borderRadius: "var(--radius-md)" }}>
-          <p style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>📦</p>
-          <p style={{ color: "var(--muted)" }}>Belum ada item. Tambah {TYPE_LABELS[itemType].toLowerCase()} pertama Anda!</p>
-        </div>
+        <EmptyState
+          icon="package"
+          title="Belum ada item"
+          description={`Tambah ${TYPE_LABELS[itemType].toLowerCase()} pertama Anda agar tampil di profil toko.`}
+          action={<Button icon="plus" onClick={startAdd}>Tambah {TYPE_LABELS[itemType]}</Button>}
+        />
       ) : (
         <div>
           {items.map(item => (
@@ -195,15 +203,20 @@ export default function TabItems({ items, vendor, token, userId, onItemsChange }
                   Rp {item.price.toLocaleString("id-ID")}
                 </p>
               </div>
-              <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: "0.4rem", alignItems: "center" }}>
                 <button type="button" onClick={() => toggleActive(item)} className="ghost"
-                  style={{ padding: "0.25rem 0.6rem", fontSize: "0.78rem" }}>
-                  {item.is_active ? "🟢 Aktif" : "⚪ Nonaktif"}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", padding: "0.25rem 0.6rem", fontSize: "0.78rem", color: item.is_active ? "#16a34a" : "var(--muted)" }}>
+                  <Icon name="check-circle" size={14} filled={item.is_active} strokeWidth={2.2} />
+                  {item.is_active ? "Aktif" : "Nonaktif"}
                 </button>
                 <button type="button" onClick={() => startEdit(item)} className="secondary"
-                  style={{ padding: "0.25rem 0.6rem", fontSize: "0.78rem" }}>✏️</button>
+                  aria-label="Edit item" style={{ display: "inline-flex", padding: "0.3rem 0.5rem", fontSize: "0.78rem" }}>
+                  <Icon name="edit" size={15} />
+                </button>
                 <button type="button" onClick={() => remove(item.id)}
-                  style={{ padding: "0.25rem 0.6rem", fontSize: "0.78rem", background: "var(--error)" }}>🗑</button>
+                  className="btn--danger" aria-label="Hapus item" style={{ display: "inline-flex", padding: "0.3rem 0.5rem", fontSize: "0.78rem" }}>
+                  <Icon name="trash" size={15} />
+                </button>
               </div>
             </div>
           ))}

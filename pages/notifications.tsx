@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
+import Icon, { type IconName } from "@/components/ui/Icon";
+import Button from "@/components/ui/Button";
+import EmptyState from "@/components/ui/EmptyState";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { Notification } from "@/types/domain";
 
@@ -62,8 +65,10 @@ export default function NotificationsPage() {
     <SiteLayout title="Notifikasi | UC Connect">
       <div className="card" style={{ maxWidth: "760px", margin: "0 auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1rem" }}>
-          <h1 style={{ margin: 0 }}>🔔 Notifikasi</h1>
-          <div style={{ display: "flex", gap: "0.35rem" }}>
+          <h1 style={{ margin: 0, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <Icon name="bell" size={24} strokeWidth={2.2} /> Notifikasi
+          </h1>
+          <div style={{ display: "flex", gap: "0.35rem", alignItems: "center" }}>
             {(["all", "unread"] as const).map((f) => (
               <button key={f} type="button" className="chip" onClick={() => setFilter(f)}
                 style={{
@@ -74,21 +79,20 @@ export default function NotificationsPage() {
                 {f === "all" ? "Semua" : "Belum Dibaca"}
               </button>
             ))}
-            <button type="button" onClick={() => void markAll()} className="ghost" style={{ fontSize: "0.82rem" }}>
+            <Button variant="ghost" size="sm" icon="check-circle" onClick={() => void markAll()}>
               Tandai semua dibaca
-            </button>
+            </Button>
           </div>
         </div>
 
         {loading ? (
           <p style={{ textAlign: "center", color: "var(--muted)", padding: "2rem" }}>Memuat…</p>
         ) : notifs.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
-            <p style={{ fontSize: "2.5rem", margin: "0 0 0.5rem" }}>📭</p>
-            <p style={{ color: "var(--muted)", margin: 0 }}>
-              {filter === "unread" ? "Tidak ada notifikasi belum dibaca." : "Belum ada notifikasi."}
-            </p>
-          </div>
+          <EmptyState
+            icon="bell"
+            title={filter === "unread" ? "Semua sudah dibaca" : "Belum ada notifikasi"}
+            description={filter === "unread" ? "Tidak ada notifikasi yang belum dibaca." : "Notifikasi kamu akan muncul di sini."}
+          />
         ) : (
           <div style={{ display: "grid", gap: "0.5rem" }}>
             {notifs.map((n) => <Row key={n.id} n={n} onClick={() => void markOne(n.id)} />)}
@@ -114,7 +118,7 @@ function Row({ n, onClick }: { n: Notification; onClick: () => void }) {
         cursor: href ? "pointer" : "default",
       }}
     >
-      <span style={{ fontSize: "1.25rem", flexShrink: 0 }}>{icon}</span>
+      <span style={{ flexShrink: 0, color: "var(--pacific-dark)", marginTop: "0.1rem" }}><Icon name={icon} size={20} strokeWidth={2.2} /></span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ margin: 0, fontSize: "0.9rem", lineHeight: 1.5, color: "var(--text)" }}>{message}</p>
         <p style={{ margin: "0.25rem 0 0", fontSize: "0.75rem", color: "var(--muted)" }}>
@@ -128,60 +132,60 @@ function Row({ n, onClick }: { n: Notification; onClick: () => void }) {
   return href ? <Link href={href} style={{ textDecoration: "none", color: "inherit" }}>{body}</Link> : body;
 }
 
-function renderNotif(n: Notification): { icon: string; message: string; href: string | null } {
+function renderNotif(n: Notification): { icon: IconName; message: string; href: string | null } {
   const p = n.payload as Record<string, string | number | undefined>;
   switch (n.type) {
     case "review_received":
       return {
-        icon: "⭐",
+        icon: "star",
         message: `${p.reviewer_name ?? "Pelanggan"} memberi rating ${p.rating ?? "?"} bintang untuk ${p.vendor_name ?? "vendormu"}${p.preview ? `: "${p.preview}"` : ""}.`,
         href: p.vendor_id ? `/directory/vendor/${p.vendor_id}` : null,
       };
     case "review_replied":
       return {
-        icon: "💬",
+        icon: "message-circle",
         message: `${p.vendor_name ?? "Vendor"} membalas ulasanmu${p.preview ? `: "${p.preview}"` : ""}.`,
         href: p.vendor_id ? `/directory/vendor/${p.vendor_id}` : null,
       };
     case "forum_reply":
       return {
-        icon: "💬",
+        icon: "message-circle",
         message: `${p.replier_name ?? "Pengguna"} membalas thread "${p.thread_title ?? "milikmu"}".`,
         href: p.thread_id && p.category_slug ? `/community/${p.category_slug}/${p.thread_id}` : null,
       };
     case "vendor_approved":
       return {
-        icon: "✅",
+        icon: "check-circle",
         message: `Vendor "${p.vendor_name ?? "kamu"}" sudah disetujui admin dan tampil di direktori.`,
         href: p.vendor_id ? `/directory/vendor/${p.vendor_id}` : "/vendor/dashboard",
       };
     case "content_removed":
       return {
-        icon: "🗑",
+        icon: "trash",
         message: `Admin menghapus ${labelTarget(String(p.target_type ?? ""))}mu${p.preview ? `: "${p.preview}"` : ""}.`,
         href: null,
       };
     case "report_received":
       return {
-        icon: "🚩",
+        icon: "flag",
         message: `Laporan baru untuk ${labelTarget(String(p.target_type ?? ""))}${p.preview ? `: "${p.preview}"` : ""}.`,
         href: "/admin/reports",
       };
     case "report_resolved":
       return {
-        icon: p.status === "resolved" ? "✅" : "↩️",
+        icon: p.status === "resolved" ? "check-circle" : "x",
         message: `Laporanmu (${labelTarget(String(p.target_type ?? ""))}) ${p.status === "resolved" ? "diselesaikan oleh admin" : "ditolak oleh admin"}.`,
         href: null,
       };
     case "bid_won":
       return {
-        icon: "🏆",
+        icon: "trophy",
         message: `Bid featured-mu menang (peringkat #${p.rank ?? "?"})! Vendormu tampil di Beranda & atas Jelajahi selama 24 jam. Saldo dipotong Rp${Number(p.amount ?? 0).toLocaleString("id-ID")}.`,
         href: p.vendor_id ? `/directory/vendor/${p.vendor_id}` : "/vendor/dashboard",
       };
     case "bid_lost":
       return {
-        icon: "📉",
+        icon: "trending-down",
         message: p.reason === "insufficient_balance"
           ? "Bid featured-mu gagal karena saldo tidak cukup saat settlement. Top up & bid lagi."
           : "Bid featured-mu kalah di lelang kali ini. Coba naikkan bid untuk round berikutnya.",
@@ -189,13 +193,13 @@ function renderNotif(n: Notification): { icon: string; message: string; href: st
       };
     case "topup_credited":
       return {
-        icon: "💰",
+        icon: "wallet",
         message: `Top-up berhasil. Saldo bertambah Rp${Number(p.amount ?? 0).toLocaleString("id-ID")}.`,
         href: "/vendor/dashboard",
       };
     default:
       return {
-        icon: "🔔",
+        icon: "bell",
         message: `Notifikasi baru (${n.type}).`,
         href: null,
       };

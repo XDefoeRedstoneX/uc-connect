@@ -1,11 +1,12 @@
 import { useLanguage } from "@/lib/language-context";
+import Icon from "@/components/ui/Icon";
 
 export default function LanguageSwitcher() {
   const { language, setLanguage } = useLanguage();
 
   return (
     <div className="language-switcher" style={{ display: 'flex', alignItems: 'center' }}>
-      <span className="switcher-icon" aria-hidden="true" style={{marginRight: '4px'}}>🌐</span>
+      <span className="switcher-icon" aria-hidden="true" style={{ marginRight: '4px', display: 'inline-flex', color: 'var(--muted)' }}><Icon name="globe" size={15} strokeWidth={2.2} /></span>
       <select 
         value={language} 
         onChange={(e) => setLanguage(e.target.value as "en" | "id")}

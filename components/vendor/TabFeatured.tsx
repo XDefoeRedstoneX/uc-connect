@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import type { FeaturedBid, WalletTransaction } from "@/types/domain";
 import { useConfirm } from "@/components/ConfirmProvider";
+import Icon from "@/components/ui/Icon";
+import Button from "@/components/ui/Button";
 
 type Props = {
   vendorId: string;
@@ -148,8 +150,9 @@ export default function TabFeatured({ vendorId, token }: Props) {
     <div className="stack" style={{ gap: "1rem" }}>
       {!clientKey && (
         <div className="dash-card" style={{ background: "var(--orange-soft)", border: "1px solid var(--orange-light)" }}>
-          <p style={{ margin: 0, fontSize: "0.85rem" }}>
-            ⚠️ <strong>NEXT_PUBLIC_MIDTRANS_CLIENT_KEY</strong> belum diset. Top-up tidak akan berjalan sampai key Midtrans dikonfigurasi.
+          <p style={{ margin: 0, fontSize: "0.85rem", display: "flex", alignItems: "flex-start", gap: "0.4rem" }}>
+            <span style={{ color: "var(--orange-dark)", flexShrink: 0, marginTop: "0.1rem" }}><Icon name="alert-triangle" size={15} strokeWidth={2.4} /></span>
+            <span><strong>NEXT_PUBLIC_MIDTRANS_CLIENT_KEY</strong> belum diset. Top-up tidak akan berjalan sampai key Midtrans dikonfigurasi.</span>
           </p>
         </div>
       )}
@@ -164,11 +167,13 @@ export default function TabFeatured({ vendorId, token }: Props) {
       <div className="dash-card">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.75rem" }}>
           <div>
-            <p className="stat-label" style={{ margin: 0 }}>💳 Saldo Dompet</p>
+            <p className="stat-label" style={{ margin: 0, display: "flex", alignItems: "center", gap: "0.35rem" }}>
+              <Icon name="wallet" size={14} strokeWidth={2.2} /> Saldo Dompet
+            </p>
             <p className="stat-value" style={{ margin: 0 }}>{rupiah(balance)}</p>
             <button type="button" className="ghost" onClick={() => void refresh()}
-              style={{ fontSize: "0.72rem", padding: "0.15rem 0.5rem", marginTop: "0.25rem" }}>
-              ↻ Perbarui saldo
+              style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", fontSize: "0.72rem", padding: "0.15rem 0.5rem", marginTop: "0.25rem" }}>
+              <Icon name="refresh-cw" size={12} strokeWidth={2.4} /> Perbarui saldo
             </button>
           </div>
           <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-end", flexWrap: "wrap" }}>
@@ -178,14 +183,16 @@ export default function TabFeatured({ vendorId, token }: Props) {
                 onChange={(e) => setTopupAmount(e.target.value)} placeholder="50000"
                 style={{ display: "block", marginTop: "0.2rem", width: "140px" }} />
             </div>
-            <button type="button" disabled={busy} onClick={() => void startTopup()}>Top Up</button>
+            <Button icon="wallet" disabled={busy} onClick={() => void startTopup()}>Top Up</Button>
           </div>
         </div>
       </div>
 
       {/* Bid */}
       <div className="dash-card">
-        <h3 style={{ marginTop: 0 }}>🏆 Bid Featured</h3>
+        <h3 style={{ marginTop: 0, display: "flex", alignItems: "center", gap: "0.45rem" }}>
+          <Icon name="trophy" size={18} strokeWidth={2.2} /> Bid Featured
+        </h3>
         <p className="muted" style={{ fontSize: "0.85rem", marginTop: 0 }}>
           Lelang harian tertutup. 5 bid tertinggi (yang saldonya cukup) tampil di Beranda & atas halaman Jelajahi selama 24 jam.
           Saldo dipotong hanya jika kamu menang.
@@ -197,7 +204,7 @@ export default function TabFeatured({ vendorId, token }: Props) {
               <p style={{ margin: 0, fontWeight: 700 }}>Bid aktif: {rupiah(activeBid.amount_idr)}</p>
               <p className="muted" style={{ margin: 0, fontSize: "0.78rem" }}>Untuk lelang {activeBid.round_date}</p>
             </div>
-            <button type="button" className="ghost" disabled={busy} onClick={() => void withdrawBid()}>Tarik Bid</button>
+            <Button variant="ghost" icon="x" disabled={busy} onClick={() => void withdrawBid()}>Tarik Bid</Button>
           </div>
         ) : (
           <p className="muted" style={{ fontSize: "0.85rem" }}>Belum ada bid aktif.</p>
@@ -210,15 +217,17 @@ export default function TabFeatured({ vendorId, token }: Props) {
               onChange={(e) => setBidAmount(e.target.value)} placeholder="25000"
               style={{ display: "block", marginTop: "0.2rem", width: "140px" }} />
           </div>
-          <button type="button" disabled={busy} onClick={() => void placeBid()}>
+          <Button icon="trophy" disabled={busy} onClick={() => void placeBid()}>
             {activeBid ? "Perbarui Bid" : "Tempatkan Bid"}
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Transaction history */}
       <div className="dash-card">
-        <h3 style={{ marginTop: 0 }}>📜 Riwayat Transaksi</h3>
+        <h3 style={{ marginTop: 0, display: "flex", alignItems: "center", gap: "0.45rem" }}>
+          <Icon name="receipt" size={18} strokeWidth={2.2} /> Riwayat Transaksi
+        </h3>
         {transactions.length === 0 ? (
           <p className="muted" style={{ fontSize: "0.85rem" }}>Belum ada transaksi.</p>
         ) : (
@@ -241,9 +250,9 @@ export default function TabFeatured({ vendorId, token }: Props) {
 
 function txLabel(t: WalletTransaction["type"]): string {
   switch (t) {
-    case "topup": return "💰 Top-up";
-    case "bid_charge": return "🏆 Biaya bid menang";
-    case "refund": return "↩️ Refund";
-    case "adjustment": return "⚙️ Penyesuaian";
+    case "topup": return "Top-up";
+    case "bid_charge": return "Biaya bid menang";
+    case "refund": return "Refund";
+    case "adjustment": return "Penyesuaian";
   }
 }

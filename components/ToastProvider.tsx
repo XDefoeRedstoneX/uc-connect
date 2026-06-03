@@ -1,7 +1,14 @@
 "use client";
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import Icon, { type IconName } from "@/components/ui/Icon";
 
 type ToastType = "success" | "error" | "info";
+
+const TOAST_ICON: Record<ToastType, IconName> = {
+  success: "check-circle",
+  error: "alert-triangle",
+  info: "info",
+};
 
 type Toast = {
   id: number;
@@ -67,8 +74,8 @@ export default function ToastProvider({ children }: { children: ReactNode }) {
               animation: "toast-slide-down 0.35s ease-out",
             }}
           >
-            <span style={{ fontSize: "1.1rem" }}>
-              {toast.type === "success" ? "✅" : toast.type === "error" ? "❌" : "ℹ️"}
+            <span style={{ flexShrink: 0, color: colorMap[toast.type], display: "inline-flex" }}>
+              <Icon name={TOAST_ICON[toast.type]} size={18} strokeWidth={2.3} />
             </span>
             <span style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--text, #1a1a1a)", flex: 1 }}>
               {toast.message}

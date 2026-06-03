@@ -79,16 +79,30 @@ SUPABASE_SERVICE_ROLE_KEY                # server-only; required for API routes/
 MIDTRANS_SERVER_KEY                      # server-only
 NEXT_PUBLIC_MIDTRANS_CLIENT_KEY          # Snap.js
 MIDTRANS_IS_PRODUCTION / NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION
+UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN  # optional; distributed rate limiting
 ```
 `npm run check:env` validates Supabase vars (Midtrans → warning).
 
 ---
 
 ## Auth & API conventions
-- `resolveAuthedUser(req)` validates the Bearer token and returns a **service-role** Supabase client (bypasses RLS — endpoints enforce ownership in code).
-- `requireAdmin(req,res)` → 403 unless `profiles.role = 'admin'`.
-- Responses via `lib/api-response`; 500s log a structured line + return a `requestId`.
-- Mutating endpoints (topup/bids/reports/reviews) pass through `lib/rate-limit`.
+- **`createHandler` (`lib/api-handler`) is the entry point for every API route.** It owns method routing, auth, rate limiting, body validation, and the 500 error funnel so individual handlers stay thin. Shape:
+  ```ts
+  export default createHandler({
+    POST: method({
+      auth: "user",                                   // "none" | "user" | "admin" (default "user")
+      rateLimit: { key: "report", limit: 10, windowMs: 60_000 },
+      body: zodSchema,                                 // optional → ctx.body is typed + validated
+      handler: async ({ supabase, userId, user, body, req, res }) => { /* ... */ },
+    }),
+  });
+  ```
+  - `auth: "none"` → anon/server client, `userId = ""`. `"user"` → `resolveAuthedUser` (service-role client, `userId`, `user`). `"admin"` → `requireAdmin`.
+  - The service-role client bypasses RLS, so **each handler still asserts per-resource ownership** (e.g. `vendor.owner_id === userId`). That is the one security line every endpoint must write; the wrapper does not and cannot do it generically.
+  - Any thrown error is caught and sent via `sendInternalServerError` (structured log + correlation `requestId`). In handlers, return `sendInternalServerError(res, msg, cause)` for the explicit DB-error paths.
+  - Body schemas live in `lib/validation` primitives + per-route `z.object(...)`; a parse failure returns a standardized 400 with the first message.
+  - Exceptions: `api/health` (liveness, no auth) and `api/payments/midtrans/webhook` (signature-based trust, not Bearer) are hand-written.
+- `lib/rate-limit` uses **Upstash Redis when `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` are set** (hard global limit), else an in-memory per-process fallback; a Redis failure falls back to memory rather than erroring.
 
 ## Storage
 Buckets: `avatars`, `forum-images`, `vendor-assets` (public), `vendor-documents` (private; KTM). Every upload path starts with `${auth.uid()}/…`; RLS scopes writes to that folder. Admin KTM view fetches a 120s signed URL via `/api/admin/vendors/ktm`.

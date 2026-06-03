@@ -1,13 +1,17 @@
 import SiteLayout from "@/components/SiteLayout";
 import Link from "next/link";
 import { GetServerSideProps } from "next";
+import Icon from "@/components/ui/Icon";
 
 export default function PrivacyPage() {
   return (
     <SiteLayout title="Kebijakan Privasi | UC Connect" description="Kebijakan privasi dan perlindungan data pengguna UC Connect.">
       <section className="hero bubble-section">
-        <h1 style={{ position: "relative", zIndex: 1 }}>🔒 Kebijakan Privasi</h1>
-        <p style={{ color: "var(--muted)", position: "relative", zIndex: 1 }}>
+        <span className="kicker" style={{ position: "relative", zIndex: 1 }}>
+          <Icon name="shield" size={14} strokeWidth={2.6} /> Legal
+        </span>
+        <h1 className="display" style={{ position: "relative", zIndex: 1, fontSize: "var(--fs-h1)", margin: "0.5rem 0 0" }}>Kebijakan Privasi</h1>
+        <p style={{ color: "var(--muted)", position: "relative", zIndex: 1, marginTop: "0.5rem" }}>
           Terakhir diperbarui: 8 Mei 2026
         </p>
       </section>

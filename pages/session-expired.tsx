@@ -1,15 +1,17 @@
-import Link from "next/link";
 import SiteLayout from "@/components/SiteLayout";
 import { GetServerSideProps } from "next";
+import Button from "@/components/ui/Button";
+import EmptyState from "@/components/ui/EmptyState";
 
 export default function SessionExpiredPage() {
   return (
-    <SiteLayout title="Session Expired | UC Connect">
-      <section className="card">
-        <h1>Session Expired</h1>
-        <p>Your session has expired. Please sign in again.</p>
-        <Link className="btn" href="/auth/login">Login again</Link>
-      </section>
+    <SiteLayout title="Sesi Berakhir | UC Connect">
+      <EmptyState
+        icon="clock"
+        title="Sesi Berakhir"
+        description="Sesi kamu telah berakhir demi keamanan. Silakan masuk kembali untuk melanjutkan."
+        action={<Button href="/auth/login" iconRight="arrow-right">Masuk Lagi</Button>}
+      />
     </SiteLayout>
   );
 }

@@ -4,6 +4,9 @@ import { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
 import SiteLayout from "@/components/SiteLayout";
 import LoadingScreen from "@/components/LoadingScreen";
+import Icon, { type IconName } from "@/components/ui/Icon";
+import Button from "@/components/ui/Button";
+import EmptyState from "@/components/ui/EmptyState";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import TabOverview from "@/components/vendor/TabOverview";
 import TabEditProfile from "@/components/vendor/TabEditProfile";
@@ -30,14 +33,14 @@ export type VendorItem = {
   image_url: string | null; sort_order: number; is_active: boolean; created_at: string;
 };
 
-const TABS = [
-  { id: "overview", label: "📊 Overview" },
-  { id: "profile", label: "✏️ Edit Profil" },
-  { id: "items", label: "📦 Produk & Layanan" },
-  { id: "hours", label: "🕐 Jam Operasional" },
-  { id: "reviews", label: "⭐ Ulasan" },
-  { id: "featured", label: "🏆 Featured & Dompet" },
-  { id: "analytics", label: "📈 Analitik" },
+const TABS: { id: string; label: string; icon: IconName }[] = [
+  { id: "overview", label: "Overview", icon: "grid" },
+  { id: "profile", label: "Edit Profil", icon: "edit" },
+  { id: "items", label: "Produk & Layanan", icon: "package" },
+  { id: "hours", label: "Jam Operasional", icon: "clock" },
+  { id: "reviews", label: "Ulasan", icon: "star" },
+  { id: "featured", label: "Featured & Dompet", icon: "trophy" },
+  { id: "analytics", label: "Analitik", icon: "trending-up" },
 ];
 
 const DEFAULT_HOURS: VendorHour[] = Array.from({ length: 7 }, (_, i) => ({
@@ -97,10 +100,12 @@ export default function VendorDashboardPage() {
 
   if (error || !vendor) return (
     <SiteLayout title="Vendor Dashboard | UC Connect">
-      <div className="card" style={{ textAlign: "center" }}>
-        <p className="err">{error ?? "Vendor tidak ditemukan."}</p>
-        <button onClick={() => router.push("/")}>Kembali</button>
-      </div>
+      <EmptyState
+        icon="store"
+        title={error ?? "Vendor tidak ditemukan."}
+        description="Tidak dapat memuat data toko. Coba muat ulang atau kembali ke beranda."
+        action={<Button icon="arrow-left" onClick={() => router.push("/")}>Kembali</Button>}
+      />
     </SiteLayout>
   );
 
@@ -114,8 +119,8 @@ export default function VendorDashboardPage() {
       <div className="stack" style={{ gap: "1rem", marginTop: 0 }}>
         {!vendor.is_verified && (
           <div className="dash-card" style={{ background: "var(--orange-soft)", border: "1.5px solid var(--orange-light)" }}>
-            <p style={{ fontWeight: 700, margin: "0 0 0.35rem", color: "var(--orange-dark)" }}>
-              ⏳ Vendor menunggu verifikasi admin
+            <p style={{ fontWeight: 700, margin: "0 0 0.35rem", color: "var(--orange-dark)", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              <Icon name="clock" size={16} strokeWidth={2.4} /> Vendor menunggu verifikasi admin
             </p>
             <p style={{ margin: 0, fontSize: "0.88rem", lineHeight: 1.5, color: "var(--text)" }}>
               Tokomu belum tampil di direktori publik dan kamu belum bisa ikut lelang featured.
@@ -129,23 +134,29 @@ export default function VendorDashboardPage() {
         <div className="scroll-tabs" style={{ borderBottom: "2px solid var(--border)", paddingBottom: "0.5rem" }}>
           {TABS.map(t => {
             const locked = featuredLocked && t.id === "featured";
+            const active = activeTab === t.id;
             return (
               <button
                 key={t.id}
                 type="button"
+                role="tab"
+                aria-selected={active}
                 onClick={() => !locked && setActiveTab(t.id)}
                 disabled={locked}
                 title={locked ? "Tersedia setelah vendor diverifikasi" : undefined}
                 style={{
-                  background: activeTab === t.id ? "var(--gradient-main)" : "transparent",
-                  color: activeTab === t.id ? "#fff" : "var(--muted)",
-                  border: "none", borderRadius: "8px", padding: "0.45rem 1rem",
+                  display: "inline-flex", alignItems: "center", gap: "0.4rem",
+                  background: active ? "var(--pacific)" : "transparent",
+                  color: active ? "#fff" : "var(--muted)",
+                  border: "none", borderRadius: "999px", padding: "0.45rem 1rem",
                   fontWeight: 700, cursor: locked ? "not-allowed" : "pointer", fontSize: "0.88rem",
                   opacity: locked ? 0.5 : 1,
+                  whiteSpace: "nowrap",
                   transition: "all 0.2s ease",
                 }}
               >
-                {t.label}{locked ? " 🔒" : ""}
+                <Icon name={locked ? "lock" : t.icon} size={15} strokeWidth={2.3} />
+                {t.label}
               </button>
             );
           })}

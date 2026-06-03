@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import Icon, { type IconName } from "@/components/ui/Icon";
 import type { Notification } from "@/types/domain";
 
 const POLL_INTERVAL_MS = 30_000;
@@ -91,9 +92,10 @@ export default function NotificationBell() {
           color: "var(--pacific-dark)",
           position: "relative",
           padding: "0.35rem 0.55rem",
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
         }}
       >
-        🔔
+        <Icon name="bell" size={19} strokeWidth={2.2} />
         {unread > 0 && (
           <span
             aria-label={`${unread} notifikasi belum dibaca`}
@@ -152,8 +154,8 @@ export default function NotificationBell() {
 
           <div style={{ borderTop: "1px solid var(--border)", padding: "0.5rem 0.85rem", textAlign: "center" }}>
             <Link href="/notifications" onClick={() => setOpen(false)}
-              style={{ color: "var(--pacific)", fontSize: "0.82rem", fontWeight: 700, textDecoration: "none" }}>
-              Lihat semua →
+              style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", color: "var(--pacific)", fontSize: "0.82rem", fontWeight: 700, textDecoration: "none" }}>
+              Lihat semua <Icon name="arrow-right" size={14} strokeWidth={2.4} />
             </Link>
           </div>
         </div>
@@ -179,7 +181,7 @@ function NotifRow({ n, onClick }: { n: Notification; onClick: () => void }) {
         transition: "background 0.15s",
       }}
     >
-      <span style={{ fontSize: "1.1rem", flexShrink: 0 }}>{icon}</span>
+      <span style={{ flexShrink: 0, color: "var(--pacific-dark)", marginTop: "0.1rem" }}><Icon name={icon} size={18} strokeWidth={2.2} /></span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ margin: 0, fontSize: "0.85rem", lineHeight: 1.4, color: "var(--text)" }}>{message}</p>
         <p style={{ margin: "0.2rem 0 0", fontSize: "0.72rem", color: "var(--muted)" }}>
@@ -193,60 +195,60 @@ function NotifRow({ n, onClick }: { n: Notification; onClick: () => void }) {
   return href ? <Link href={href} style={{ textDecoration: "none", color: "inherit" }}>{content}</Link> : content;
 }
 
-function renderNotif(n: Notification): { icon: string; message: string; href: string | null } {
+function renderNotif(n: Notification): { icon: IconName; message: string; href: string | null } {
   const p = n.payload as Record<string, string | number | undefined>;
   switch (n.type) {
     case "review_received":
       return {
-        icon: "⭐",
+        icon: "star",
         message: `${p.reviewer_name ?? "Pelanggan"} memberi rating ${p.rating ?? "?"} untuk ${p.vendor_name ?? "vendormu"}.`,
         href: p.vendor_id ? `/directory/vendor/${p.vendor_id}` : null,
       };
     case "review_replied":
       return {
-        icon: "💬",
+        icon: "message-circle",
         message: `${p.vendor_name ?? "Vendor"} membalas ulasanmu.`,
         href: p.vendor_id ? `/directory/vendor/${p.vendor_id}` : null,
       };
     case "forum_reply":
       return {
-        icon: "💬",
+        icon: "message-circle",
         message: `${p.replier_name ?? "Pengguna"} membalas thread "${p.thread_title ?? "milikmu"}".`,
         href: p.thread_id && p.category_slug ? `/community/${p.category_slug}/${p.thread_id}` : null,
       };
     case "vendor_approved":
       return {
-        icon: "✅",
+        icon: "check-circle",
         message: `Vendor "${p.vendor_name ?? "kamu"}" sudah disetujui dan tampil di direktori.`,
         href: p.vendor_id ? `/directory/vendor/${p.vendor_id}` : "/vendor/dashboard",
       };
     case "content_removed":
       return {
-        icon: "🗑",
+        icon: "trash",
         message: `Admin menghapus ${labelTarget(String(p.target_type ?? ""))}mu${p.preview ? `: "${truncate(String(p.preview), 50)}"` : ""}.`,
         href: null,
       };
     case "report_received":
       return {
-        icon: "🚩",
+        icon: "flag",
         message: `Laporan baru untuk ${labelTarget(String(p.target_type ?? ""))}${p.preview ? `: "${truncate(String(p.preview), 50)}"` : ""}.`,
         href: "/admin/reports",
       };
     case "report_resolved":
       return {
-        icon: p.status === "resolved" ? "✅" : "↩️",
+        icon: p.status === "resolved" ? "check-circle" : "x",
         message: `Laporanmu (${labelTarget(String(p.target_type ?? ""))}) ${p.status === "resolved" ? "diselesaikan" : "ditolak"}.`,
         href: null,
       };
     case "bid_won":
       return {
-        icon: "🏆",
+        icon: "trophy",
         message: `Bid featured-mu menang (peringkat #${p.rank ?? "?"})! Vendor tampil 24 jam. Saldo dipotong Rp${Number(p.amount ?? 0).toLocaleString("id-ID")}.`,
         href: p.vendor_id ? `/directory/vendor/${p.vendor_id}` : "/vendor/dashboard",
       };
     case "bid_lost":
       return {
-        icon: "📉",
+        icon: "trending-down",
         message: p.reason === "insufficient_balance"
           ? "Bid featured-mu gagal: saldo tidak cukup saat settlement."
           : "Bid featured-mu kalah di lelang kali ini.",
@@ -254,13 +256,13 @@ function renderNotif(n: Notification): { icon: string; message: string; href: st
       };
     case "topup_credited":
       return {
-        icon: "💰",
+        icon: "wallet",
         message: `Top-up berhasil. Saldo bertambah Rp${Number(p.amount ?? 0).toLocaleString("id-ID")}.`,
         href: "/vendor/dashboard",
       };
     default:
       return {
-        icon: "🔔",
+        icon: "bell",
         message: `Notifikasi baru (${n.type}).`,
         href: null,
       };

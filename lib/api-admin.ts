@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { resolveAuthedUser } from "@/lib/api-auth";
-import { sendMethodNotAllowed, sendServiceUnavailable, sendInternalServerError } from "@/lib/api-response";
+import { sendServiceUnavailable } from "@/lib/api-response";
 
 /** Middleware: verifies the user is an admin. Returns userId or sends error. */
 export async function requireAdmin(req: NextApiRequest, res: NextApiResponse) {

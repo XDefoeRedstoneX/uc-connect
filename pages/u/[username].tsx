@@ -2,6 +2,10 @@ import { GetServerSideProps } from "next";
 import Head from "next/head";
 import Link from "next/link";
 import SiteLayout from "@/components/SiteLayout";
+import Icon from "@/components/ui/Icon";
+import Button from "@/components/ui/Button";
+import Badge from "@/components/ui/Badge";
+import EmptyState from "@/components/ui/EmptyState";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 
 type PublicProfile = {
@@ -26,10 +30,12 @@ export default function PublicProfilePage({ profile, vendor, threads }: Props) {
   if (!profile) {
     return (
       <SiteLayout title="Profil tidak ditemukan | UC Connect">
-        <section className="card" style={{ textAlign: "center", padding: "4rem 1rem" }}>
-          <h1>Profil tidak ditemukan</h1>
-          <Link href="/community" style={{ color: "var(--pacific)" }}>Kembali ke Forum</Link>
-        </section>
+        <EmptyState
+          icon="user"
+          title="Profil tidak ditemukan"
+          description="Pengguna yang kamu cari tidak ada atau telah dihapus."
+          action={<Button href="/community" variant="ghost" icon="arrow-left">Kembali ke Forum</Button>}
+        />
       </SiteLayout>
     );
   }
@@ -54,8 +60,8 @@ export default function PublicProfilePage({ profile, vendor, threads }: Props) {
             <h1 style={{ margin: "0 0 0.25rem" }}>{displayName}</h1>
             <div className="row-wrap" style={{ gap: "0.4rem" }}>
               {profile.username && <span className="muted" style={{ fontSize: "0.85rem" }}>@{profile.username}</span>}
-              {profile.role === "vendor" && <span className="badge pacific">🏪 Vendor</span>}
-              {isAlumni && <span className="badge gold">🎓 Alumni</span>}
+              {profile.role === "vendor" && <Badge tone="pacific" icon="store">Vendor</Badge>}
+              {isAlumni && <Badge tone="gold" icon="graduation-cap">Alumni</Badge>}
             </div>
             {(profile.major || profile.graduation_year) && (
               <p className="muted" style={{ margin: "0.4rem 0 0", fontSize: "0.85rem" }}>
@@ -67,13 +73,18 @@ export default function PublicProfilePage({ profile, vendor, threads }: Props) {
 
         {vendor && (
           <div style={{ marginTop: "1.5rem" }}>
-            <h2 style={{ fontSize: "1rem", marginBottom: "0.5rem" }}>🏪 Tokonya</h2>
+            <h2 style={{ fontSize: "1rem", marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+              <Icon name="store" size={17} strokeWidth={2.3} /> Tokonya
+            </h2>
             <Link href={`/directory/vendor/${vendor.id}`} className="dash-card" style={{ display: "flex", gap: "0.75rem", alignItems: "center", textDecoration: "none", color: "inherit" }}>
               {vendor.logo_url
                 ? <img src={vendor.logo_url} alt="" style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover" }} />
                 : <div style={{ width: 44, height: 44, borderRadius: "50%", background: "var(--gradient-subtle)" }} />}
               <div>
-                <p style={{ margin: 0, fontWeight: 700 }}>{vendor.name} {vendor.is_verified && <span className="badge success" style={{ fontSize: "0.68rem" }}>✓</span>}</p>
+                <p style={{ margin: 0, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+                  {vendor.name}
+                  {vendor.is_verified && <span className="badge success" style={{ display: "inline-flex", alignItems: "center", padding: "0.1rem 0.3rem" }}><Icon name="check" size={11} strokeWidth={3} /></span>}
+                </p>
                 <p className="muted" style={{ margin: 0, fontSize: "0.82rem" }}>{vendor.category ?? "—"}{vendor.city ? ` · ${vendor.city}` : ""}</p>
               </div>
             </Link>
@@ -81,7 +92,9 @@ export default function PublicProfilePage({ profile, vendor, threads }: Props) {
         )}
 
         <div style={{ marginTop: "1.5rem" }}>
-          <h2 style={{ fontSize: "1rem", marginBottom: "0.5rem" }}>💬 Diskusi Terbaru</h2>
+          <h2 style={{ fontSize: "1rem", marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            <Icon name="chat" size={17} strokeWidth={2.3} /> Diskusi Terbaru
+          </h2>
           {threads.length === 0 ? (
             <p className="muted" style={{ fontSize: "0.85rem" }}>Belum ada thread.</p>
           ) : (

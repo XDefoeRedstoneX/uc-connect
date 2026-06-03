@@ -1,10 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import Link from "next/link";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import AdminNav from "@/components/admin/AdminNav";
+import Icon from "@/components/ui/Icon";
+import Button from "@/components/ui/Button";
+import Badge from "@/components/ui/Badge";
+import EmptyState from "@/components/ui/EmptyState";
 import { useToast } from "@/components/ToastProvider";
 import { useConfirm } from "@/components/ConfirmProvider";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -97,17 +100,20 @@ export default function AdminVendorsPage() {
 
       <div className="dash-card">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1rem" }}>
-          <h2 style={{ margin: 0 }}>🏪 Vendor Management</h2>
+          <h2 style={{ margin: 0, display: "flex", alignItems: "center", gap: "0.45rem" }}>
+            <Icon name="store" size={20} strokeWidth={2.2} /> Vendor Management
+          </h2>
           <div style={{ display: "flex", gap: "0.35rem" }}>
             {(["pending", "verified", "all"] as const).map(f => (
               <button key={f} type="button" className="chip" onClick={() => setFilter(f)}
                 style={{
-                  cursor: "pointer",
+                  display: "inline-flex", alignItems: "center", gap: "0.3rem", cursor: "pointer",
                   background: filter === f ? "var(--pacific-soft)" : "#fff",
                   borderColor: filter === f ? "var(--pacific)" : undefined,
                   fontWeight: filter === f ? 700 : 600,
                 }}>
-                {f === "pending" ? "⏳ Pending" : f === "verified" ? "✓ Verified" : "📋 Semua"}
+                <Icon name={f === "pending" ? "clock" : f === "verified" ? "check" : "grid"} size={13} strokeWidth={2.4} />
+                {f === "pending" ? "Pending" : f === "verified" ? "Verified" : "Semua"}
               </button>
             ))}
           </div>
@@ -116,10 +122,11 @@ export default function AdminVendorsPage() {
         {loading ? (
           <p style={{ color: "var(--muted)", textAlign: "center", padding: "2rem" }}>Memuat...</p>
         ) : vendors.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "2.5rem", background: "var(--gradient-subtle)", borderRadius: "var(--radius-md)" }}>
-            <p style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>🎉</p>
-            <p style={{ color: "var(--muted)" }}>{filter === "pending" ? "Tidak ada vendor menunggu verifikasi." : "Tidak ada vendor ditemukan."}</p>
-          </div>
+          <EmptyState
+            icon="check-circle"
+            title={filter === "pending" ? "Tidak ada antrean verifikasi" : "Tidak ada vendor"}
+            description={filter === "pending" ? "Semua vendor sudah ditinjau. Mantap!" : "Belum ada vendor pada filter ini."}
+          />
         ) : (
           <div style={{ display: "grid", gap: "0.75rem" }}>
             {vendors.map(v => (
@@ -128,15 +135,19 @@ export default function AdminVendorsPage() {
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.3rem" }}>
                     <p className="product-name" style={{ margin: 0 }}>{v.name}</p>
                     {v.is_verified
-                      ? <span className="badge success" style={{ fontSize: "0.72rem" }}>✓ Verified</span>
-                      : <span className="badge" style={{ background: "var(--orange-soft)", color: "var(--orange-dark)", fontSize: "0.72rem" }}>⏳ Pending</span>}
+                      ? <Badge tone="success" icon="check">Verified</Badge>
+                      : <Badge tone="gold" icon="clock">Pending</Badge>}
                   </div>
                   {v.tagline && <p style={{ color: "var(--muted)", fontSize: "0.85rem", margin: "0 0 0.25rem" }}>{v.tagline}</p>}
-                  <div className="row-wrap" style={{ gap: "0.35rem", fontSize: "0.8rem" }}>
-                    {v.category && <span className="badge pacific">{v.category}</span>}
-                    {v.university && <span className="badge pacific">🎓 {v.university}</span>}
-                    {v.city && <span className="badge pacific">📍 {v.city}</span>}
-                    {v.whatsapp && <span style={{ color: "var(--muted)" }}>📱 {v.whatsapp}</span>}
+                  <div className="row-wrap" style={{ gap: "0.35rem", fontSize: "0.8rem", alignItems: "center" }}>
+                    {v.category && <Badge tone="pacific">{v.category}</Badge>}
+                    {v.university && <Badge tone="pacific" icon="graduation-cap">{v.university}</Badge>}
+                    {v.city && <Badge tone="pacific" icon="map-pin">{v.city}</Badge>}
+                    {v.whatsapp && (
+                      <span style={{ color: "var(--muted)", display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+                        <Icon name="phone" size={12} strokeWidth={2.4} /> {v.whatsapp}
+                      </span>
+                    )}
                   </div>
                   <p style={{ fontSize: "0.78rem", color: "var(--muted)", marginTop: "0.35rem" }}>
                     Owner: {v.profiles?.full_name ?? v.profiles?.username ?? "—"}
@@ -147,26 +158,22 @@ export default function AdminVendorsPage() {
                 <div style={{ display: "flex", gap: "0.4rem", flexShrink: 0 }}>
                   {!v.is_verified && (
                     <>
-                      <button onClick={() => act(v.id, "approve")} disabled={actionId === v.id}
-                        style={{ fontSize: "0.82rem", padding: "0.35rem 0.75rem" }}>
-                        ✓ Approve
-                      </button>
-                      <button onClick={() => act(v.id, "reject")} disabled={actionId === v.id}
-                        style={{ fontSize: "0.82rem", padding: "0.35rem 0.75rem", background: "var(--error)" }}>
-                        ✕ Reject
-                      </button>
+                      <Button size="sm" icon="check" onClick={() => act(v.id, "approve")} disabled={actionId === v.id}>
+                        Approve
+                      </Button>
+                      <Button size="sm" variant="danger" icon="x" onClick={() => act(v.id, "reject")} disabled={actionId === v.id}>
+                        Reject
+                      </Button>
                     </>
                   )}
                   {v.ktm_url && (
-                    <button type="button" onClick={() => void viewKtm(v.id)} className="btn ghost"
-                      style={{ fontSize: "0.82rem", padding: "0.35rem 0.75rem" }}>
-                      🪪 Lihat KTM
-                    </button>
+                    <Button size="sm" variant="ghost" icon="file-text" onClick={() => void viewKtm(v.id)}>
+                      Lihat KTM
+                    </Button>
                   )}
-                  <Link href={`/directory/vendor/${v.id}`} className="btn ghost"
-                    style={{ fontSize: "0.82rem", padding: "0.35rem 0.75rem" }}>
-                    👁 View
-                  </Link>
+                  <Button href={`/directory/vendor/${v.id}`} size="sm" variant="ghost" icon="eye">
+                    View
+                  </Button>
                 </div>
               </div>
             ))}

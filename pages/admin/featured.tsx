@@ -4,6 +4,8 @@ import { useRouter } from "next/router";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import AdminNav from "@/components/admin/AdminNav";
+import Icon from "@/components/ui/Icon";
+import Button from "@/components/ui/Button";
 import { useConfirm } from "@/components/ConfirmProvider";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
@@ -86,14 +88,16 @@ export default function AdminFeaturedPage() {
       <div className="dash-card" style={{ marginBottom: "1rem" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.75rem" }}>
           <div>
-            <h2 style={{ margin: 0 }}>🏆 Lelang Featured</h2>
+            <h2 style={{ margin: 0, display: "flex", alignItems: "center", gap: "0.45rem" }}>
+              <Icon name="trophy" size={20} strokeWidth={2.2} /> Lelang Featured
+            </h2>
             <p className="muted" style={{ margin: "0.25rem 0 0", fontSize: "0.85rem" }}>
               Lelang harian tertutup. pg_cron menjalankan settlement otomatis tiap 00:01. Tombol di bawah untuk menjalankan manual (mis. demo).
             </p>
           </div>
-          <button type="button" disabled={settling} onClick={() => void runSettlement()}>
-            {settling ? "Menjalankan…" : "▶ Jalankan Settlement"}
-          </button>
+          <Button icon="refresh-cw" disabled={settling} onClick={() => void runSettlement()}>
+            {settling ? "Menjalankan…" : "Jalankan Settlement"}
+          </Button>
         </div>
         {msg && <p style={{ marginTop: "0.75rem", marginBottom: 0, color: "var(--pacific-dark)", fontSize: "0.88rem" }}>{msg}</p>}
       </div>
@@ -123,8 +127,8 @@ export default function AdminFeaturedPage() {
           <div style={{ display: "grid", gap: "0.4rem" }}>
             {bids.map((b, i) => (
               <div key={b.id} className="product-row">
-                <span style={{ color: i < 5 ? "var(--pacific-dark)" : "var(--muted)", fontWeight: 700 }}>
-                  {i < 5 ? `🏅 #${i + 1}` : `#${i + 1}`}
+                <span style={{ color: i < 5 ? "var(--pacific-dark)" : "var(--muted)", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "0.25rem" }}>
+                  {i < 5 && <Icon name="trophy" size={13} strokeWidth={2.3} />}#{i + 1}
                 </span>
                 <span>{b.vendors?.name ?? b.vendor_id}</span>
                 <span style={{ marginLeft: "auto", fontWeight: 700 }}>{rupiah(b.amount_idr)}</span>

@@ -1,159 +1,203 @@
-import HeroSection from "@/components/HeroSection";
 import SiteLayout from "@/components/SiteLayout";
 import VendorCard from "@/components/VendorCard";
 import BottomCTA from "@/components/BottomCTA";
+import Button from "@/components/ui/Button";
+import Badge from "@/components/ui/Badge";
+import Icon, { type IconName } from "@/components/ui/Icon";
+import SectionHeader from "@/components/ui/SectionHeader";
+import EmptyState from "@/components/ui/EmptyState";
+import Reveal from "@/components/ui/Reveal";
 import { useLanguage } from "@/lib/language-context";
 import { GetServerSideProps } from "next";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 import { Vendor } from "@/types/domain";
-import Link from "next/link";
 
 type HomeProps = {
   sponsoredVendors: Vendor[];
   featuredVendors: Vendor[];
+  vendorCount: number;
 };
 
-const HOW_IT_WORKS = [
+const HOW_IT_WORKS: { step: string; icon: IconName; title: string; desc: string }[] = [
   {
     step: "01",
-    icon: "🔍",
+    icon: "search",
     title: "Temukan Vendor",
     desc: "Jelajahi ratusan bisnis mahasiswa terverifikasi dari berbagai universitas di Indonesia.",
   },
   {
     step: "02",
-    icon: "💬",
+    icon: "phone",
     title: "Hubungi Langsung",
     desc: "Terhubung langsung via WhatsApp — tanpa perantara, tanpa biaya tambahan.",
   },
   {
     step: "03",
-    icon: "🌟",
+    icon: "users",
     title: "Bergabung Komunitas",
     desc: "Ikut diskusi di forum, temukan tips bisnis, dan bangun jaringan sesama mahasiswa.",
   },
 ];
 
+const HERO_CHIPS = ["Makanan & Minuman", "Desain Kreatif", "Jasa Kampus", "Fashion"];
 
-export default function Home({ sponsoredVendors, featuredVendors }: HomeProps) {
+export default function Home({ sponsoredVendors, featuredVendors, vendorCount }: HomeProps) {
   const { t } = useLanguage();
 
+  const collage = [...sponsoredVendors, ...featuredVendors]
+    .filter((v) => v.hero_image_url)
+    .slice(0, 3);
+  while (collage.length < 3) collage.push(null as unknown as Vendor);
+
   return (
-    <SiteLayout title="UC Connect — Direktori Bisnis Mahasiswa Indonesia" description="Platform direktori bisnis mahasiswa terbesar di Indonesia. Temukan vendor terverifikasi dari berbagai universitas.">
-      {/* ── Hero ── */}
-      <HeroSection
-        title={t("pages.homepage.title")}
-        titleId="landing-title"
-        description={t("pages.homepage.description")}
-        actions={[
-          { href: "/directory/explore", label: t("pages.homepage.exploreBtn"), variant: "primary" },
-          { href: "/community", label: "Forum Komunitas", variant: "secondary" },
-        ]}
-      >
-        <div className="row-wrap" style={{ gap: "0.5rem", margin: "1rem 0" }}>
-          {["Makanan & Minuman", "Desain Kreatif", "Jasa Kampus", "Fashion"].map((chip) => (
-            <span key={chip} className="chip">{chip}</span>
-          ))}
+    <SiteLayout
+      title="UC Connect — Direktori Bisnis Mahasiswa Indonesia"
+      description="Platform direktori bisnis mahasiswa terbesar di Indonesia. Temukan vendor terverifikasi dari berbagai universitas."
+    >
+      {/* ── Editorial hero ── */}
+      <Reveal as="section" className="home-hero" aria-labelledby="landing-title">
+        <div className="home-hero__copy">
+          <span className="kicker">
+            <Icon name="sparkles" size={14} strokeWidth={2.6} />
+            Direktori Bisnis Mahasiswa
+          </span>
+          <h1 id="landing-title" className="home-hero__title">
+            {t("pages.homepage.title")}
+          </h1>
+          <p className="home-hero__lead">{t("pages.homepage.description")}</p>
+
+          <div className="home-hero__cta">
+            <Button href="/directory/explore" variant="gradient" size="lg" iconRight="arrow-right">
+              {t("pages.homepage.exploreBtn")}
+            </Button>
+            <Button href="/community" variant="secondary" size="lg" icon="chat">
+              Forum Komunitas
+            </Button>
+          </div>
+
+          <div className="home-hero__chips">
+            {HERO_CHIPS.map((chip) => (
+              <span key={chip} className="chip">{chip}</span>
+            ))}
+          </div>
+
+          {vendorCount > 0 && (
+            <p className="home-hero__trust">
+              <Icon name="check-circle" size={18} strokeWidth={2.2} style={{ color: "var(--success)" }} />
+              <span>
+                <strong>{vendorCount}+</strong> vendor mahasiswa terverifikasi siap ditemukan
+              </span>
+            </p>
+          )}
         </div>
-      </HeroSection>
+
+        <div className="home-hero__visual" aria-hidden="true">
+          <div className="hero-collage">
+            {collage.map((v, i) =>
+              v ? (
+                <div key={v.id} className="hero-collage__tile">
+                  <img src={v.hero_image_url ?? ""} alt="" />
+                </div>
+              ) : (
+                <div key={`ph-${i}`} className="hero-collage__tile hero-collage__tile--ph">
+                  <Icon name="store" size={28} strokeWidth={1.6} />
+                </div>
+              )
+            )}
+          </div>
+        </div>
+      </Reveal>
 
       {/* ── How it works ── */}
-      <section className="section-gradient bubble-section" aria-label="How UC Connect works" style={{ marginTop: "1.5rem" }}>
-        <h2 className="section-title" style={{ textAlign: "center", marginBottom: "1.5rem" }}>Cara Kerja UC Connect</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1.25rem" }}>
+      <Reveal as="section" index={1} aria-label="Cara kerja UC Connect" style={{ marginTop: "2.25rem" }}>
+        <SectionHeader
+          kicker="Cara Kerja"
+          kickerIcon="grid"
+          title="Tiga langkah menuju bisnis kampus favoritmu"
+        />
+        <div className="how-grid">
           {HOW_IT_WORKS.map((item) => (
-            <div key={item.step} style={{
-              background: "var(--panel)",
-              borderRadius: "var(--radius-md)",
-              padding: "1.5rem",
-              border: "1px solid var(--border)",
-              position: "relative",
-              overflow: "hidden",
-            }}>
-              <span style={{
-                position: "absolute", top: "0.75rem", right: "1rem",
-                fontSize: "3rem", fontWeight: 900, opacity: 0.06,
-                color: "var(--pacific)", lineHeight: 1,
-              }}>{item.step}</span>
-              <div style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>{item.icon}</div>
-              <h3 style={{ fontWeight: 700, marginBottom: "0.4rem", color: "var(--text)" }}>{item.title}</h3>
-              <p style={{ color: "var(--muted)", fontSize: "0.9rem", margin: 0 }}>{item.desc}</p>
+            <div key={item.step} className="how-step">
+              <span className="how-step__num">{item.step}</span>
+              <span className="how-step__icon">
+                <Icon name={item.icon} size={22} strokeWidth={2} />
+              </span>
+              <h3 className="how-step__title">{item.title}</h3>
+              <p>{item.desc}</p>
             </div>
           ))}
         </div>
-      </section>
+      </Reveal>
 
       {/* ── Sponsored (paid featured auction winners) ── */}
       {sponsoredVendors.length > 0 && (
-        <section
-          className="card compact-top"
-          aria-label="Sponsored vendors"
-          style={{ background: "linear-gradient(135deg, rgba(232,97,0,0.06), rgba(28,169,201,0.06))", border: "1.5px solid var(--orange-light)" }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1.25rem", flexWrap: "wrap" }}>
-            <span style={{ fontSize: "1.2rem" }}>⭐</span>
-            <h2 style={{ margin: 0 }}>Vendor Sponsor</h2>
-            <span className="badge" style={{ background: "var(--orange-soft)", color: "var(--orange-dark)", fontSize: "0.72rem" }}>
-              Bersponsor
-            </span>
-          </div>
+        <Reveal as="section" index={2} aria-label="Vendor sponsor" style={{ marginTop: "2.25rem" }}>
+          <SectionHeader
+            kicker="Bersponsor"
+            kickerIcon="sparkles"
+            title="Vendor Sponsor"
+            lead="Etalase pilihan yang memenangkan slot sorotan hari ini."
+          />
           <ul className="vendor-grid">
             {sponsoredVendors.map((vendor) => (
               <VendorCard
                 key={vendor.id}
                 title={vendor.name}
-                meta={`${vendor.category || "General"}${vendor.city ? ` • ${vendor.city}` : ""}`}
+                meta={`${vendor.category || "General"}${vendor.city ? ` · ${vendor.city}` : ""}`}
                 description={vendor.tagline || undefined}
                 href={`/directory/vendor/${vendor.slug || vendor.id}`}
                 imageSrc={vendor.hero_image_url || undefined}
                 imageAlt={`${vendor.name} cover`}
                 highlight
-                badges={vendor.is_verified ? [{ text: "Verified", tone: "success" as const }] : []}
+                badges={vendor.is_verified ? [{ text: "Terverifikasi", tone: "success" }] : []}
                 ctaLabel="Lihat Detail"
               />
             ))}
           </ul>
-        </section>
+        </Reveal>
       )}
 
       {/* ── Featured Vendors ── */}
-      <section className="card compact-top" aria-label="Featured vendors">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.75rem" }}>
-          <h2 style={{ margin: 0 }}>Vendor Pilihan</h2>
-          <Link href="/directory/explore" className="btn" style={{ background: "var(--gradient-cool)", fontSize: "0.85rem", padding: "0.5rem 1rem" }}>
-            Lihat Semua →
-          </Link>
-        </div>
-
+      <Reveal as="section" index={3} aria-label="Vendor pilihan" style={{ marginTop: "2.25rem" }}>
+        <SectionHeader
+          kicker="Pilihan"
+          kickerIcon="star"
+          title="Vendor Pilihan"
+          action={
+            <Button href="/directory/explore" variant="secondary" size="sm" iconRight="arrow-right">
+              Lihat Semua
+            </Button>
+          }
+        />
         {featuredVendors.length > 0 ? (
           <ul className="vendor-grid">
             {featuredVendors.map((vendor) => (
               <VendorCard
                 key={vendor.id}
                 title={vendor.name}
-                meta={`${vendor.category || "General"}${vendor.city ? ` • ${vendor.city}` : ""}`}
+                meta={`${vendor.category || "General"}${vendor.city ? ` · ${vendor.city}` : ""}`}
                 description={vendor.tagline || undefined}
                 href={`/directory/vendor/${vendor.slug || vendor.id}`}
                 imageSrc={vendor.hero_image_url || undefined}
                 imageAlt={`${vendor.name} cover`}
-                badges={vendor.is_verified ? [{ text: "Verified", tone: "success" }] : []}
+                badges={vendor.is_verified ? [{ text: "Terverifikasi", tone: "success" }] : []}
                 ctaLabel="Lihat Detail"
               />
             ))}
           </ul>
         ) : (
-          <div style={{
-            textAlign: "center", padding: "3rem 1rem",
-            background: "var(--gradient-subtle)", borderRadius: "var(--radius-md)",
-          }}>
-            <p style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>🏪</p>
-            <p style={{ color: "var(--muted)" }}>Belum ada vendor terdaftar. Jadilah yang pertama!</p>
-            <Link href="/vendor/onboarding" className="btn" style={{ marginTop: "1rem", display: "inline-block" }}>
-              Daftar Sebagai Vendor
-            </Link>
-          </div>
+          <EmptyState
+            icon="store"
+            title="Belum ada vendor terdaftar"
+            description="Jadilah yang pertama menampilkan bisnismu di UC Connect."
+            action={
+              <Button href="/vendor/onboarding" icon="store">
+                Daftar Sebagai Vendor
+              </Button>
+            }
+          />
         )}
-      </section>
+      </Reveal>
 
       {/* ── CTA ── */}
       <BottomCTA />
@@ -165,7 +209,7 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async () => {
   const supabase = getSupabaseServerClient();
 
   if (!supabase) {
-    return { props: { sponsoredVendors: [], featuredVendors: [] } };
+    return { props: { sponsoredVendors: [], featuredVendors: [], vendorCount: 0 } };
   }
 
   // Paid auction winners with an active 24h window, ordered by rank.
@@ -189,9 +233,9 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async () => {
 
   // Regular "Vendor Pilihan": recent verified vendors, excluding any already
   // shown in the sponsored row.
-  const { data } = await supabase
+  const { data, count } = await supabase
     .from("vendors")
-    .select("id,slug,name,tagline,category,city,is_verified,hero_image_url")
+    .select("id,slug,name,tagline,category,city,is_verified,hero_image_url", { count: "exact" })
     .eq("is_verified", true)
     .order("created_at", { ascending: false })
     .limit(6);
@@ -201,6 +245,6 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async () => {
     .slice(0, 3);
 
   return {
-    props: { sponsoredVendors, featuredVendors },
+    props: { sponsoredVendors, featuredVendors, vendorCount: count ?? 0 },
   };
 };

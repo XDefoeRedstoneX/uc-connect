@@ -1,15 +1,17 @@
-import Link from "next/link";
 import SiteLayout from "@/components/SiteLayout";
 import { GetServerSideProps } from "next";
+import Button from "@/components/ui/Button";
+import EmptyState from "@/components/ui/EmptyState";
 
 export default function UnauthorizedPage() {
   return (
-    <SiteLayout title="Unauthorized | UC Connect">
-      <section className="card">
-        <h1>Unauthorized</h1>
-        <p>You do not have permission to access this page.</p>
-        <Link className="btn" href="/auth/login">Go to login</Link>
-      </section>
+    <SiteLayout title="Akses Ditolak | UC Connect">
+      <EmptyState
+        icon="lock"
+        title="Akses Ditolak"
+        description="Kamu tidak punya izin untuk mengakses halaman ini. Masuk dengan akun yang sesuai."
+        action={<Button href="/auth/login" iconRight="arrow-right">Ke Halaman Masuk</Button>}
+      />
     </SiteLayout>
   );
 }
