@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import Icon from "@/components/ui/Icon";
 import type { ReportTargetType } from "@/types/domain";
 
 type Props = {
@@ -21,6 +22,14 @@ export default function ReportButton({ targetType, targetId, size = "sm" }: Prop
     setDone(false);
     setError(null);
   };
+
+  // Close the report dialog on Escape while it's open.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
 
   const submit = async () => {
     setSubmitting(true);
@@ -61,10 +70,11 @@ export default function ReportButton({ targetType, targetId, size = "sm" }: Prop
           cursor: "pointer",
           fontSize: size === "sm" ? "0.78rem" : "0.88rem",
           padding: "0.1rem 0.35rem",
+          display: "inline-flex", alignItems: "center", gap: "0.25rem",
         }}
         title="Laporkan konten ini"
       >
-        🚩 Laporkan
+        <Icon name="flag" size={size === "sm" ? 13 : 15} strokeWidth={2.3} /> Laporkan
       </button>
 
       {open && (
@@ -77,13 +87,16 @@ export default function ReportButton({ targetType, targetId, size = "sm" }: Prop
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Laporkan konten"
             onClick={(e) => e.stopPropagation()}
             className="dash-card"
             style={{ width: "100%", maxWidth: "440px", background: "#fff" }}
           >
             {done ? (
               <div style={{ textAlign: "center", padding: "0.5rem 0" }}>
-                <p style={{ fontSize: "2rem", margin: "0 0 0.3rem" }}>✅</p>
+                <p style={{ margin: "0 0 0.4rem", color: "#16a34a", display: "flex", justifyContent: "center" }}><Icon name="check-circle" size={32} strokeWidth={2.2} /></p>
                 <p style={{ margin: 0, fontWeight: 700 }}>Laporan terkirim</p>
                 <p className="muted" style={{ margin: "0.3rem 0 1rem", fontSize: "0.85rem" }}>
                   Tim admin akan meninjau dalam waktu dekat.
@@ -92,7 +105,9 @@ export default function ReportButton({ targetType, targetId, size = "sm" }: Prop
               </div>
             ) : (
               <>
-                <h3 style={{ margin: "0 0 0.5rem" }}>🚩 Laporkan Konten</h3>
+                <h3 style={{ margin: "0 0 0.5rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                  <Icon name="flag" size={18} strokeWidth={2.3} /> Laporkan Konten
+                </h3>
                 <p className="muted" style={{ fontSize: "0.85rem", marginBottom: "0.75rem" }}>
                   Beri tahu kami apa yang salah dengan {targetTypeLabel(targetType)} ini. Minimal 5 karakter.
                 </p>

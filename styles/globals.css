@@ -1854,6 +1854,26 @@ a:focus-visible {
   border-radius: 6px;
 }
 
+/* Skip-to-content: hidden until a keyboard user tabs to it, then pinned
+   top-left above the header so it can move focus straight to <main>. */
+.skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: -3rem;
+  z-index: 200;
+  background: var(--pacific);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: top 0.18s var(--ease-out);
+}
+.skip-link:focus {
+  top: 0.75rem;
+}
+
 /* ── Staggered page-load reveal ── */
 @keyframes reveal-up {
   from { opacity: 0; transform: translateY(18px); }
@@ -1867,7 +1887,14 @@ a:focus-visible {
 
 @media (prefers-reduced-motion: reduce) {
   .reveal { animation: none; opacity: 1; transform: none; }
-  * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; }
+  /* Neutralize all motion — decorative loops (float-bubble/shimmer/pulse),
+     hover transforms, and smooth scrolling — for vestibular safety. */
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ── Section header (kicker + editorial title + optional action) ── */

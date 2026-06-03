@@ -107,7 +107,9 @@ export default function MyReviewsPage() {
                 {r.content && <p style={{ margin: 0, fontSize: "0.88rem", lineHeight: 1.5 }}>{r.content}</p>}
                 {r.image_url && <img src={r.image_url} alt="Foto ulasan" style={{ maxHeight: 140, borderRadius: 8, objectFit: "cover", maxWidth: "100%" }} />}
                 {r.vendor_reply && (
-                  <p style={{ margin: 0, fontSize: "0.82rem", color: "var(--pacific)", fontStyle: "italic" }}>↳ Vendor: {r.vendor_reply}</p>
+                  <p style={{ margin: 0, fontSize: "0.82rem", color: "var(--pacific)", fontStyle: "italic", display: "flex", alignItems: "baseline", gap: "0.3rem" }}>
+                    <Icon name="message-circle" size={12} strokeWidth={2.2} style={{ alignSelf: "center" }} /> Vendor: {r.vendor_reply}
+                  </p>
                 )}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span className="muted" style={{ fontSize: "0.75rem" }}>{new Date(r.created_at).toLocaleDateString("id-ID")}</span>

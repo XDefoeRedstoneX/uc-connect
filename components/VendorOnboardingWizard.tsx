@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { compressAndResize } from "@/lib/compress-image";
 import { isValidIndonesianPhone } from "@/lib/phone";
+import Icon from "@/components/ui/Icon";
+import Button from "@/components/ui/Button";
 
 /** Compress to max 500KB for onboarding KTM uploads */
 const compressImage = (f: File) => compressAndResize(f, 1200, 1200, 500);
@@ -42,7 +44,6 @@ const CATEGORY_OPTIONS = [
   "Kesehatan & Kecantikan",
   "Lainnya",
 ] as const;
-type CategoryOption = (typeof CATEGORY_OPTIONS)[number];
 
 function isFileList(value: unknown): value is FileList {
   return typeof FileList !== "undefined" && value instanceof FileList;
@@ -113,11 +114,19 @@ const defaultValues: VendorOnboardingValues = {
   deliveryMethod: [],
 };
 
+// Shared editorial field styling so labels/inputs/errors stay consistent with
+// the rest of the dashboard forms (design tokens, not Tailwind utilities).
+const labelStyle = { fontWeight: 600, fontSize: "0.88rem", color: "var(--muted)" } as const;
+const inputStyle = { marginTop: "0.35rem", width: "100%" } as const;
+const errStyle = { fontSize: "0.8rem", marginTop: "0.3rem" } as const;
+
 export default function VendorOnboardingWizard({ initialStep = 1, initialValues, onComplete }: VendorOnboardingWizardProps) {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(initialStep);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
   const [compressionMessage, setCompressionMessage] = useState<string | null>(null);
+  // Track compression outcome explicitly instead of sniffing the message string.
+  const [compressionOk, setCompressionOk] = useState(false);
 
   const mergedDefaultValues: VendorOnboardingValues = {
     ...defaultValues,
@@ -155,6 +164,7 @@ export default function VendorOnboardingWizard({ initialStep = 1, initialValues,
 
   async function handleKtmFileChange(event: React.ChangeEvent<HTMLInputElement>, onChange: (value: File | undefined) => void) {
     setCompressionMessage(null);
+    setCompressionOk(false);
     const file = event.target.files?.[0];
     if (!file) {
       onChange(undefined);
@@ -169,7 +179,8 @@ export default function VendorOnboardingWizard({ initialStep = 1, initialValues,
         const compressedFile = await compressImage(file);
         const compressedSize = formatFileSize(compressedFile.size);
         const reduction = Math.round(((file.size - compressedFile.size) / file.size) * 100);
-        setCompressionMessage(`✓ File dikompres: ${originalSize} → ${compressedSize} (${reduction}% lebih kecil)`);
+        setCompressionMessage(`File dikompres: ${originalSize} → ${compressedSize} (${reduction}% lebih kecil)`);
+        setCompressionOk(true);
         onChange(compressedFile);
       } else {
         onChange(file);
@@ -177,6 +188,7 @@ export default function VendorOnboardingWizard({ initialStep = 1, initialValues,
     } catch (error) {
       console.error("Compression error:", error);
       setCompressionMessage("Gagal mengompres file, menggunakan file asli.");
+      setCompressionOk(false);
       onChange(file);
     } finally {
       setIsCompressing(false);
@@ -193,320 +205,218 @@ export default function VendorOnboardingWizard({ initialStep = 1, initialValues,
   const ktmFileValue = watch("ktmFile");
 
   return (
-    <section className="w-full max-w-3xl mx-auto">
-      <div className="rounded-xl bg-white p-6 shadow-md transition-all duration-300">
-        <div className="mb-6 space-y-3">
-          <p className="text-sm font-semibold text-gray-500">
-            Step {currentStep} of 3: {stepLabels[currentStep - 1]}
-          </p>
-          <div className="flex items-center gap-3 text-sm font-medium">
-            {stepLabels.map((label, index) => {
-              const stepNumber = (index + 1) as 1 | 2 | 3;
-              const isActive = stepNumber === currentStep;
-              const isComplete = stepNumber < currentStep;
-
-              return (
-                <div key={label} className="flex items-center gap-2">
-                  <span
-                    className={[
-                      "inline-flex h-8 w-8 items-center justify-center rounded-full border text-xs font-bold transition-colors",
-                      isActive
-                        ? "border-(--brand-orange) bg-(--brand-orange) text-white"
-                        : isComplete
-                          ? "border-(--brand-orange) bg-orange-50 text-(--brand-orange)"
-                          : "border-gray-300 bg-white text-gray-400",
-                    ].join(" ")}
-                  >
-                    {stepNumber}
+    <div>
+      {/* Stepper */}
+      <div style={{ marginBottom: "1.5rem" }}>
+        <span className="kicker">
+          <Icon name="store" size={14} strokeWidth={2.6} /> Langkah {currentStep} dari 3
+        </span>
+        <h2 className="display" style={{ fontSize: "var(--fs-h3)", margin: "0.4rem 0 1rem" }}>
+          {stepLabels[currentStep - 1]}
+        </h2>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+          {stepLabels.map((label, index) => {
+            const stepNumber = (index + 1) as 1 | 2 | 3;
+            const isActive = stepNumber === currentStep;
+            const isComplete = stepNumber < currentStep;
+            const on = isActive || isComplete;
+            return (
+              <Fragment key={label}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
+                  <span style={{
+                    width: 30, height: 30, borderRadius: "50%",
+                    display: "inline-flex", alignItems: "center", justifyContent: "center",
+                    fontSize: "0.8rem", fontWeight: 800,
+                    background: on ? "var(--pacific)" : "#fff",
+                    color: on ? "#fff" : "var(--muted)",
+                    border: `1.5px solid ${on ? "var(--pacific)" : "var(--border)"}`,
+                    transition: "all 0.2s ease",
+                  }}>
+                    {isComplete ? <Icon name="check" size={15} strokeWidth={3} /> : stepNumber}
                   </span>
-                  <span
-                    className={[
-                      "transition-colors",
-                      isActive ? "text-(--brand-orange)" : "text-gray-400",
-                    ].join(" ")}
-                  >
-                    {label}
-                  </span>
-                  {index < stepLabels.length - 1 && (
-                    <span className="h-px w-8 bg-gray-200" aria-hidden="true" />
-                  )}
+                  <span style={{ fontSize: "0.82rem", fontWeight: 700, color: isActive ? "var(--pacific-dark)" : "var(--muted)" }}>{label}</span>
                 </div>
-              );
-            })}
-          </div>
+                {index < stepLabels.length - 1 && (
+                  <span style={{ flex: 1, minWidth: "0.75rem", height: 2, background: "var(--border)" }} aria-hidden="true" />
+                )}
+              </Fragment>
+            );
+          })}
         </div>
+      </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="min-h-80 space-y-5 transition-all duration-300">
-            {currentStep === 1 && (
-              <div className="space-y-5">
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-gray-700" htmlFor="fullName">
-                    Full Name
-                  </label>
-                  <input
-                    id="fullName"
-                    {...register("fullName")}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-(--brand-orange) focus:ring-2 focus:ring-orange-100"
-                    placeholder="Nama lengkap"
-                  />
-                  {errors.fullName && <p className="mt-2 text-sm text-red-600">{errors.fullName.message}</p>}
-                </div>
+      <form onSubmit={handleSubmit(onSubmit)} className="stack" style={{ gap: "1.25rem" }}>
+        <div className="stack" style={{ gap: "1rem", minHeight: "20rem" }}>
+          {currentStep === 1 && (
+            <div className="stack" style={{ gap: "0.9rem" }}>
+              <label>
+                <span style={labelStyle}>Nama Lengkap</span>
+                <input id="fullName" {...register("fullName")} placeholder="Nama lengkap" style={inputStyle} />
+                {errors.fullName && <p className="err" style={errStyle}>{errors.fullName.message}</p>}
+              </label>
 
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-gray-700" htmlFor="university">
-                    Asal Universitas
-                  </label>
-                  <input
-                    id="university"
-                    {...register("university")}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-(--brand-orange) focus:ring-2 focus:ring-orange-100"
-                    placeholder="Universitas"
-                  />
-                  {errors.university && <p className="mt-2 text-sm text-red-600">{errors.university.message}</p>}
-                </div>
+              <label>
+                <span style={labelStyle}>Asal Universitas</span>
+                <input id="university" {...register("university")} placeholder="Universitas" style={inputStyle} />
+                {errors.university && <p className="err" style={errStyle}>{errors.university.message}</p>}
+              </label>
 
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-gray-700" htmlFor="major">
-                    Jurusan / Program Studi
-                  </label>
-                  <input
-                    id="major"
-                    {...register("major")}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-(--brand-orange) focus:ring-2 focus:ring-orange-100"
-                    placeholder="cth. Manajemen, Informatika"
-                  />
-                  {errors.major && <p className="mt-2 text-sm text-red-600">{errors.major.message}</p>}
-                </div>
+              <label>
+                <span style={labelStyle}>Jurusan / Program Studi</span>
+                <input id="major" {...register("major")} placeholder="cth. Manajemen, Informatika" style={inputStyle} />
+                {errors.major && <p className="err" style={errStyle}>{errors.major.message}</p>}
+              </label>
 
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-gray-700" htmlFor="graduationYear">
-                    Tahun Kelulusan (perkiraan)
-                  </label>
-                  <select
-                    id="graduationYear"
-                    {...register("graduationYear", { valueAsNumber: true })}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-(--brand-orange) focus:ring-2 focus:ring-orange-100"
-                  >
-                    {GRAD_YEARS.map((y) => (
-                      <option key={y} value={y}>{y}{y <= CURRENT_YEAR ? " (sudah/alumni)" : ""}</option>
-                    ))}
-                  </select>
-                  <p className="mt-1 text-xs text-gray-500">Boleh lulus tahun ini — kamu tetap bisa berjualan sebagai alumni.</p>
-                  {errors.graduationYear && <p className="mt-2 text-sm text-red-600">{errors.graduationYear.message}</p>}
-                </div>
+              <label>
+                <span style={labelStyle}>Tahun Kelulusan (perkiraan)</span>
+                <select id="graduationYear" {...register("graduationYear", { valueAsNumber: true })} style={inputStyle}>
+                  {GRAD_YEARS.map((y) => (
+                    <option key={y} value={y}>{y}{y <= CURRENT_YEAR ? " (sudah/alumni)" : ""}</option>
+                  ))}
+                </select>
+                <p style={{ marginTop: "0.3rem", fontSize: "0.78rem", color: "var(--muted)" }}>Boleh lulus tahun ini — kamu tetap bisa berjualan sebagai alumni.</p>
+                {errors.graduationYear && <p className="err" style={errStyle}>{errors.graduationYear.message}</p>}
+              </label>
 
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-gray-700" htmlFor="whatsappNumber">
-                    WhatsApp Number
-                  </label>
-                  <input
-                    id="whatsappNumber"
-                    {...register("whatsappNumber")}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-(--brand-orange) focus:ring-2 focus:ring-orange-100"
-                    placeholder="08xxxxxxxxxx"
-                  />
-                  {errors.whatsappNumber && (
-                    <p className="mt-2 text-sm text-red-600">{errors.whatsappNumber.message}</p>
+              <label>
+                <span style={labelStyle}>Nomor WhatsApp</span>
+                <input id="whatsappNumber" {...register("whatsappNumber")} placeholder="08xxxxxxxxxx" style={inputStyle} />
+                {errors.whatsappNumber && <p className="err" style={errStyle}>{errors.whatsappNumber.message}</p>}
+              </label>
+
+              <label>
+                <span style={labelStyle}>Upload KTM</span>
+                <Controller
+                  control={control}
+                  name="ktmFile"
+                  render={({ field }) => (
+                    <input
+                      id="ktmFile"
+                      type="file"
+                      accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+                      onChange={(event) => handleKtmFileChange(event, field.onChange)}
+                      disabled={isCompressing}
+                      style={{ ...inputStyle, padding: "0.6rem 0.75rem" }}
+                    />
                   )}
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-gray-700" htmlFor="ktmFile">
-                    Upload KTM
-                  </label>
-                  <Controller
-                    control={control}
-                    name="ktmFile"
-                    render={({ field }) => (
-                      <input
-                        id="ktmFile"
-                        type="file"
-                        accept=".png,.jpg,.jpeg,image/png,image/jpeg"
-                        onChange={(event) => handleKtmFileChange(event, field.onChange)}
-                        disabled={isCompressing}
-                        className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition file:mr-4 file:rounded-md file:border-0 file:bg-orange-50 file:px-4 file:py-2 file:font-semibold file:text-(--brand-orange) focus:border-(--brand-orange) focus:ring-2 focus:ring-orange-100 disabled:opacity-50"
-                      />
-                    )}
-                  />
-                  {isCompressing && <p className="mt-2 text-sm text-blue-600">Sedang mengompres file...</p>}
-                  {compressionMessage && !isCompressing && (
-                    <p className={`mt-2 text-sm ${compressionMessage.includes("✓") ? "text-green-600" : "text-orange-600"}`}>
-                      {compressionMessage}
-                    </p>
-                  )}
-                  {ktmFileValue && (
-                    <p className="mt-2 text-sm text-gray-500">File terpilih: {ktmFileValue.name} ({formatFileSize(ktmFileValue.size)})</p>
-                  )}
-                  {errors.ktmFile && <p className="mt-2 text-sm text-red-600">{errors.ktmFile.message as string}</p>}
-                  <p className="mt-2 text-sm text-gray-500">
-                    File KTM akan dipakai sebagai verifikasi mahasiswa. Pastikan file yang diunggah jelas dan sesuai dengan ketentuan (PNG/JPG, maksimal 1 MB).
+                />
+                {isCompressing && <p style={{ ...errStyle, color: "var(--pacific-dark)" }}>Sedang mengompres file...</p>}
+                {compressionMessage && !isCompressing && (
+                  <p style={{ ...errStyle, display: "flex", alignItems: "center", gap: "0.3rem", color: compressionOk ? "#16a34a" : "var(--orange-dark)" }}>
+                    {compressionOk && <Icon name="check" size={13} strokeWidth={3} />} {compressionMessage}
                   </p>
-                </div>
-              </div>
-            )}
-
-            {currentStep === 2 && (
-              <div className="space-y-5">
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-gray-700" htmlFor="businessName">
-                    Business Name
-                  </label>
-                  <input
-                    id="businessName"
-                    {...register("businessName")}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-(--brand-orange) focus:ring-2 focus:ring-orange-100"
-                    placeholder="Nama usaha"
-                  />
-                  {errors.businessName && (
-                    <p className="mt-2 text-sm text-red-600">{errors.businessName.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-gray-700" htmlFor="category">
-                    Category
-                  </label>
-                  <select
-                    id="category"
-                    {...register("category")}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 outline-none transition focus:border-(--brand-orange) focus:ring-2 focus:ring-orange-100"
-                  >
-                    {CATEGORY_OPTIONS.map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                  {errors.category && <p className="mt-2 text-sm text-red-600">{errors.category.message}</p>}
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-gray-700" htmlFor="description">
-                    Description
-                  </label>
-                  <textarea
-                    id="description"
-                    {...register("description")}
-                    maxLength={150}
-                    rows={4}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-(--brand-orange) focus:ring-2 focus:ring-orange-100"
-                    placeholder="Jelaskan bisnis kamu secara singkat"
-                  />
-                  <div className="mt-2 flex items-center justify-between gap-4 text-sm text-gray-500">
-                    {errors.description ? (
-                      <p className="text-red-600">{errors.description.message}</p>
-                    ) : (
-                      <p>Max 150 characters</p>
-                    )}
-                    <p>{descriptionValue.length}/150</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {currentStep === 3 && (
-              <div className="space-y-6">
-                <div>
-                  <p className="mb-3 block text-sm font-semibold text-gray-700">Sales System</p>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {salesSystemOptions.map((option) => (
-                      <label
-                        key={option}
-                        className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 transition hover:border-(--brand-orange)"
-                      >
-                        <input
-                          type="radio"
-                          value={option}
-                          {...register("salesSystem")}
-                          className="h-4 w-4 accent-(--brand-orange)"
-                        />
-                        <span className="text-sm font-medium text-gray-700">
-                          {SALES_SYSTEM_LABELS[option]}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                  {errors.salesSystem && <p className="mt-2 text-sm text-red-600">{errors.salesSystem.message}</p>}
-                </div>
-
-                <div>
-                  <p className="mb-3 block text-sm font-semibold text-gray-700">Delivery Method</p>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {deliveryMethodOptions.map((option) => {
-                      return (
-                        <label
-                          key={option}
-                          className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 px-4 py-3 transition hover:border-(--brand-orange)"
-                        >
-                          <Controller
-                            control={control}
-                            name="deliveryMethod"
-                            render={({ field }) => (
-                              <input
-                                type="checkbox"
-                                checked={field.value.includes(option)}
-                                onChange={(event) => {
-                                  if (event.target.checked) {
-                                    field.onChange([...field.value, option]);
-                                  } else {
-                                    field.onChange(field.value.filter((item) => item !== option));
-                                  }
-                                }}
-                                className="h-4 w-4 rounded border-gray-300 text-(--brand-orange) focus:ring-(--brand-orange)"
-                              />
-                            )}
-                          />
-                          <span className="text-sm font-medium text-gray-700">
-                            {DELIVERY_METHOD_LABELS[option]}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                  {errors.deliveryMethod && (
-                    <p className="mt-2 text-sm text-red-600">{errors.deliveryMethod.message}</p>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {isSubmitted && (
-            <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-800">
-              Pendaftaran vendor berhasil dikirim.
+                )}
+                {ktmFileValue && (
+                  <p style={{ marginTop: "0.3rem", fontSize: "0.8rem", color: "var(--muted)" }}>File terpilih: {ktmFileValue.name} ({formatFileSize(ktmFileValue.size)})</p>
+                )}
+                {errors.ktmFile && <p className="err" style={errStyle}>{errors.ktmFile.message as string}</p>}
+                <p style={{ marginTop: "0.4rem", fontSize: "0.8rem", color: "var(--muted)" }}>
+                  File KTM akan dipakai sebagai verifikasi mahasiswa. Pastikan file yang diunggah jelas dan sesuai dengan ketentuan (PNG/JPG, maksimal 1 MB).
+                </p>
+              </label>
             </div>
           )}
 
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <button
-              type="button"
-              onClick={handleBack}
-              disabled={currentStep === 1 || isSubmitting}
-              className="rounded-lg px-4 py-3 text-sm font-semibold text-gray-500 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Kembali
-            </button>
+          {currentStep === 2 && (
+            <div className="stack" style={{ gap: "0.9rem" }}>
+              <label>
+                <span style={labelStyle}>Nama Bisnis</span>
+                <input id="businessName" {...register("businessName")} placeholder="Nama usaha" style={inputStyle} />
+                {errors.businessName && <p className="err" style={errStyle}>{errors.businessName.message}</p>}
+              </label>
 
-            {currentStep < 3 ? (
-              <button
-                type="button"
-                onClick={() => void handleNext()}
-                disabled={isSubmitting}
-                className="rounded-lg bg-(--brand-orange) px-5 py-3 text-sm font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Selanjutnya
-              </button>
-            ) : (
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="rounded-lg bg-(--brand-orange) px-5 py-3 text-sm font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isSubmitting ? "Menyimpan..." : "Selesai"}
-              </button>
-            )}
+              <label>
+                <span style={labelStyle}>Kategori</span>
+                <select id="category" {...register("category")} style={inputStyle}>
+                  {CATEGORY_OPTIONS.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+                {errors.category && <p className="err" style={errStyle}>{errors.category.message}</p>}
+              </label>
+
+              <label>
+                <span style={labelStyle}>Deskripsi</span>
+                <textarea id="description" {...register("description")} maxLength={150} rows={4}
+                  placeholder="Jelaskan bisnis kamu secara singkat" style={inputStyle} />
+                <div style={{ marginTop: "0.3rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", fontSize: "0.8rem", color: "var(--muted)" }}>
+                  {errors.description ? <span className="err" style={{ margin: 0 }}>{errors.description.message}</span> : <span>Maks 150 karakter</span>}
+                  <span>{descriptionValue.length}/150</span>
+                </div>
+              </label>
+            </div>
+          )}
+
+          {currentStep === 3 && (
+            <div className="stack" style={{ gap: "1.25rem" }}>
+              <div>
+                <p style={{ ...labelStyle, marginBottom: "0.6rem" }}>Sistem Penjualan</p>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.6rem" }}>
+                  {salesSystemOptions.map((option) => (
+                    <label key={option} style={{ display: "flex", alignItems: "center", gap: "0.6rem", border: "1.5px solid var(--border)", borderRadius: "var(--radius-md)", padding: "0.7rem 0.9rem", cursor: "pointer" }}>
+                      <input type="radio" value={option} {...register("salesSystem")} style={{ width: "1rem", height: "1rem", accentColor: "var(--pacific)" }} />
+                      <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>{SALES_SYSTEM_LABELS[option]}</span>
+                    </label>
+                  ))}
+                </div>
+                {errors.salesSystem && <p className="err" style={errStyle}>{errors.salesSystem.message}</p>}
+              </div>
+
+              <div>
+                <p style={{ ...labelStyle, marginBottom: "0.6rem" }}>Metode Pengiriman</p>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.6rem" }}>
+                  {deliveryMethodOptions.map((option) => (
+                    <label key={option} style={{ display: "flex", alignItems: "center", gap: "0.6rem", border: "1.5px solid var(--border)", borderRadius: "var(--radius-md)", padding: "0.7rem 0.9rem", cursor: "pointer" }}>
+                      <Controller
+                        control={control}
+                        name="deliveryMethod"
+                        render={({ field }) => (
+                          <input
+                            type="checkbox"
+                            checked={field.value.includes(option)}
+                            onChange={(event) => {
+                              if (event.target.checked) {
+                                field.onChange([...field.value, option]);
+                              } else {
+                                field.onChange(field.value.filter((item) => item !== option));
+                              }
+                            }}
+                            style={{ width: "1rem", height: "1rem", accentColor: "var(--pacific)" }}
+                          />
+                        )}
+                      />
+                      <span style={{ fontSize: "0.9rem", fontWeight: 600 }}>{DELIVERY_METHOD_LABELS[option]}</span>
+                    </label>
+                  ))}
+                </div>
+                {errors.deliveryMethod && <p className="err" style={errStyle}>{errors.deliveryMethod.message}</p>}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {isSubmitted && (
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", borderRadius: "var(--radius-md)", border: "1px solid #bbf7d0", background: "#f0fdf4", padding: "0.75rem 1rem", fontSize: "0.88rem", fontWeight: 600, color: "#166534" }}>
+            <Icon name="check-circle" size={16} strokeWidth={2.4} /> Pendaftaran vendor berhasil dikirim.
           </div>
-        </form>
-      </div>
-    </section>
+        )}
+
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+          <Button type="button" variant="ghost" icon="arrow-left" onClick={handleBack} disabled={currentStep === 1 || isSubmitting}>
+            Kembali
+          </Button>
+
+          {currentStep < 3 ? (
+            <Button type="button" iconRight="arrow-right" onClick={() => void handleNext()} disabled={isSubmitting}>
+              Selanjutnya
+            </Button>
+          ) : (
+            <Button type="submit" icon="check" disabled={isSubmitting}>
+              {isSubmitting ? "Menyimpan..." : "Selesai"}
+            </Button>
+          )}
+        </div>
+      </form>
+    </div>
   );
 }

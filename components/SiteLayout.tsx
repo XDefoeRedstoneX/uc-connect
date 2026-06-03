@@ -7,6 +7,7 @@ import { useLanguage } from "@/lib/language-context";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/router";
 import NotificationBell from "@/components/NotificationBell";
+import Icon, { type IconName } from "@/components/ui/Icon";
 
 type Props = {
   title: string;
@@ -37,10 +38,10 @@ export default function SiteLayout({ title, children, description, ogImage }: Pr
 
   // Account sub-pages — surfaced in the mobile drawer so favorites / reviews /
   // threads aren't reachable only by typing the URL.
-  const accountItems = [
-    { href: "/customer/favorites", label: "❤️ Favorit Saya" },
-    { href: "/customer/reviews", label: "⭐ Ulasan Saya" },
-    { href: "/customer/threads", label: "💬 Diskusi Saya" },
+  const accountItems: { href: string; label: string; icon: IconName }[] = [
+    { href: "/customer/favorites", label: "Favorit Saya", icon: "heart" },
+    { href: "/customer/reviews", label: "Ulasan Saya", icon: "star" },
+    { href: "/customer/threads", label: "Diskusi Saya", icon: "chat" },
   ];
 
   return (
@@ -58,6 +59,7 @@ export default function SiteLayout({ title, children, description, ogImage }: Pr
         {description && <meta name="twitter:description" content={description} />}
       </Head>
       <div className="site-shell">
+        <a href="#main-content" className="skip-link">Lewati ke konten</a>
         <header className="topbar">
           <div className="topbar-inner">
             <Link href="/" className="brand" aria-label="UC Connect homepage">
@@ -86,16 +88,16 @@ export default function SiteLayout({ title, children, description, ogImage }: Pr
                   type="button"
                   onClick={() => router.push('/vendor/dashboard')}
                   className="nav-link"
-                  style={{ background: '#fff', fontWeight: 700, color: 'var(--orange)', border: '1.5px solid var(--orange-light)' }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: '#fff', fontWeight: 700, color: 'var(--orange)', border: '1.5px solid var(--orange-light)' }}
                 >
-                  🏪 Dashboard
+                  <Icon name="store" size={15} strokeWidth={2.3} /> Dashboard
                 </button>
               )}
 
               {isAdmin && (
                 <Link href="/admin" className="nav-link"
-                  style={{ background: '#fff', fontWeight: 700, color: 'var(--orange-dark)', border: '1.5px solid var(--orange)' }}>
-                  🛡 Admin
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: '#fff', fontWeight: 700, color: 'var(--orange-dark)', border: '1.5px solid var(--orange)' }}>
+                  <Icon name="shield" size={15} strokeWidth={2.3} /> Admin
                 </Link>
               )}
 
@@ -133,7 +135,7 @@ export default function SiteLayout({ title, children, description, ogImage }: Pr
               }}
               className="hamburger-btn"
             >
-              {menuOpen ? "✕" : "☰"}
+              <Icon name={menuOpen ? "x" : "menu"} size={20} strokeWidth={2.4} />
             </button>
           </div>
 
@@ -162,22 +164,22 @@ export default function SiteLayout({ title, children, description, ogImage }: Pr
                 </Link>
               ))}
               {isVendor && (
-                <Link href="/vendor/dashboard" className="nav-link" onClick={() => setMenuOpen(false)} style={{ color: 'var(--orange)', background: 'var(--orange-soft)' }}>
-                  🏪 Vendor Dashboard
+                <Link href="/vendor/dashboard" className="nav-link" onClick={() => setMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: 'var(--orange)', background: 'var(--orange-soft)' }}>
+                  <Icon name="store" size={16} strokeWidth={2.3} /> Vendor Dashboard
                 </Link>
               )}
               {isAdmin && (
-                <Link href="/admin" className="nav-link" onClick={() => setMenuOpen(false)} style={{ color: 'var(--orange-dark)', background: 'var(--orange-soft)' }}>
-                  🛡 Admin Panel
+                <Link href="/admin" className="nav-link" onClick={() => setMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: 'var(--orange-dark)', background: 'var(--orange-soft)' }}>
+                  <Icon name="shield" size={16} strokeWidth={2.3} /> Admin Panel
                 </Link>
               )}
               {isLoggedIn ? (
                 <>
-                  <Link href="/notifications" className="nav-link" onClick={() => setMenuOpen(false)} style={{ color: 'var(--pacific-dark)', background: 'var(--pacific-soft)' }}>
-                    🔔 Notifikasi
+                  <Link href="/notifications" className="nav-link" onClick={() => setMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: 'var(--pacific-dark)', background: 'var(--pacific-soft)' }}>
+                    <Icon name="bell" size={16} strokeWidth={2.3} /> Notifikasi
                   </Link>
-                  <Link href="/customer/profile" className="nav-link" onClick={() => setMenuOpen(false)} style={{ color: 'var(--pacific-dark)', background: 'var(--pacific-soft)' }}>
-                    👤 Profil Saya
+                  <Link href="/customer/profile" className="nav-link" onClick={() => setMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: 'var(--pacific-dark)', background: 'var(--pacific-soft)' }}>
+                    <Icon name="user" size={16} strokeWidth={2.3} /> Profil Saya
                   </Link>
                   {accountItems.map((item) => (
                     <Link
@@ -185,9 +187,9 @@ export default function SiteLayout({ title, children, description, ogImage }: Pr
                       href={item.href}
                       className="nav-link"
                       onClick={() => setMenuOpen(false)}
-                      style={{ color: 'var(--text)', background: 'var(--bg)' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: 'var(--text)', background: 'var(--bg)' }}
                     >
-                      {item.label}
+                      <Icon name={item.icon} size={16} strokeWidth={2.3} /> {item.label}
                     </Link>
                   ))}
                 </>
@@ -200,7 +202,7 @@ export default function SiteLayout({ title, children, description, ogImage }: Pr
           )}
         </header>
 
-        <main className="content">{children}</main>
+        <main id="main-content" className="content">{children}</main>
 
         <footer className="footer">
           <div className="footer-inner">
