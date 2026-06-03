@@ -2,6 +2,10 @@ import Link from "next/link";
 import { GetServerSideProps } from "next";
 import { useState } from "react";
 import SiteLayout from "@/components/SiteLayout";
+import Icon from "@/components/ui/Icon";
+import Button from "@/components/ui/Button";
+import EmptyState from "@/components/ui/EmptyState";
+import Reveal from "@/components/ui/Reveal";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 import { ForumCategory, ForumThread } from "@/types/domain";
 
@@ -29,13 +33,12 @@ export default function CategoryPage({ category, threads }: Props) {
   if (!category) {
     return (
       <SiteLayout title="Kategori Tidak Ditemukan | UC Connect">
-        <section className="card" style={{ textAlign: "center", padding: "4rem 1rem" }}>
-          <h1 style={{ color: "var(--error)" }}>Kategori Tidak Ditemukan</h1>
-          <p>Maaf, kategori yang Anda cari tidak tersedia.</p>
-          <Link href="/community" style={{ color: "var(--pacific)", textDecoration: "underline" }}>
-            Kembali ke Forum
-          </Link>
-        </section>
+        <EmptyState
+          icon="search"
+          title="Kategori Tidak Ditemukan"
+          description="Maaf, kategori yang Anda cari tidak tersedia."
+          action={<Button href="/community" variant="secondary" icon="arrow-left">Kembali ke Forum</Button>}
+        />
       </SiteLayout>
     );
   }
@@ -50,91 +53,65 @@ export default function CategoryPage({ category, threads }: Props) {
   return (
     <SiteLayout title={`${category.name} | UC Connect`} description={category.description ?? `Diskusi seputar ${category.name} di UC Connect.`}>
       {/* Hero */}
-      <section className="hero bubble-section">
-        <Link href="/community" style={{ color: "rgba(255,255,255,0.8)", textDecoration: "none", fontSize: "0.88rem", position: "relative", zIndex: 1 }}>
-          ← Kembali ke Forum
+      <Reveal as="section" className="hero">
+        <Link href="/community" className="back-link" style={{ position: "relative", zIndex: 1 }}>
+          <Icon name="arrow-left" size={15} /> Kembali ke Forum
         </Link>
-        <h1 style={{ position: "relative", zIndex: 1, marginTop: "0.5rem" }}>{category.name}</h1>
-        {category.description && <p style={{ color: "var(--muted)", position: "relative", zIndex: 1 }}>{category.description}</p>}
-      </section>
+        <h1 className="display" style={{ position: "relative", zIndex: 1, marginTop: "0.6rem", fontSize: "var(--fs-h1)" }}>{category.name}</h1>
+        {category.description && <p style={{ color: "var(--muted)", position: "relative", zIndex: 1, marginTop: "0.5rem", maxWidth: "52ch" }}>{category.description}</p>}
+      </Reveal>
 
       {/* Search + New Thread */}
-      <section className="card compact-top">
-        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem", flexWrap: "wrap" }}>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="🔍 Cari diskusi..."
-            style={{ flex: 1, minWidth: "200px" }}
-          />
-          <Link href={`/community/${category.slug}/new`} className="btn" style={{ whiteSpace: "nowrap" }}>
-            + Diskusi Baru
-          </Link>
+      <section style={{ marginTop: "1.75rem" }}>
+        <div style={{ display: "flex", gap: "0.6rem", marginBottom: "1.1rem", flexWrap: "wrap", alignItems: "center" }}>
+          <div className="explore-search" style={{ flex: 1, minWidth: "220px", margin: 0 }}>
+            <Icon name="search" size={18} className="search-ico" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Cari diskusi..."
+              aria-label="Cari diskusi"
+            />
+          </div>
+          <Button href={`/community/${category.slug}/new`} icon="plus">Diskusi Baru</Button>
         </div>
 
-        <p style={{ color: "var(--muted)", fontSize: "0.85rem", marginBottom: "0.75rem" }}>
+        <p style={{ color: "var(--muted)", fontSize: "0.85rem", marginBottom: "0.85rem", fontWeight: 600 }}>
           {query ? `${filtered.length} hasil ditemukan` : `${threads.length} diskusi`}
         </p>
 
         {/* Thread list */}
         {filtered.length > 0 ? (
-          <div style={{ display: "grid", gap: "0.65rem" }}>
+          <div style={{ display: "grid", gap: "0.7rem" }}>
             {filtered.map((thread) => {
               const replyCount = thread.forum_replies?.[0]?.count ?? 0;
-              const snippet = thread.content.length > 120
-                ? thread.content.slice(0, 120) + "..."
-                : thread.content;
-
               return (
-                <Link key={thread.id} href={`/community/${category.slug}/${thread.id}`} style={{ textDecoration: "none", color: "inherit" }}>
-                  <div style={{
-                    padding: "1rem 1.15rem",
-                    borderRadius: "var(--radius-md)",
-                    background: "var(--bg)",
-                    border: "1px solid var(--border)",
-                    transition: "all 0.2s ease",
-                    cursor: "pointer",
-                  }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(28,169,201,0.3)"; e.currentTarget.style.background = "var(--pacific-soft)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.background = "var(--bg)"; }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.75rem" }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <h3 style={{ margin: "0 0 0.25rem", fontSize: "1rem", fontWeight: 700 }}>{thread.title}</h3>
-                        <p style={{ color: "var(--muted)", fontSize: "0.85rem", lineHeight: 1.5, margin: "0 0 0.5rem", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {snippet}
-                        </p>
-                        {thread.image_url && (
-                          <img src={thread.image_url} alt=""
-                            style={{ width: "100%", maxHeight: "160px", objectFit: "cover", borderRadius: "8px", marginBottom: "0.5rem" }} />
-                        )}
-                        <div style={{ display: "flex", gap: "0.75rem", fontSize: "0.78rem", color: "var(--muted)" }}>
-                          <span>💬 {replyCount} balasan</span>
-                          <span>👁 {thread.view_count} dilihat</span>
-                          <span>{timeAgo(thread.created_at)}</span>
-                        </div>
-                      </div>
+                <Link key={thread.id} href={`/community/${category.slug}/${thread.id}`} className="thread-row">
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h3 className="thread-row__title clamp-1">{thread.title}</h3>
+                    <p className="thread-row__snippet clamp-2">{thread.content}</p>
+                    {thread.image_url && (
+                      <img src={thread.image_url} alt=""
+                        style={{ width: "100%", maxHeight: "160px", objectFit: "cover", borderRadius: "10px", margin: "0.5rem 0" }} />
+                    )}
+                    <div className="thread-row__meta">
+                      <span><Icon name="message-circle" size={14} /> {replyCount} balasan</span>
+                      <span><Icon name="eye" size={14} /> {thread.view_count} dilihat</span>
+                      <span>{timeAgo(thread.created_at)}</span>
                     </div>
                   </div>
+                  <Icon name="chevron-right" size={18} className="thread-row__arrow" />
                 </Link>
               );
             })}
           </div>
         ) : (
-          <div style={{
-            textAlign: "center", padding: "3rem 1rem",
-            background: "var(--gradient-subtle)", borderRadius: "var(--radius-md)",
-          }}>
-            <p style={{ fontSize: "2rem", margin: "0 0 0.5rem" }}>💬</p>
-            <p style={{ color: "var(--muted)", marginBottom: "0.75rem" }}>
-              {query ? "Tidak ada diskusi yang cocok." : "Belum ada diskusi. Jadilah yang pertama!"}
-            </p>
-            {!query && (
-              <Link href={`/community/${category.slug}/new`} className="btn">
-                Mulai Diskusi Baru
-              </Link>
-            )}
-          </div>
+          <EmptyState
+            icon="chat"
+            title={query ? "Tidak ada diskusi yang cocok" : "Belum ada diskusi"}
+            description={query ? "Coba kata kunci lain." : "Jadilah yang pertama memulai diskusi di kategori ini."}
+            action={!query ? <Button href={`/community/${category.slug}/new`} icon="plus">Mulai Diskusi Baru</Button> : undefined}
+          />
         )}
       </section>
     </SiteLayout>

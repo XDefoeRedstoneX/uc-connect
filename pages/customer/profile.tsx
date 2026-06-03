@@ -4,31 +4,13 @@ import { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
 import SiteLayout from "@/components/SiteLayout";
 import AccountNav from "@/components/AccountNav";
+import Icon from "@/components/ui/Icon";
 import { useToast } from "@/components/ToastProvider";
 import { useLanguage } from "@/lib/language-context";
 import { toPublicPageErrorMessage } from "@/lib/public-errors";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { uploadProfileAvatar, compressImage } from "@/lib/profile-image-upload";
 import { UserProfile } from "@/types/domain";
-
-function UserIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  );
-}
-
-function ExitIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-      <polyline points="16 17 21 12 16 7" />
-      <line x1="21" y1="12" x2="9" y2="12" />
-    </svg>
-  );
-}
 
 export default function CustomerProfilePage() {
   const router = useRouter();
@@ -256,29 +238,33 @@ export default function CustomerProfilePage() {
       <div className="stack" style={{ gap: '1.25rem', maxWidth: '52rem', margin: '0 auto', marginTop: 0 }}>
         {/* Header bar */}
         <header className="profile-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--muted)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '2.75rem', height: '2.75rem', borderRadius: '50%', background: 'var(--pacific-soft)', color: 'var(--pacific-dark)' }}>
-              <UserIcon />
+              <Icon name="user" size={20} strokeWidth={2.2} />
             </span>
+            <div>
+              <span className="kicker">Akun</span>
+              <h1 className="display" style={{ fontSize: 'var(--fs-h3)', margin: '0.1rem 0 0' }}>Profil Saya</h1>
+            </div>
           </div>
 
           <div className="row-wrap" style={{ gap: '0.5rem' }}>
             {!isEditing ? (
-              <button type="button" onClick={() => setIsEditing(true)}>
-                Edit Profil
+              <button type="button" className="btn" onClick={() => setIsEditing(true)}>
+                <Icon name="edit" size={16} /> Edit Profil
               </button>
             ) : (
               <>
-                <button type="submit" form="profile-settings-form" disabled={isSaving}>
+                <button type="submit" className="btn" form="profile-settings-form" disabled={isSaving}>
                   {isSaving ? t("pages.editProfile.savingProfile") : t("pages.editProfile.saveBtn")}
                 </button>
-                <button type="button" className="ghost" onClick={handleCancelEdit}>
+                <button type="button" className="btn ghost" onClick={handleCancelEdit}>
                   {t("pages.editProfile.cancelBtn") || "Cancel"}
                 </button>
               </>
             )}
-            <button type="button" style={{ background: 'var(--error)' }} onClick={logout}>
-              <ExitIcon /> {t("pages.profile.logout")}
+            <button type="button" className="btn btn--danger" onClick={logout}>
+              <Icon name="log-out" size={16} /> {t("pages.profile.logout")}
             </button>
           </div>
         </header>
@@ -420,25 +406,22 @@ export default function CustomerProfilePage() {
 
         {profile?.role !== "vendor" && (
           <div style={{ paddingLeft: '0.25rem' }}>
-            <button type="button" onClick={() => void router.push("/vendor/onboarding")}>
-              {t("pages.editProfile.becomeVendor")}
+            <button type="button" className="btn" onClick={() => void router.push("/vendor/onboarding")}>
+              <Icon name="store" size={16} /> {t("pages.editProfile.becomeVendor")}
             </button>
           </div>
         )}
 
         {/* Quick links */}
         <div style={{ paddingLeft: '0.25rem', marginTop: '0.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-          <button type="button" className="ghost" onClick={() => void router.push("/customer/favorites")}
-            style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            ❤️ Vendor Favorit
+          <button type="button" className="btn ghost" onClick={() => void router.push("/customer/favorites")}>
+            <Icon name="heart" size={16} /> Vendor Favorit
           </button>
-          <button type="button" className="ghost" onClick={() => void router.push("/customer/reviews")}
-            style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            ⭐ Ulasan Saya
+          <button type="button" className="btn ghost" onClick={() => void router.push("/customer/reviews")}>
+            <Icon name="star" size={16} /> Ulasan Saya
           </button>
-          <button type="button" className="ghost" onClick={() => void router.push("/customer/threads")}
-            style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            💬 Diskusi Saya
+          <button type="button" className="btn ghost" onClick={() => void router.push("/customer/threads")}>
+            <Icon name="chat" size={16} /> Diskusi Saya
           </button>
         </div>
 
@@ -483,23 +466,23 @@ function DangerZone() {
 
   return (
     <section style={{ marginTop: "2rem", padding: "1rem", border: "1.5px solid var(--error)", borderRadius: "var(--radius-md)", background: "rgba(239,68,68,0.04)" }}>
-      <h3 style={{ margin: "0 0 0.35rem", color: "var(--error)", fontSize: "1rem" }}>⚠️ Zona Bahaya</h3>
+      <h3 style={{ margin: "0 0 0.35rem", color: "var(--error)", fontSize: "1rem", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
+        <Icon name="shield" size={17} /> Zona Bahaya
+      </h3>
       <p className="muted" style={{ margin: "0 0 0.75rem", fontSize: "0.85rem" }}>
         Menghapus akun bersifat permanen. Semua thread forum, balasan, ulasan, dan toko yang kamu miliki akan dihapus.
       </p>
       {!open ? (
-        <button type="button" onClick={() => setOpen(true)}
-          style={{ background: "var(--error)", fontSize: "0.85rem" }}>
-          🗑 Hapus Akun
+        <button type="button" className="btn btn--sm btn--danger" onClick={() => setOpen(true)}>
+          <Icon name="trash" size={14} /> Hapus Akun
         </button>
       ) : (
         <div style={{ display: "grid", gap: "0.5rem" }}>
           <p style={{ margin: 0, fontSize: "0.85rem" }}>Ketik <strong>HAPUS</strong> untuk konfirmasi:</p>
           <input value={confirmText} onChange={(e) => setConfirmText(e.target.value)} placeholder="HAPUS" />
           <div style={{ display: "flex", gap: "0.5rem" }}>
-            <button type="button" className="ghost" onClick={() => { setOpen(false); setConfirmText(""); }}>Batal</button>
-            <button type="button" disabled={submitting || confirmText !== "HAPUS"} onClick={() => void deleteAccount()}
-              style={{ background: "var(--error)" }}>
+            <button type="button" className="btn ghost" onClick={() => { setOpen(false); setConfirmText(""); }}>Batal</button>
+            <button type="button" className="btn btn--danger" disabled={submitting || confirmText !== "HAPUS"} onClick={() => void deleteAccount()}>
               {submitting ? "Menghapus…" : "Hapus Permanen"}
             </button>
           </div>

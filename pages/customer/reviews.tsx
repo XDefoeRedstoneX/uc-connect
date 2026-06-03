@@ -6,6 +6,9 @@ import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import AccountNav from "@/components/AccountNav";
 import SkeletonList from "@/components/SkeletonList";
+import Icon from "@/components/ui/Icon";
+import Button from "@/components/ui/Button";
+import EmptyState from "@/components/ui/EmptyState";
 import { useToast } from "@/components/ToastProvider";
 import { useConfirm } from "@/components/ConfirmProvider";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -70,18 +73,22 @@ export default function MyReviewsPage() {
   return (
     <SiteLayout title="Ulasan Saya | UC Connect">
       <AccountNav current="reviews" />
-      <section className="hero bubble-section">
-        <h1 style={{ position: "relative", zIndex: 1 }}>⭐ Ulasan Saya</h1>
-        <p style={{ color: "var(--muted)", position: "relative", zIndex: 1 }}>Ulasan yang kamu tulis untuk vendor.</p>
+      <section className="hero">
+        <span className="kicker" style={{ position: "relative", zIndex: 1 }}>
+          <Icon name="star" size={14} strokeWidth={2.6} /> Ulasan
+        </span>
+        <h1 className="display" style={{ position: "relative", zIndex: 1, fontSize: "var(--fs-h1)", margin: "0.5rem 0 0" }}>Ulasan Saya</h1>
+        <p style={{ color: "var(--muted)", position: "relative", zIndex: 1, marginTop: "0.5rem" }}>Ulasan yang kamu tulis untuk vendor.</p>
       </section>
 
-      <section className="card compact-top">
+      <section style={{ marginTop: "1.75rem" }}>
         {reviews.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "3rem 1rem", background: "var(--gradient-subtle)", borderRadius: "var(--radius-md)" }}>
-            <p style={{ fontSize: "2.5rem", margin: "0 0 0.5rem" }}>⭐</p>
-            <p style={{ color: "var(--muted)", marginBottom: "1rem" }}>Belum ada ulasan.</p>
-            <Link href="/directory/explore" className="btn">Jelajahi Vendor →</Link>
-          </div>
+          <EmptyState
+            icon="star"
+            title="Belum ada ulasan"
+            description="Bagikan pengalamanmu dengan memberi ulasan pada vendor."
+            action={<Button href="/directory/explore" iconRight="arrow-right">Jelajahi Vendor</Button>}
+          />
         ) : (
           <div style={{ display: "grid", gap: "0.75rem" }}>
             {reviews.map((r) => (
@@ -90,7 +97,12 @@ export default function MyReviewsPage() {
                   <Link href={`/directory/vendor/${r.vendor_id}`} style={{ fontWeight: 700, color: "var(--pacific)" }}>
                     {r.vendors?.name ?? "Vendor"}
                   </Link>
-                  <span style={{ color: "#f59e0b" }}>{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span>
+                  <span style={{ display: "inline-flex", gap: "0.05rem", flexShrink: 0 }}>
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Icon key={s} name="star" size={14} filled={s <= r.rating}
+                        style={{ color: s <= r.rating ? "#f59e0b" : "#d1d5db" }} />
+                    ))}
+                  </span>
                 </div>
                 {r.content && <p style={{ margin: 0, fontSize: "0.88rem", lineHeight: 1.5 }}>{r.content}</p>}
                 {r.image_url && <img src={r.image_url} alt="Foto ulasan" style={{ maxHeight: 140, borderRadius: 8, objectFit: "cover", maxWidth: "100%" }} />}
@@ -100,7 +112,9 @@ export default function MyReviewsPage() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span className="muted" style={{ fontSize: "0.75rem" }}>{new Date(r.created_at).toLocaleDateString("id-ID")}</span>
                   <button type="button" onClick={() => deleteReview(r.vendor_id, r.id)}
-                    style={{ fontSize: "0.78rem", padding: "0.25rem 0.6rem", background: "var(--error)" }}>🗑 Hapus</button>
+                    className="btn btn--sm btn--danger" style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem" }}>
+                    <Icon name="trash" size={13} /> Hapus
+                  </button>
                 </div>
               </div>
             ))}

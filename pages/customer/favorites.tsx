@@ -6,6 +6,9 @@ import SiteLayout from "@/components/SiteLayout";
 import AccountNav from "@/components/AccountNav";
 import SkeletonList from "@/components/SkeletonList";
 import VendorCard from "@/components/VendorCard";
+import Icon from "@/components/ui/Icon";
+import Button from "@/components/ui/Button";
+import EmptyState from "@/components/ui/EmptyState";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { Vendor } from "@/types/domain";
 
@@ -74,25 +77,24 @@ export default function FavoritesPage() {
   return (
     <SiteLayout title="Favorit Saya | UC Connect" description="Lihat vendor yang telah Anda favoritkan di UC Connect.">
       <AccountNav current="favorites" />
-      <section className="hero bubble-section">
-        <h1 style={{ position: "relative", zIndex: 1 }}>❤️ Favorit Saya</h1>
-        <p style={{ color: "var(--muted)", position: "relative", zIndex: 1 }}>
+      <section className="hero">
+        <span className="kicker" style={{ position: "relative", zIndex: 1 }}>
+          <Icon name="heart" size={14} strokeWidth={2.6} /> Tersimpan
+        </span>
+        <h1 className="display" style={{ position: "relative", zIndex: 1, fontSize: "var(--fs-h1)", margin: "0.5rem 0 0" }}>Favorit Saya</h1>
+        <p style={{ color: "var(--muted)", position: "relative", zIndex: 1, marginTop: "0.5rem" }}>
           Vendor yang telah Anda simpan.
         </p>
       </section>
 
-      <section className="card compact-top">
+      <section style={{ marginTop: "1.75rem" }}>
         {vendors.length === 0 ? (
-          <div style={{
-            textAlign: "center", padding: "3rem 1rem",
-            background: "var(--gradient-subtle)", borderRadius: "var(--radius-md)",
-          }}>
-            <p style={{ fontSize: "2.5rem", margin: "0 0 0.5rem" }}>🤍</p>
-            <p style={{ color: "var(--muted)", marginBottom: "1rem" }}>Belum ada vendor favorit.</p>
-            <button onClick={() => router.push("/directory/explore")}>
-              Jelajahi Vendor →
-            </button>
-          </div>
+          <EmptyState
+            icon="heart"
+            title="Belum ada favorit"
+            description="Simpan vendor yang kamu suka agar mudah ditemukan kembali."
+            action={<Button href="/directory/explore" iconRight="arrow-right">Jelajahi Vendor</Button>}
+          />
         ) : (
           <>
             <p style={{ color: "var(--muted)", fontSize: "0.9rem", marginBottom: "1rem" }}>
@@ -107,7 +109,7 @@ export default function FavoritesPage() {
                   href={`/directory/vendor/${vendor.id}`}
                   imageSrc={vendor.hero_image_url ?? "/images/vendor-placeholder.svg"}
                   description={vendor.description ?? ""}
-                  badges={vendor.is_verified ? [{ tone: "success", text: "✓ Terverifikasi" }] : []}
+                  badges={vendor.is_verified ? [{ tone: "success", text: "Terverifikasi" }] : []}
                   ctaLabel="Lihat Detail"
                   isFavorited={favIds.has(vendor.id)}
                   onToggleFavorite={() => toggleFav(vendor.id)}

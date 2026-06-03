@@ -3,6 +3,9 @@ import Link from "next/link";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import ReportButton from "@/components/ReportButton";
+import Icon from "@/components/ui/Icon";
+import EmptyState from "@/components/ui/EmptyState";
+import Button from "@/components/ui/Button";
 import { useToast } from "@/components/ToastProvider";
 import { useConfirm } from "@/components/ConfirmProvider";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
@@ -140,13 +143,12 @@ export default function ThreadPage({ category, thread: initialThread, replies: i
   if (!category || !thread) {
     return (
       <SiteLayout title="Diskusi Tidak Ditemukan | UC Connect">
-        <section className="card" style={{ textAlign: "center", padding: "4rem 1rem" }}>
-          <h1 style={{ color: "var(--error)" }}>Diskusi Tidak Ditemukan</h1>
-          <p>Maaf, diskusi yang Anda cari tidak tersedia.</p>
-          <Link href="/community" style={{ color: "var(--pacific)", textDecoration: "underline" }}>
-            Kembali ke Forum
-          </Link>
-        </section>
+        <EmptyState
+          icon="search"
+          title="Diskusi Tidak Ditemukan"
+          description="Maaf, diskusi yang Anda cari tidak tersedia."
+          action={<Button href="/community" variant="secondary" icon="arrow-left">Kembali ke Forum</Button>}
+        />
       </SiteLayout>
     );
   }
@@ -301,15 +303,15 @@ export default function ThreadPage({ category, thread: initialThread, replies: i
             {currentUserId === thread.author_id && !editing && (
               <>
                 {isWithinEditWindow(thread.created_at) && (
-                  <button type="button" className="ghost" style={{ fontSize: "0.78rem", padding: "0.25rem 0.6rem" }}
+                  <button type="button" className="btn ghost btn--sm" style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem" }}
                     onClick={() => { setEditDraft(thread.content); setEditing({ kind: "thread" }); }}>
-                    ✏️ Edit
+                    <Icon name="edit" size={14} /> Edit
                   </button>
                 )}
                 {isWithinEditWindow(thread.created_at) && (
-                  <button type="button" style={{ fontSize: "0.78rem", padding: "0.25rem 0.6rem", background: "var(--error)" }}
+                  <button type="button" className="btn btn--sm btn--danger" style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem" }}
                     onClick={() => void deleteThread()}>
-                    🗑 Hapus
+                    <Icon name="trash" size={14} /> Hapus
                   </button>
                 )}
               </>
@@ -322,15 +324,17 @@ export default function ThreadPage({ category, thread: initialThread, replies: i
 
         {/* Reply Form */}
         <form onSubmit={submitReply} style={{ marginBottom: "1.5rem" }}>
-          <h3 style={{ fontSize: "1rem", marginTop: 0, marginBottom: "0.5rem" }}>💬 Tulis Balasan</h3>
+          <h3 style={{ fontSize: "1rem", marginTop: 0, marginBottom: "0.5rem", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
+            <Icon name="message-circle" size={17} /> Tulis Balasan
+          </h3>
           <textarea value={newReply} onChange={(e) => setNewReply(e.target.value)} rows={3} placeholder="Bagikan pendapatmu..."
             style={{ width: "100%", marginBottom: "0.5rem" }} />
 
           {/* Image attachment */}
           <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
-            <button type="button" className="ghost" onClick={() => imageRef.current?.click()}
-              style={{ fontSize: "0.82rem", display: "flex", alignItems: "center", gap: "0.3rem" }}>
-              📷 Lampirkan Gambar
+            <button type="button" className="btn ghost btn--sm" onClick={() => imageRef.current?.click()}
+              style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
+              <Icon name="camera" size={15} /> Lampirkan Gambar
             </button>
             <input ref={imageRef} type="file" accept="image/*" style={{ display: "none" }}
               onChange={e => handleReplyImage(e.target.files?.[0] ?? null)} />
@@ -338,7 +342,10 @@ export default function ThreadPage({ category, thread: initialThread, replies: i
               <>
                 <img src={replyImagePreview} alt="Preview" style={{ height: "40px", borderRadius: "6px", objectFit: "cover" }} />
                 <button type="button" onClick={() => { setReplyImage(null); setReplyImagePreview(null); }}
-                  style={{ background: "var(--error)", fontSize: "0.75rem", padding: "0.2rem 0.5rem" }}>✕</button>
+                  className="btn btn--sm btn--danger" aria-label="Hapus foto"
+                  style={{ display: "inline-flex", padding: "0.3rem 0.5rem" }}>
+                  <Icon name="x" size={14} />
+                </button>
               </>
             )}
           </div>
@@ -401,15 +408,15 @@ export default function ThreadPage({ category, thread: initialThread, replies: i
                 {currentUserId === r.author_id && !(editing?.kind === "reply" && editing.id === r.id) && (
                   <>
                     {isWithinEditWindow(r.created_at) && (
-                      <button type="button" className="ghost" style={{ fontSize: "0.72rem", padding: "0.2rem 0.5rem" }}
+                      <button type="button" className="btn ghost btn--sm" style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem" }}
                         onClick={() => { setEditDraft(r.content); setEditing({ kind: "reply", id: r.id }); }}>
-                        ✏️ Edit
+                        <Icon name="edit" size={13} /> Edit
                       </button>
                     )}
                     {isWithinEditWindow(r.created_at) && (
-                      <button type="button" style={{ fontSize: "0.72rem", padding: "0.2rem 0.5rem", background: "var(--error)" }}
+                      <button type="button" className="btn btn--sm btn--danger" style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem" }}
                         onClick={() => void deleteReply(r.id)}>
-                        🗑 Hapus
+                        <Icon name="trash" size={13} /> Hapus
                       </button>
                     )}
                   </>

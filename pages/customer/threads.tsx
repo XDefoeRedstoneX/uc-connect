@@ -6,6 +6,9 @@ import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import AccountNav from "@/components/AccountNav";
 import SkeletonList from "@/components/SkeletonList";
+import Icon from "@/components/ui/Icon";
+import Button from "@/components/ui/Button";
+import EmptyStateUI from "@/components/ui/EmptyState";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type MyThread = {
@@ -48,17 +51,21 @@ export default function MyThreadsPage() {
   return (
     <SiteLayout title="Diskusi Saya | UC Connect">
       <AccountNav current="threads" />
-      <section className="hero bubble-section">
-        <h1 style={{ position: "relative", zIndex: 1 }}>💬 Diskusi Saya</h1>
-        <p style={{ color: "var(--muted)", position: "relative", zIndex: 1 }}>Thread dan balasan yang kamu buat di forum.</p>
+      <section className="hero">
+        <span className="kicker" style={{ position: "relative", zIndex: 1 }}>
+          <Icon name="chat" size={14} strokeWidth={2.6} /> Forum
+        </span>
+        <h1 className="display" style={{ position: "relative", zIndex: 1, fontSize: "var(--fs-h1)", margin: "0.5rem 0 0" }}>Diskusi Saya</h1>
+        <p style={{ color: "var(--muted)", position: "relative", zIndex: 1, marginTop: "0.5rem" }}>Thread dan balasan yang kamu buat di forum.</p>
       </section>
 
-      <section className="card compact-top">
-        <div style={{ display: "flex", gap: "0.35rem", marginBottom: "1rem" }}>
+      <section style={{ marginTop: "1.75rem" }}>
+        <div role="tablist" style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem", flexWrap: "wrap" }}>
           {(["threads", "replies"] as const).map((tb) => (
-            <button key={tb} type="button" className="chip" onClick={() => setTab(tb)}
-              style={{ cursor: "pointer", background: tab === tb ? "var(--pacific-soft)" : "#fff", borderColor: tab === tb ? "var(--pacific)" : undefined, fontWeight: tab === tb ? 700 : 600 }}>
-              {tb === "threads" ? `📝 Thread (${threads.length})` : `💬 Balasan (${replies.length})`}
+            <button key={tb} type="button" role="tab" aria-selected={tab === tb} className="cat-pill"
+              aria-pressed={tab === tb} onClick={() => setTab(tb)}>
+              <Icon name={tb === "threads" ? "file-text" : "message-circle"} size={15} strokeWidth={2.2} />
+              {tb === "threads" ? `Thread (${threads.length})` : `Balasan (${replies.length})`}
             </button>
           ))}
         </div>
@@ -102,11 +109,12 @@ export default function MyThreadsPage() {
 
 function EmptyState({ label }: { label: string }) {
   return (
-    <div style={{ textAlign: "center", padding: "3rem 1rem", background: "var(--gradient-subtle)", borderRadius: "var(--radius-md)" }}>
-      <p style={{ fontSize: "2.5rem", margin: "0 0 0.5rem" }}>💬</p>
-      <p style={{ color: "var(--muted)", marginBottom: "1rem" }}>{label}</p>
-      <Link href="/community" className="btn">Ke Forum →</Link>
-    </div>
+    <EmptyStateUI
+      icon="chat"
+      title={label}
+      description="Mulai berdiskusi atau membalas thread di forum komunitas."
+      action={<Button href="/community" iconRight="arrow-right">Ke Forum</Button>}
+    />
   );
 }
 
