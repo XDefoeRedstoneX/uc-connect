@@ -259,9 +259,17 @@ create table public.featured_bids (
   amount_idr bigint not null check (amount_idr > 0),
   status text not null default 'active' check (status in ('active', 'won', 'lost', 'withdrawn')),
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique (vendor_id, round_date)
+  updated_at timestamptz not null default now()
+  -- Uniqueness is PARTIAL (only one *active* bid per vendor per round) — see
+  -- the index below. A full unique on (vendor_id, round_date) would block a
+  -- vendor from re-bidding on a round they already lost (the settled 'lost'
+  -- row would collide with the new 'active' insert).
 );
+
+-- At most one active bid per vendor per round. Settled rows (won/lost/
+-- withdrawn) may accumulate as history without blocking a fresh active bid.
+create unique index if not exists featured_bids_one_active_per_round
+  on public.featured_bids (vendor_id, round_date) where status = 'active';
 
 create table public.featured_slots (
   id uuid primary key default gen_random_uuid(),
