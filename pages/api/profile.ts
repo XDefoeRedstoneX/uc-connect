@@ -94,8 +94,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const cleanPhone = trimToNull(phone);
     const cleanAvatarUrl = trimToNull(avatar_url);
     const cleanMajor = trimToNull(major);
+
+    // graduation_year: empty/absent clears the field; a provided-but-invalid
+    // value is a 400 (instead of silently saving NULL, which made users think
+    // their input vanished).
+    const gradProvided =
+      graduation_year !== undefined && graduation_year !== null && String(graduation_year).trim() !== "";
     const gradNum = Number(graduation_year);
-    const cleanGradYear = Number.isInteger(gradNum) && gradNum > 1900 && gradNum < 2100 ? gradNum : null;
+    const gradValid = Number.isInteger(gradNum) && gradNum > 1900 && gradNum < 2100;
+    if (gradProvided && !gradValid) {
+      return res.status(400).json({ error: "Tahun lulus tidak valid (harus antara 1901–2099)." });
+    }
+    const cleanGradYear = gradProvided ? gradNum : null;
 
     // Case-insensitive uniqueness check. The DB has a partial unique index on
     // lower(username), but we want a clean 409 with a Bahasa message instead

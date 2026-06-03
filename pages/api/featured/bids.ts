@@ -103,6 +103,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .select("id,vendor_id,round_date,amount_idr,status,created_at,updated_at")
       .single();
     if (error) {
+      // Partial unique index (one active bid per vendor/round): a concurrent
+      // double-submit that slipped past the existence check above lands here.
+      // Surface a clean 409 instead of a 500 so the client can just refresh.
+      if ((error as { code?: string }).code === "23505") {
+        return res.status(409).json({ error: "Kamu sudah punya bid aktif untuk round ini. Refresh halaman." });
+      }
       console.error("[api/featured/bids POST insert]", error);
       return sendInternalServerError(res, "Gagal membuat bid");
     }

@@ -50,8 +50,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: "Rating harus antara 1-5" });
     }
 
-    // Only accept image URLs that point at our own Supabase storage.
-    const storagePrefix = `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""}/storage/v1/object/public/`;
+    // Only accept image URLs that point at our own Supabase storage. If the
+    // env var is missing server-side the prefix would degenerate to a relative
+    // "/storage/..." and reject every absolute URL, silently dropping images —
+    // so require the env var explicitly and fail loud rather than mis-validate.
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!supabaseUrl) {
+      console.error("[api/vendor/[id]/reviews] NEXT_PUBLIC_SUPABASE_URL missing — cannot validate image URLs");
+      return sendServiceUnavailable(res);
+    }
+    const storagePrefix = `${supabaseUrl}/storage/v1/object/public/`;
     const cleanImageUrl =
       typeof image_url === "string" && image_url.startsWith(storagePrefix) ? image_url : null;
 
