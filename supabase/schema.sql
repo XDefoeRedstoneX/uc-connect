@@ -62,11 +62,27 @@ begin
   meta_username := nullif(btrim(coalesce(new.raw_user_meta_data->>'username', '')), '');
   meta_full_name := nullif(btrim(coalesce(new.raw_user_meta_data->>'full_name', '')), '');
   meta_phone := nullif(btrim(coalesce(new.raw_user_meta_data->>'phone', '')), '');
+
+  -- Drop the metadata username on case-insensitive collision so the partial
+  -- unique index (lower(username)) can't fail this trigger and break signup.
+  -- The self-heal path in /api/profile lets the user pick a fresh one.
+  if meta_username is not null and exists (
+    select 1 from public.profiles where lower(username) = lower(meta_username)
+  ) then
+    meta_username := null;
+  end if;
+
   insert into public.profiles (id, username, full_name, phone, role, updated_at)
   values (new.id, meta_username, meta_full_name, meta_phone, 'customer', now())
   on conflict (id) do nothing;
   return new;
 end; $$;
+
+-- Case-insensitive uniqueness for usernames. Partial index (where username
+-- is not null) so newly-signed-up users with no username yet are still allowed.
+create unique index if not exists profiles_username_lower_uidx
+  on public.profiles (lower(username))
+  where username is not null;
 
 -- ─── 3. Vendor tables ───────────────────────────────────────────────────────
 create table public.vendors (
@@ -243,9 +259,17 @@ create table public.featured_bids (
   amount_idr bigint not null check (amount_idr > 0),
   status text not null default 'active' check (status in ('active', 'won', 'lost', 'withdrawn')),
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique (vendor_id, round_date)
+  updated_at timestamptz not null default now()
+  -- Uniqueness is PARTIAL (only one *active* bid per vendor per round) — see
+  -- the index below. A full unique on (vendor_id, round_date) would block a
+  -- vendor from re-bidding on a round they already lost (the settled 'lost'
+  -- row would collide with the new 'active' insert).
 );
+
+-- At most one active bid per vendor per round. Settled rows (won/lost/
+-- withdrawn) may accumulate as history without blocking a fresh active bid.
+create unique index if not exists featured_bids_one_active_per_round
+  on public.featured_bids (vendor_id, round_date) where status = 'active';
 
 create table public.featured_slots (
   id uuid primary key default gen_random_uuid(),
@@ -369,56 +393,33 @@ end; $$;
 
 create or replace function public.notify_thread_author_on_reply()
 returns trigger language plpgsql security definer set search_path = public as $$
-declare thread_author uuid; thread_title text; replier_name text;
+declare thread_author uuid; thread_title text; thread_category_slug text; replier_name text;
 begin
-  select t.author_id, t.title into thread_author, thread_title from public.forum_threads t where t.id = new.thread_id;
+  select t.author_id, t.title, c.slug
+    into thread_author, thread_title, thread_category_slug
+  from public.forum_threads t
+  join public.forum_categories c on c.id = t.category_id
+  where t.id = new.thread_id;
   if thread_author is null or thread_author = new.author_id then return new; end if;
   select coalesce(p.full_name, p.username, 'Pengguna') into replier_name from public.profiles p where p.id = new.author_id;
   insert into public.notifications (user_id, type, payload)
   values (thread_author, 'forum_reply', jsonb_build_object('thread_id', new.thread_id, 'thread_title', thread_title,
+    'category_slug', thread_category_slug,
     'reply_id', new.id, 'preview', left(new.content, 140), 'replier_name', replier_name));
   return new;
 end; $$;
 
-create or replace function public.notify_vendor_on_approval()
-returns trigger language plpgsql security definer set search_path = public as $$
-begin
-  if new.is_verified = true and (old.is_verified is null or old.is_verified = false) and new.owner_id is not null then
-    insert into public.notifications (user_id, type, payload)
-    values (new.owner_id, 'vendor_approved', jsonb_build_object('vendor_id', new.id, 'vendor_name', new.name));
-  end if;
-  return new;
-end; $$;
+-- NOTE: vendor_approved notification is emitted from the admin API route
+-- (/api/admin/vendors PATCH approve) instead of via the trigger below. The
+-- trigger was unguarded against re-fires (any future is_verified flip-flop
+-- by a non-admin update would notify the owner), and the API path lets us
+-- log the action consistently with other admin operations.
 
-create or replace function public.notify_thread_removed_by_admin()
-returns trigger language plpgsql security definer set search_path = public as $$
-begin
-  if public.is_admin() and old.author_id <> auth.uid() then
-    insert into public.notifications (user_id, type, payload)
-    values (old.author_id, 'content_removed', jsonb_build_object('target_type', 'thread', 'preview', left(old.title, 140)));
-  end if;
-  return old;
-end; $$;
-
-create or replace function public.notify_reply_removed_by_admin()
-returns trigger language plpgsql security definer set search_path = public as $$
-begin
-  if public.is_admin() and old.author_id <> auth.uid() then
-    insert into public.notifications (user_id, type, payload)
-    values (old.author_id, 'content_removed', jsonb_build_object('target_type', 'reply', 'preview', left(old.content, 140)));
-  end if;
-  return old;
-end; $$;
-
-create or replace function public.notify_review_removed_by_admin()
-returns trigger language plpgsql security definer set search_path = public as $$
-begin
-  if public.is_admin() and old.user_id <> auth.uid() then
-    insert into public.notifications (user_id, type, payload)
-    values (old.user_id, 'content_removed', jsonb_build_object('target_type', 'review', 'preview', left(coalesce(old.content, ''), 140)));
-  end if;
-  return old;
-end; $$;
+-- NOTE: content_removed notifications are emitted from the admin API routes
+-- (/api/admin/forum, /api/admin/reviews) instead of via BEFORE DELETE triggers.
+-- A trigger gated on `is_admin()` failed silently when the service-role client
+-- (auth.uid() = NULL) performed the delete, so authors weren't notified. The
+-- API path runs the same insert with deterministic timing.
 
 create or replace function public.notify_admins_on_report()
 returns trigger language plpgsql security definer set search_path = public as $$
@@ -467,14 +468,18 @@ drop trigger if exists trg_notify_vendor_on_review on public.vendor_reviews;
 create trigger trg_notify_vendor_on_review after insert on public.vendor_reviews for each row execute function public.notify_vendor_on_review();
 drop trigger if exists trg_notify_thread_author_on_reply on public.forum_replies;
 create trigger trg_notify_thread_author_on_reply after insert on public.forum_replies for each row execute function public.notify_thread_author_on_reply();
+-- Vendor approval trigger removed; the admin API owns this notification now.
 drop trigger if exists trg_notify_vendor_on_approval on public.vendors;
-create trigger trg_notify_vendor_on_approval after update of is_verified on public.vendors for each row execute function public.notify_vendor_on_approval();
+drop function if exists public.notify_vendor_on_approval();
+-- Legacy: BEFORE DELETE triggers for content_removed notifications have been
+-- removed; the admin API routes own that notification path now.
 drop trigger if exists trg_notify_thread_removed_by_admin on public.forum_threads;
-create trigger trg_notify_thread_removed_by_admin before delete on public.forum_threads for each row execute function public.notify_thread_removed_by_admin();
 drop trigger if exists trg_notify_reply_removed_by_admin on public.forum_replies;
-create trigger trg_notify_reply_removed_by_admin before delete on public.forum_replies for each row execute function public.notify_reply_removed_by_admin();
 drop trigger if exists trg_notify_review_removed_by_admin on public.vendor_reviews;
-create trigger trg_notify_review_removed_by_admin before delete on public.vendor_reviews for each row execute function public.notify_review_removed_by_admin();
+drop function if exists public.notify_thread_removed_by_admin();
+drop function if exists public.notify_reply_removed_by_admin();
+drop function if exists public.notify_review_removed_by_admin();
+
 drop trigger if exists trg_notify_admins_on_report on public.reports;
 create trigger trg_notify_admins_on_report after insert on public.reports for each row execute function public.notify_admins_on_report();
 drop trigger if exists trg_notify_reporter_on_resolution on public.reports;

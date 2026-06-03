@@ -17,6 +17,9 @@ export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
     "Disallow: /api",
     "Disallow: /vendor/dashboard",
     "Disallow: /customer",
+    // Public user profiles expose real name / major / graduation year — keep
+    // them out of search indexes so personal data isn't durably leaked.
+    "Disallow: /u/",
     `Sitemap: ${base}/sitemap.xml`,
     "",
   ].join("\n");

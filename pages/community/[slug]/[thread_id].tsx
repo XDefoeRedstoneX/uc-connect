@@ -4,6 +4,7 @@ import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import ReportButton from "@/components/ReportButton";
 import { useToast } from "@/components/ToastProvider";
+import { useConfirm } from "@/components/ConfirmProvider";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { compressAndResize } from "@/lib/compress-image";
@@ -18,8 +19,11 @@ function AuthorLink({ username, children, style }: { username?: string | null; c
   return <Link href={`/u/${username}`} style={{ textDecoration: "none", color: "inherit", ...style }}>{children}</Link>;
 }
 
-type ReplyWithAuthor = ForumReply & { profiles?: UserProfile | null };
-type ThreadWithAuthor = ForumThread & { profiles?: UserProfile | null };
+// SSR only selects id/full_name/avatar_url/username from profiles; widening to
+// the full UserProfile lies about what's available on the client.
+type ProfileSummary = Pick<UserProfile, "id" | "full_name" | "avatar_url" | "username">;
+type ReplyWithAuthor = ForumReply & { profiles?: ProfileSummary | null };
+type ThreadWithAuthor = ForumThread & { profiles?: ProfileSummary | null };
 
 type Props = {
   category: ForumCategory | null;
@@ -56,6 +60,7 @@ export default function ThreadPage({ category, thread: initialThread, replies: i
   const [saving, setSaving] = useState(false);
 
   const { showToast } = useToast();
+  const confirm = useConfirm();
   const imageRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -85,7 +90,13 @@ export default function ThreadPage({ category, thread: initialThread, replies: i
 
   async function deleteThread() {
     if (!thread) return;
-    if (!confirm("Hapus thread ini? Semua balasan akan ikut dihapus.")) return;
+    const ok = await confirm({
+      title: "Hapus thread ini?",
+      message: "Semua balasan akan ikut dihapus. Tindakan ini tidak bisa dibatalkan.",
+      confirmLabel: "Hapus",
+      destructive: true,
+    });
+    if (!ok) return;
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
     const { error } = await supabase.from("forum_threads").delete().eq("id", thread.id);
@@ -113,7 +124,8 @@ export default function ThreadPage({ category, thread: initialThread, replies: i
   }
 
   async function deleteReply(replyId: string) {
-    if (!confirm("Hapus balasan ini?")) return;
+    const ok = await confirm({ title: "Hapus balasan ini?", confirmLabel: "Hapus", destructive: true });
+    if (!ok) return;
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
     const { error } = await supabase.from("forum_replies").delete().eq("id", replyId);
@@ -186,7 +198,7 @@ export default function ThreadPage({ category, thread: initialThread, replies: i
     const { data: userData } = await supabase.auth.getUser();
     const user = userData?.user;
     if (!user) {
-      window.location.href = `/auth/login?redirect=/community/${categorySlug}/${threadId}`;
+      window.location.href = `/auth/login?next=${encodeURIComponent(`/community/${categorySlug}/${threadId}`)}`;
       setSubmitting(false);
       return;
     }
@@ -294,10 +306,12 @@ export default function ThreadPage({ category, thread: initialThread, replies: i
                     ✏️ Edit
                   </button>
                 )}
-                <button type="button" style={{ fontSize: "0.78rem", padding: "0.25rem 0.6rem", background: "var(--error)" }}
-                  onClick={() => void deleteThread()}>
-                  🗑 Hapus
-                </button>
+                {isWithinEditWindow(thread.created_at) && (
+                  <button type="button" style={{ fontSize: "0.78rem", padding: "0.25rem 0.6rem", background: "var(--error)" }}
+                    onClick={() => void deleteThread()}>
+                    🗑 Hapus
+                  </button>
+                )}
               </>
             )}
             {currentUserId && currentUserId !== thread.author_id && (
@@ -392,10 +406,12 @@ export default function ThreadPage({ category, thread: initialThread, replies: i
                         ✏️ Edit
                       </button>
                     )}
-                    <button type="button" style={{ fontSize: "0.72rem", padding: "0.2rem 0.5rem", background: "var(--error)" }}
-                      onClick={() => void deleteReply(r.id)}>
-                      🗑 Hapus
-                    </button>
+                    {isWithinEditWindow(r.created_at) && (
+                      <button type="button" style={{ fontSize: "0.72rem", padding: "0.2rem 0.5rem", background: "var(--error)" }}
+                        onClick={() => void deleteReply(r.id)}>
+                        🗑 Hapus
+                      </button>
+                    )}
                   </>
                 )}
                 {currentUserId && currentUserId !== r.author_id && (
@@ -473,12 +489,12 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
 
   const replyProfileMap = new Map((replyProfiles ?? []).map((profile) => [profile.id, profile]));
   const threadWithAuthor: ThreadWithAuthor = {
-    ...(threadData as any),
-    profiles: (threadAuthor as UserProfile | null) ?? null,
+    ...(threadData as unknown as ForumThread),
+    profiles: (threadAuthor as ProfileSummary | null) ?? null,
   };
   const repliesWithAuthors: ReplyWithAuthor[] = (repliesData ?? []).map((reply) => ({
-    ...(reply as any),
-    profiles: replyProfileMap.get(reply.author_id) ?? null,
+    ...(reply as unknown as ForumReply),
+    profiles: (replyProfileMap.get(reply.author_id) as ProfileSummary | undefined) ?? null,
   }));
 
   return {

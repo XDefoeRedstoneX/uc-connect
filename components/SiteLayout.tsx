@@ -2,9 +2,9 @@
 
 import Head from "next/head";
 import Link from "next/link";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useState } from "react";
 import { useLanguage } from "@/lib/language-context";
-import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/router";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -18,41 +18,29 @@ type Props = {
 export default function SiteLayout({ title, children, description, ogImage }: Props) {
   const { t } = useLanguage();
   const router = useRouter();
-  const [isVendor, setIsVendor] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // Role comes from the app-level AuthProvider (fetched once per session), so
+  // navigating between pages no longer re-hits /api/profile on every mount.
+  const { isLoggedIn, role } = useAuth();
+  const isVendor = role === "vendor";
+  const isAdmin = role === "admin";
   const [menuOpen, setMenuOpen] = useState(false);
 
-  useEffect(() => {
-    const load = async () => {
-      const supabase = getSupabaseBrowserClient();
-      if (!supabase) return;
-
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-      if (!token) return;
-
-      setIsLoggedIn(true);
-
-      try {
-        const resp = await fetch('/api/profile', { headers: { Authorization: `Bearer ${token}` } });
-        const json = await resp.json();
-        if (resp.ok && json.profile) {
-          if (json.profile.role === 'vendor') setIsVendor(true);
-          if (json.profile.role === 'admin') setIsAdmin(true);
-        }
-      } catch {
-        // ignore
-      }
-    };
-
-    void load();
-  }, []);
+  // Mark the active top-level section so the current page is indicated.
+  const isActive = (href: string) =>
+    href === "/" ? router.pathname === "/" : router.pathname.startsWith(href);
 
   const navItems = [
     { href: "/", label: t("nav.home") },
     { href: "/community", label: "Komunitas" },
     { href: "/directory/explore", label: t("nav.explore") },
+  ];
+
+  // Account sub-pages — surfaced in the mobile drawer so favorites / reviews /
+  // threads aren't reachable only by typing the URL.
+  const accountItems = [
+    { href: "/customer/favorites", label: "❤️ Favorit Saya" },
+    { href: "/customer/reviews", label: "⭐ Ulasan Saya" },
+    { href: "/customer/threads", label: "💬 Diskusi Saya" },
   ];
 
   return (
@@ -82,7 +70,13 @@ export default function SiteLayout({ title, children, description, ogImage }: Pr
             {/* Desktop nav */}
             <nav className="topnav" aria-label="Primary navigation" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               {navItems.map((item) => (
-                <Link key={item.href} href={item.href} className="nav-link">
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="nav-link"
+                  aria-current={isActive(item.href) ? "page" : undefined}
+                  style={isActive(item.href) ? { color: "var(--pacific-dark)", fontWeight: 700 } : undefined}
+                >
                   {item.label}
                 </Link>
               ))}
@@ -185,6 +179,17 @@ export default function SiteLayout({ title, children, description, ogImage }: Pr
                   <Link href="/customer/profile" className="nav-link" onClick={() => setMenuOpen(false)} style={{ color: 'var(--pacific-dark)', background: 'var(--pacific-soft)' }}>
                     👤 Profil Saya
                   </Link>
+                  {accountItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className="nav-link"
+                      onClick={() => setMenuOpen(false)}
+                      style={{ color: 'var(--text)', background: 'var(--bg)' }}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
                 </>
               ) : (
                 <Link href="/auth/login" className="nav-link" onClick={() => setMenuOpen(false)} style={{ color: 'var(--pacific-dark)', background: 'var(--pacific-soft)' }}>

@@ -1,4 +1,5 @@
 import { GetServerSideProps } from "next";
+import Head from "next/head";
 import Link from "next/link";
 import SiteLayout from "@/components/SiteLayout";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
@@ -39,6 +40,11 @@ export default function PublicProfilePage({ profile, vendor, threads }: Props) {
 
   return (
     <SiteLayout title={`${displayName} | UC Connect`}>
+      {/* Personal data (name/major/year) — keep crawlers out even if a stray
+          link gets indexed; pairs with the robots.txt /u/ disallow. */}
+      <Head>
+        <meta name="robots" content="noindex, nofollow" />
+      </Head>
       <section className="card" style={{ maxWidth: "760px", margin: "0 auto" }}>
         <div style={{ display: "flex", gap: "1rem", alignItems: "center", flexWrap: "wrap" }}>
           <div style={{ width: 72, height: 72, borderRadius: "50%", background: "var(--gradient-main)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: "1.5rem", overflow: "hidden", flexShrink: 0 }}>

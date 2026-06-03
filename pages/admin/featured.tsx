@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import AdminNav from "@/components/admin/AdminNav";
+import { useConfirm } from "@/components/ConfirmProvider";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type Slot = {
@@ -20,6 +21,7 @@ const rupiah = (n: number) => `Rp${n.toLocaleString("id-ID")}`;
 
 export default function AdminFeaturedPage() {
   const router = useRouter();
+  const confirm = useConfirm();
   const [token, setToken] = useState<string | null>(null);
   const [slots, setSlots] = useState<Slot[]>([]);
   const [bids, setBids] = useState<Bid[]>([]);
@@ -54,7 +56,12 @@ export default function AdminFeaturedPage() {
 
   async function runSettlement() {
     if (!token) return;
-    if (!confirm("Jalankan settlement untuk round besok sekarang? Saldo pemenang akan dipotong.")) return;
+    const ok = await confirm({
+      title: "Jalankan settlement sekarang?",
+      message: "Round besok akan diselesaikan dan saldo pemenang dipotong. Settlement bersifat idempoten per round.",
+      confirmLabel: "Jalankan",
+    });
+    if (!ok) return;
     setSettling(true);
     setMsg(null);
     const res = await fetch("/api/admin/featured/settle", {

@@ -18,16 +18,24 @@ type AdminReport = {
   resolved_at: string | null;
   created_at: string;
   reporter: { full_name: string | null; username: string | null } | null;
+  target_url: string | null;
+  target_preview: string | null;
+  target_exists: boolean;
 };
 
-function targetLink(r: AdminReport) {
-  switch (r.target_type) {
-    case "vendor": return { href: `/directory/vendor/${r.target_id}`, label: "🏪 Vendor" };
-    case "review": return { href: `/admin/reviews`, label: "⭐ Ulasan" };
-    case "thread": return { href: `/admin/forum`, label: "📝 Thread" };
-    case "reply":  return { href: `/admin/forum`, label: "💬 Balasan" };
-  }
-}
+const TARGET_LABEL: Record<ReportTargetType, string> = {
+  vendor: "🏪 Vendor",
+  review: "⭐ Ulasan",
+  thread: "📝 Thread",
+  reply: "💬 Balasan",
+};
+
+const MODERATION_FALLBACK: Record<ReportTargetType, string> = {
+  vendor: "/admin/vendors",
+  review: "/admin/reviews",
+  thread: "/admin/forum",
+  reply: "/admin/forum?type=replies",
+};
 
 export default function AdminReportsPage() {
   const router = useRouter();
@@ -68,7 +76,17 @@ export default function AdminReportsPage() {
       body: JSON.stringify({ report_id: reportId, status: newStatus }),
     });
     if (res.ok) {
-      setReports((prev) => prev.filter((r) => r.id !== reportId || status === "all"));
+      // On the "all" tab the row stays but flips status; on filtered tabs it
+      // leaves the current view. Update locally so the screen stays in sync.
+      setReports((prev) =>
+        status === "all"
+          ? prev.map((r) =>
+              r.id === reportId
+                ? { ...r, status: newStatus, resolved_at: new Date().toISOString() }
+                : r,
+            )
+          : prev.filter((r) => r.id !== reportId),
+      );
     }
   }
 
@@ -100,11 +118,17 @@ export default function AdminReportsPage() {
         ) : (
           <div style={{ display: "grid", gap: "0.6rem" }}>
             {reports.map((r) => {
-              const link = targetLink(r);
+              const label = TARGET_LABEL[r.target_type];
+              const href = r.target_url ?? MODERATION_FALLBACK[r.target_type];
               return (
                 <div key={r.id} className="product-row" style={{ alignItems: "flex-start", flexDirection: "column", gap: "0.5rem" }}>
                   <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "baseline", width: "100%" }}>
-                    <Link href={link.href} style={{ fontWeight: 700, color: "var(--pacific)" }}>{link.label}</Link>
+                    <Link href={href} style={{ fontWeight: 700, color: "var(--pacific)" }}>{label}</Link>
+                    {!r.target_exists && (
+                      <span className="badge" style={{ background: "#fee2e2", color: "#b91c1c", fontSize: "0.7rem" }}>
+                        konten dihapus
+                      </span>
+                    )}
                     <span className="muted" style={{ fontSize: "0.78rem" }}>
                       oleh {r.reporter?.full_name ?? r.reporter?.username ?? "Pengguna"}
                     </span>
@@ -119,8 +143,12 @@ export default function AdminReportsPage() {
                       {r.status === "open" ? "Terbuka" : r.status === "resolved" ? "Selesai" : "Ditolak"}
                     </span>
                   </div>
+                  {r.target_preview && (
+                    <p className="muted" style={{ margin: 0, fontSize: "0.82rem", fontStyle: "italic" }}>
+                      &ldquo;{r.target_preview}&rdquo;
+                    </p>
+                  )}
                   <p style={{ margin: 0, fontSize: "0.88rem", lineHeight: 1.5 }}>{r.reason}</p>
-                  <p className="muted" style={{ margin: 0, fontSize: "0.72rem" }}>target_id: <code>{r.target_id}</code></p>
                   {r.status === "open" && (
                     <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.25rem" }}>
                       <button type="button" onClick={() => void setReportStatus(r.id, "resolved")}

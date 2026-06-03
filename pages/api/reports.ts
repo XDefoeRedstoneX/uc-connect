@@ -37,18 +37,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: "Alasan minimal 5 karakter" });
   }
 
-  // Reject duplicate open reports from the same user for the same target.
+  // Verify the target row actually exists — otherwise admins get reports
+  // pointing at deleted/never-existing rows that they can't action.
+  const targetTable: Record<ReportTargetType, string> = {
+    vendor: "vendors",
+    review: "vendor_reviews",
+    thread: "forum_threads",
+    reply: "forum_replies",
+  };
+  const { data: targetRow, error: targetErr } = await supabase
+    .from(targetTable[target_type as ReportTargetType])
+    .select("id")
+    .eq("id", target_id)
+    .maybeSingle();
+  if (targetErr) {
+    console.error("[api/reports] target lookup", targetErr);
+    return sendInternalServerError(res, "Gagal memverifikasi target laporan");
+  }
+  if (!targetRow) {
+    return res.status(404).json({ error: "Konten yang dilaporkan tidak ditemukan" });
+  }
+
+  // Dedup across ALL statuses (open/resolved/dismissed) within the last 30
+  // days, so a resolved/dismissed report can't be used to spam a re-report.
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const { data: existing } = await supabase
     .from("reports")
     .select("id")
     .eq("reporter_id", userId)
     .eq("target_type", target_type)
     .eq("target_id", target_id)
-    .eq("status", "open")
+    .gte("created_at", thirtyDaysAgo)
     .maybeSingle();
 
   if (existing) {
-    return res.status(409).json({ error: "Kamu sudah melaporkan konten ini" });
+    return res.status(409).json({ error: "Kamu sudah melaporkan konten ini dalam 30 hari terakhir." });
   }
 
   const { data, error } = await supabase

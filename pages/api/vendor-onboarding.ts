@@ -37,8 +37,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const category = typeof body.category === "string" ? body.category.trim() : "";
   const description = typeof body.description === "string" ? body.description.trim() : "";
   const salesSystem = typeof body.salesSystem === "string" ? body.salesSystem.trim() : "";
+  // Only accept known delivery-method keys — never persist arbitrary client
+  // strings into vendors.delivery_methods (surfaced on the public profile).
+  const ALLOWED_DELIVERY = new Set(["cod-kampus", "digital-delivery", "lainnya"]);
   const deliveryMethod = Array.isArray(body.deliveryMethod)
-    ? body.deliveryMethod.filter((item): item is string => typeof item === "string")
+    ? body.deliveryMethod.filter(
+        (item): item is string => typeof item === "string" && ALLOWED_DELIVERY.has(item),
+      )
     : [];
   const ktmUrl = typeof body.ktmUrl === "string" ? body.ktmUrl.trim() : null;
   const major = typeof body.major === "string" ? body.major.trim() : "";
@@ -70,13 +75,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const existingVendorResult = await supabase
     .from("vendors")
-    .select("id,slug")
+    .select("id,slug,is_verified")
     .eq("owner_id", userId)
     .maybeSingle();
 
   if (existingVendorResult.error) {
     console.error("[api/vendor-onboarding] failed to find existing vendor", existingVendorResult.error);
     return sendInternalServerError(res, "Unable to save vendor data");
+  }
+
+  // Re-running onboarding for an already-approved vendor would reset
+  // is_verified=false and null out tagline/city/website/hero (which they set
+  // in the dashboard, not here). Block it — verified vendors edit via the
+  // dashboard. Re-submitting a still-pending application is allowed.
+  if (existingVendorResult.data?.is_verified) {
+    return res.status(409).json({
+      error: "Vendor kamu sudah terverifikasi. Edit profil lewat dashboard, bukan onboarding ulang.",
+    });
   }
 
   const DELIVERY_LABELS: Record<string, string> = {
@@ -88,27 +103,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     .map((item) => DELIVERY_LABELS[item] ?? item)
     .join(", ");
 
-  const vendorPayload = {
-    owner_id: userId,
-    slug: existingVendorResult.data?.slug ?? `${slugify(businessName)}-${userId.slice(0, 8)}`,
+  // Fields the onboarding form actually owns. On re-submit we update only
+  // these and leave dashboard-owned fields (tagline/city/website/hero) alone,
+  // so a pending vendor re-applying doesn't wipe what they set in the dashboard.
+  const onboardingFields = {
     name: businessName,
-    tagline: null,            // vendor sets this themselves in dashboard
     category,
-    city: null,               // vendor sets this themselves in dashboard
     description,
     whatsapp: whatsappNumber,
     university,
     sales_system: salesSystem,
     delivery_methods: deliveryText,
     ktm_url: ktmUrl,
-    website_url: null,
-    hero_image_url: null,
     is_verified: false,
   };
 
   const vendorResult = existingVendorResult.data?.id
-    ? await supabase.from("vendors").update(vendorPayload).eq("id", existingVendorResult.data.id).select("id").single()
-    : await supabase.from("vendors").insert(vendorPayload).select("id").single();
+    ? await supabase
+        .from("vendors")
+        .update(onboardingFields)
+        .eq("id", existingVendorResult.data.id)
+        .select("id")
+        .single()
+    : await supabase
+        .from("vendors")
+        .insert({
+          owner_id: userId,
+          slug: `${slugify(businessName)}-${userId.slice(0, 8)}`,
+          tagline: null,
+          city: null,
+          website_url: null,
+          hero_image_url: null,
+          ...onboardingFields,
+        })
+        .select("id")
+        .single();
 
   if (vendorResult.error) {
     console.error("[api/vendor-onboarding] failed to save vendor", vendorResult.error);

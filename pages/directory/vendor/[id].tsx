@@ -8,6 +8,7 @@ import ReportButton from "@/components/ReportButton";
 import { useToast } from "@/components/ToastProvider";
 import { useLanguage } from "@/lib/language-context";
 import { toPublicPageErrorMessage } from "@/lib/public-errors";
+import { serializeJsonLd } from "@/lib/json-ld";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { VendorDetail, VendorReview } from "@/types/domain";
 
@@ -160,7 +161,7 @@ export default function VendorDetailPage() {
   return (
     <SiteLayout title={`${vendor.name} | UC Connect`}>
       <Head>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
       </Head>
       {/* ── Hero banner ── */}
       <section className="detail-hero" aria-labelledby="vendor-name-title">
@@ -450,7 +451,7 @@ export default function VendorDetailPage() {
           <p style={{ color: "var(--muted)", fontSize: "0.88rem", marginBottom: "1rem" }}>✅ Kamu sudah memberikan ulasan untuk vendor ini.</p>
         ) : !token ? (
           <p style={{ color: "var(--muted)", fontSize: "0.88rem", marginBottom: "1rem" }}>
-            <a href={`/auth/login?redirect=/directory/vendor/${vendor.id}`} style={{ color: "var(--pacific)" }}>Login</a> untuk memberikan ulasan.
+            <a href={`/auth/login?next=${encodeURIComponent(`/directory/vendor/${vendor.id}`)}`} style={{ color: "var(--pacific)" }}>Login</a> untuk memberikan ulasan.
           </p>
         ) : null}
 

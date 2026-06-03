@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import AdminNav from "@/components/admin/AdminNav";
+import { useConfirm } from "@/components/ConfirmProvider";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type ForumThread = {
@@ -19,6 +20,7 @@ type ForumReply = {
 
 export default function AdminForumPage() {
   const router = useRouter();
+  const confirm = useConfirm();
   const [token, setToken] = useState<string | null>(null);
   const [tab, setTab] = useState<"threads" | "replies">("threads");
   const [threads, setThreads] = useState<ForumThread[]>([]);
@@ -45,7 +47,10 @@ export default function AdminForumPage() {
       const tok = sd.session?.access_token;
       if (!tok) { void router.replace("/auth/login"); return; }
       setToken(tok);
-      await load(tok, tab);
+      // Allow deep-linking from the dashboard, e.g. /admin/forum?type=replies.
+      const initialTab = router.query.type === "replies" ? "replies" : "threads";
+      if (initialTab !== tab) setTab(initialTab);
+      await load(tok, initialTab);
     };
     void init();
   }, [router]);
@@ -53,7 +58,13 @@ export default function AdminForumPage() {
   useEffect(() => { if (token) void load(token, tab); }, [tab]);
 
   async function remove(type: "thread" | "reply", id: string) {
-    if (!token || !confirm(`Hapus ${type === "thread" ? "thread" : "balasan"} ini?`)) return;
+    if (!token) return;
+    const ok = await confirm({
+      title: `Hapus ${type === "thread" ? "thread" : "balasan"} ini?`,
+      confirmLabel: "Hapus",
+      destructive: true,
+    });
+    if (!ok) return;
     const res = await fetch("/api/admin/forum", {
       method: "DELETE",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },

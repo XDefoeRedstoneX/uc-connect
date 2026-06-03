@@ -1,6 +1,7 @@
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { LanguageProvider } from "@/lib/language-context";
+import { AuthProvider } from "@/lib/auth-context";
 import ToastProvider from "@/components/ToastProvider";
 import { Plus_Jakarta_Sans, Sora } from "next/font/google";
 

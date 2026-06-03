@@ -34,11 +34,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { review_id } = req.body as { review_id?: string };
     if (!review_id) return res.status(400).json({ error: "review_id required" });
 
+    // Fire content_removed notification from the API (not via DB trigger) so
+    // the path is the same whether the admin acts through service-role or via
+    // the browser. Skip when the author is the acting admin (self-delete).
+    const { data: existing } = await supabase
+      .from("vendor_reviews")
+      .select("user_id,content")
+      .eq("id", review_id)
+      .maybeSingle();
+
     const { error } = await supabase.from("vendor_reviews").delete().eq("id", review_id);
     if (error) {
       console.error("[api/admin/reviews DELETE]", error);
       return sendInternalServerError(res, "Failed to delete review");
     }
+
+    if (existing?.user_id && existing.user_id !== ctx.userId) {
+      await supabase.from("notifications").insert({
+        user_id: existing.user_id,
+        type: "content_removed",
+        payload: { target_type: "review", preview: (existing.content ?? "").slice(0, 140) },
+      });
+    }
+
     return res.status(200).json({ success: true });
   }
 

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import AdminNav from "@/components/admin/AdminNav";
+import { useToast } from "@/components/ToastProvider";
+import { useConfirm } from "@/components/ConfirmProvider";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type AdminVendor = {
@@ -12,13 +14,24 @@ type AdminVendor = {
   category: string | null; city: string | null; whatsapp: string | null;
   is_verified: boolean; created_at: string; owner_id: string | null;
   university: string | null; ktm_url: string | null;
-  profiles: { full_name: string | null; email: string | null } | null;
+  owner_email: string | null;
+  profiles: { full_name: string | null; username: string | null } | null;
 };
 
 export default function AdminVendorsPage() {
   const router = useRouter();
+  const { showToast } = useToast();
+  const confirm = useConfirm();
   const [token, setToken] = useState<string | null>(null);
   const [filter, setFilter] = useState<"pending" | "verified" | "all">("pending");
+
+  // Sync the filter from the URL once router is ready, so deep-links from the
+  // admin dashboard (e.g. /admin/vendors?status=verified) land on the right tab.
+  useEffect(() => {
+    if (!router.isReady) return;
+    const q = router.query.status;
+    if (q === "verified" || q === "all" || q === "pending") setFilter(q);
+  }, [router.isReady, router.query.status]);
   const [vendors, setVendors] = useState<AdminVendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState<string | null>(null);
@@ -51,12 +64,20 @@ export default function AdminVendorsPage() {
     const res = await fetch(`/api/admin/vendors/ktm?vendor_id=${vendorId}`, { headers: { Authorization: `Bearer ${token}` } });
     const j = await res.json().catch(() => ({}));
     if (res.ok && j.url) window.open(j.url, "_blank", "noopener,noreferrer");
-    else alert(j.error ?? "Gagal membuka KTM");
+    else showToast(j.error ?? "Gagal membuka KTM", "error");
   }
 
   async function act(vendorId: string, action: "approve" | "reject") {
     if (!token) return;
-    if (action === "reject" && !confirm("Yakin ingin menolak dan menghapus vendor ini?")) return;
+    if (action === "reject") {
+      const ok = await confirm({
+        title: "Tolak & hapus vendor ini?",
+        message: "Vendor akan dihapus dan role pemiliknya dikembalikan ke customer.",
+        confirmLabel: "Tolak Vendor",
+        destructive: true,
+      });
+      if (!ok) return;
+    }
     setActionId(vendorId);
     const res = await fetch("/api/admin/vendors", {
       method: "PATCH",
@@ -118,7 +139,9 @@ export default function AdminVendorsPage() {
                     {v.whatsapp && <span style={{ color: "var(--muted)" }}>📱 {v.whatsapp}</span>}
                   </div>
                   <p style={{ fontSize: "0.78rem", color: "var(--muted)", marginTop: "0.35rem" }}>
-                    Owner: {v.profiles?.full_name ?? v.profiles?.email ?? "—"} · {new Date(v.created_at).toLocaleDateString("id-ID")}
+                    Owner: {v.profiles?.full_name ?? v.profiles?.username ?? "—"}
+                    {v.owner_email ? ` · ${v.owner_email}` : ""}
+                    {" · "}{new Date(v.created_at).toLocaleDateString("id-ID")}
                   </p>
                 </div>
                 <div style={{ display: "flex", gap: "0.4rem", flexShrink: 0 }}>

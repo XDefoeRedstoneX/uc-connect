@@ -67,17 +67,22 @@ export default function AdminDashboard() {
       {stats && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}>
           {[
-            { label: "Total Users", value: stats.totalUsers, icon: "👥" },
-            { label: "Total Vendors", value: stats.totalVendors, icon: "🏪" },
-            { label: "Pending Verifikasi", value: stats.pendingVendors, icon: "⏳", highlight: stats.pendingVendors > 0 },
-            { label: "Forum Threads", value: stats.totalThreads, icon: "📝" },
-            { label: "Forum Replies", value: stats.totalReplies, icon: "💬" },
+            { label: "Total Users", value: stats.totalUsers, icon: "👥", href: "/admin/users" },
+            { label: "Total Vendors", value: stats.totalVendors, icon: "🏪", href: "/admin/vendors?status=verified" },
+            { label: "Pending Verifikasi", value: stats.pendingVendors, icon: "⏳", href: "/admin/vendors?status=pending", highlight: stats.pendingVendors > 0 },
+            { label: "Forum Threads", value: stats.totalThreads, icon: "📝", href: "/admin/forum" },
+            { label: "Forum Replies", value: stats.totalReplies, icon: "💬", href: "/admin/forum?type=replies" },
           ].map(s => (
-            <div key={s.label} className="dash-stat" style={s.highlight ? { border: "2px solid var(--orange)", background: "var(--orange-soft)" } : {}}>
+            <Link
+              key={s.label}
+              href={s.href}
+              className="dash-stat"
+              style={{ textDecoration: "none", color: "inherit", display: "block", ...(s.highlight ? { border: "2px solid var(--orange)", background: "var(--orange-soft)" } : {}) }}
+            >
               <p style={{ fontSize: "1.5rem", margin: "0 0 0.25rem" }}>{s.icon}</p>
               <p className="dash-stat-value">{s.value}</p>
               <p className="dash-stat-label">{s.label}</p>
-            </div>
+            </Link>
           ))}
         </div>
       )}

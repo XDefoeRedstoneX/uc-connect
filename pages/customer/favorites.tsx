@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
-import LoadingScreen from "@/components/LoadingScreen";
+import AccountNav from "@/components/AccountNav";
+import SkeletonList from "@/components/SkeletonList";
 import VendorCard from "@/components/VendorCard";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { Vendor } from "@/types/domain";
@@ -65,12 +66,14 @@ export default function FavoritesPage() {
 
   if (loading) return (
     <SiteLayout title="Favorit Saya | UC Connect">
-      <LoadingScreen message="Memuat favorit..." />
+      <AccountNav current="favorites" />
+      <section className="card compact-top"><SkeletonList rows={3} /></section>
     </SiteLayout>
   );
 
   return (
     <SiteLayout title="Favorit Saya | UC Connect" description="Lihat vendor yang telah Anda favoritkan di UC Connect.">
+      <AccountNav current="favorites" />
       <section className="hero bubble-section">
         <h1 style={{ position: "relative", zIndex: 1 }}>❤️ Favorit Saya</h1>
         <p style={{ color: "var(--muted)", position: "relative", zIndex: 1 }}>

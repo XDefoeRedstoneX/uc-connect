@@ -132,6 +132,7 @@ export type Report = {
 
 export type NotificationType =
   | "review_received"
+  | "review_replied"
   | "forum_reply"
   | "vendor_approved"
   | "content_removed"

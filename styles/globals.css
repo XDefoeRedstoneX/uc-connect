@@ -504,6 +504,15 @@ button:disabled,
   box-shadow: none;
 }
 
+/* Keyboard focus ring for buttons/links — keeps focus visible without
+   showing an outline on mouse clicks. */
+button:focus-visible,
+.btn:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--pacific);
+  outline-offset: 2px;
+}
+
 .row-gap {
   display: flex;
   flex-wrap: wrap;
@@ -1352,15 +1361,36 @@ button:disabled,
 }
 
 /* ── Skeleton shimmer ── */
-.skeleton-shimmer {
+.skeleton-shimmer,
+.skeleton {
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
 }
 
+/* Reusable skeleton primitives for list/loading placeholders. */
+.skeleton {
+  border-radius: 8px;
+  display: block;
+}
+.skeleton-line {
+  height: 0.85rem;
+  border-radius: 6px;
+  margin: 0.35rem 0;
+}
+.skeleton-card {
+  height: 96px;
+  border-radius: var(--radius-md, 14px);
+}
+
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* ── Favorite heart ── */

@@ -73,15 +73,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .maybeSingle();
 
     if (existing) {
+      // Guard against the cron-vs-request race: if settlement flipped the row
+      // to "settled" between our existence check and this update, the .eq
+      // filter returns zero rows and we surface a 409 so the client can refresh.
       const { data: updated, error } = await supabase
         .from("featured_bids")
         .update({ amount_idr: amount, updated_at: new Date().toISOString() })
         .eq("id", existing.id)
+        .eq("status", "active")
         .select("id,vendor_id,round_date,amount_idr,status,created_at,updated_at")
-        .single();
+        .maybeSingle();
       if (error) {
         console.error("[api/featured/bids POST update]", error);
         return sendInternalServerError(res, "Gagal memperbarui bid");
+      }
+      if (!updated) {
+        return res.status(409).json({ error: "Bid sudah masuk settlement, refresh dan submit ulang" });
       }
       return res.status(200).json({ bid: updated });
     }
@@ -96,6 +103,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .select("id,vendor_id,round_date,amount_idr,status,created_at,updated_at")
       .single();
     if (error) {
+      // Partial unique index (one active bid per vendor/round): a concurrent
+      // double-submit that slipped past the existence check above lands here.
+      // Surface a clean 409 instead of a 500 so the client can just refresh.
+      if ((error as { code?: string }).code === "23505") {
+        return res.status(409).json({ error: "Kamu sudah punya bid aktif untuk round ini. Refresh halaman." });
+      }
       console.error("[api/featured/bids POST insert]", error);
       return sendInternalServerError(res, "Gagal membuat bid");
     }
@@ -104,14 +117,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === "DELETE") {
     if (!vendor) return res.status(404).json({ error: "Kamu belum punya vendor" });
-    const { error } = await supabase
+    // Same race window as POST update: a settlement that flipped the bid to
+    // "settled" between the user's intent and our DELETE means zero rows match.
+    // Surface 409 so the client knows the bid is already finalized (charge or
+    // refund is in the wallet ledger) instead of pretending the withdrawal worked.
+    const { data: deleted, error } = await supabase
       .from("featured_bids")
       .delete()
       .eq("vendor_id", vendor.id)
-      .eq("status", "active");
+      .eq("status", "active")
+      .select("id");
     if (error) {
       console.error("[api/featured/bids DELETE]", error);
       return sendInternalServerError(res, "Gagal menarik bid");
+    }
+    if (!deleted || deleted.length === 0) {
+      return res.status(409).json({ error: "Bid sudah masuk settlement, tidak bisa ditarik" });
     }
     return res.status(200).json({ success: true });
   }

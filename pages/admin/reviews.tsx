@@ -5,6 +5,8 @@ import Link from "next/link";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import AdminNav from "@/components/admin/AdminNav";
+import { useToast } from "@/components/ToastProvider";
+import { useConfirm } from "@/components/ConfirmProvider";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type AdminReview = {
@@ -23,6 +25,8 @@ type AdminReview = {
 
 export default function AdminReviewsPage() {
   const router = useRouter();
+  const { showToast } = useToast();
+  const confirm = useConfirm();
   const [token, setToken] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "low">("all");
   const [reviews, setReviews] = useState<AdminReview[]>([]);
@@ -53,7 +57,14 @@ export default function AdminReviewsPage() {
   }, [router, load, filter]);
 
   async function remove(reviewId: string) {
-    if (!token || !confirm("Hapus ulasan ini? Tindakan ini tidak bisa dibatalkan.")) return;
+    if (!token) return;
+    const ok = await confirm({
+      title: "Hapus ulasan ini?",
+      message: "Tindakan ini tidak bisa dibatalkan.",
+      confirmLabel: "Hapus",
+      destructive: true,
+    });
+    if (!ok) return;
     const res = await fetch("/api/admin/reviews", {
       method: "DELETE",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -61,9 +72,10 @@ export default function AdminReviewsPage() {
     });
     if (res.ok) {
       setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+      showToast("Ulasan dihapus.");
     } else {
       const j = await res.json().catch(() => ({}));
-      alert(j.error ?? "Gagal menghapus ulasan");
+      showToast(j.error ?? "Gagal menghapus ulasan", "error");
     }
   }
 

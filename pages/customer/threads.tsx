@@ -4,7 +4,8 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
-import LoadingScreen from "@/components/LoadingScreen";
+import AccountNav from "@/components/AccountNav";
+import SkeletonList from "@/components/SkeletonList";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type MyThread = {
@@ -37,10 +38,16 @@ export default function MyThreadsPage() {
     void init();
   }, [router]);
 
-  if (loading) return <SiteLayout title="Diskusi Saya | UC Connect"><LoadingScreen message="Memuat diskusi..." /></SiteLayout>;
+  if (loading) return (
+    <SiteLayout title="Diskusi Saya | UC Connect">
+      <AccountNav current="threads" />
+      <section className="card compact-top"><SkeletonList rows={3} /></section>
+    </SiteLayout>
+  );
 
   return (
     <SiteLayout title="Diskusi Saya | UC Connect">
+      <AccountNav current="threads" />
       <section className="hero bubble-section">
         <h1 style={{ position: "relative", zIndex: 1 }}>💬 Diskusi Saya</h1>
         <p style={{ color: "var(--muted)", position: "relative", zIndex: 1 }}>Thread dan balasan yang kamu buat di forum.</p>

@@ -44,7 +44,7 @@ export default function TabHours({ hours, token, onSaved }: Props) {
       </div>
 
       <p style={{ color: "var(--muted)", fontSize: "0.88rem", marginBottom: "1rem" }}>
-        Atur hari dan jam buka toko Anda. Klik "Terapkan ke Semua" untuk menyalin jam ke hari yang buka.
+        Atur hari dan jam buka toko Anda. Klik &ldquo;Terapkan ke Semua&rdquo; untuk menyalin jam ke hari yang buka.
       </p>
 
       <div style={{ display: "grid", gap: "0.75rem" }}>
