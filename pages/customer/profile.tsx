@@ -3,6 +3,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
 import SiteLayout from "@/components/SiteLayout";
+import AccountNav from "@/components/AccountNav";
 import { useLanguage } from "@/lib/language-context";
 import { toPublicPageErrorMessage } from "@/lib/public-errors";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -250,6 +251,7 @@ export default function CustomerProfilePage() {
 
   return (
     <SiteLayout title={`${t("pages.editProfile.pageTitle")} | UC Connect`}>
+      <AccountNav current="profile" />
       <div className="stack" style={{ gap: '1.25rem', maxWidth: '52rem', margin: '0 auto', marginTop: 0 }}>
         {/* Header bar */}
         <header className="profile-header">

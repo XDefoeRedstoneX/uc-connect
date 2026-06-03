@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
+import AccountNav from "@/components/AccountNav";
 import LoadingScreen from "@/components/LoadingScreen";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
@@ -41,6 +42,7 @@ export default function MyThreadsPage() {
 
   return (
     <SiteLayout title="Diskusi Saya | UC Connect">
+      <AccountNav current="threads" />
       <section className="hero bubble-section">
         <h1 style={{ position: "relative", zIndex: 1 }}>💬 Diskusi Saya</h1>
         <p style={{ color: "var(--muted)", position: "relative", zIndex: 1 }}>Thread dan balasan yang kamu buat di forum.</p>

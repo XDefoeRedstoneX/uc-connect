@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
+import AccountNav from "@/components/AccountNav";
 import LoadingScreen from "@/components/LoadingScreen";
 import { useToast } from "@/components/ToastProvider";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -59,6 +60,7 @@ export default function MyReviewsPage() {
 
   return (
     <SiteLayout title="Ulasan Saya | UC Connect">
+      <AccountNav current="reviews" />
       <section className="hero bubble-section">
         <h1 style={{ position: "relative", zIndex: 1 }}>⭐ Ulasan Saya</h1>
         <p style={{ color: "var(--muted)", position: "relative", zIndex: 1 }}>Ulasan yang kamu tulis untuk vendor.</p>

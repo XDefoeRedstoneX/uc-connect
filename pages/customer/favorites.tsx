@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
+import AccountNav from "@/components/AccountNav";
 import LoadingScreen from "@/components/LoadingScreen";
 import VendorCard from "@/components/VendorCard";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -71,6 +72,7 @@ export default function FavoritesPage() {
 
   return (
     <SiteLayout title="Favorit Saya | UC Connect" description="Lihat vendor yang telah Anda favoritkan di UC Connect.">
+      <AccountNav current="favorites" />
       <section className="hero bubble-section">
         <h1 style={{ position: "relative", zIndex: 1 }}>❤️ Favorit Saya</h1>
         <p style={{ color: "var(--muted)", position: "relative", zIndex: 1 }}>

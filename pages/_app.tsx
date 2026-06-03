@@ -1,6 +1,7 @@
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { LanguageProvider } from "@/lib/language-context";
+import { AuthProvider } from "@/lib/auth-context";
 import ToastProvider from "@/components/ToastProvider";
 import { Plus_Jakarta_Sans } from "next/font/google";
 
@@ -13,11 +14,13 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <LanguageProvider>
-      <ToastProvider>
-        <div className={plusJakartaSans.variable}>
-          <Component {...pageProps} />
-        </div>
-      </ToastProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <div className={plusJakartaSans.variable}>
+            <Component {...pageProps} />
+          </div>
+        </ToastProvider>
+      </AuthProvider>
     </LanguageProvider>
   );
 }
