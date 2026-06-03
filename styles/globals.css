@@ -110,10 +110,10 @@ img {
 .brand-mark {
   width: 2rem;
   height: 2rem;
-  border-radius: 999px;
-  border: 1px solid #c7d6f3;
-  background: #fff;
-  box-shadow: var(--shadow-sm);
+  /* The logo SVG is transparent and self-contained. Force-rendering a white
+     disc + border underneath added a visible "inner white" halo that didn't
+     match the brand mark — let the SVG breathe. */
+  background: transparent;
 }
 
 .brand-text {

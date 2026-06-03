@@ -27,7 +27,10 @@ export default function FormField({ id, label, error, helpText, type, ...props }
       <span>{label}</span>
       {isPassword ? (
         <span style={{ position: "relative", display: "block" }}>
-          <input id={id} type={effectiveType} {...props} style={{ ...props.style, paddingRight: "2.5rem" }} />
+          {/* width:100% so the input fills the wrapping <span> instead of
+              shrinking to the browser's intrinsic input width — which made the
+              password field render at ~half width on auth pages. */}
+          <input id={id} type={effectiveType} {...props} style={{ ...props.style, width: "100%", display: "block", paddingRight: "2.5rem" }} />
           <button
             type="button"
             onClick={() => setReveal((r) => !r)}

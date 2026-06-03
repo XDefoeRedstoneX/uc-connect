@@ -273,7 +273,7 @@ export default function CustomerProfilePage() {
                   {isSaving ? t("pages.editProfile.savingProfile") : t("pages.editProfile.saveBtn")}
                 </button>
                 <button type="button" className="ghost" onClick={handleCancelEdit}>
-                  {t("pages.editProfile.cancelBtn") || "Cancel"}
+                  {t("pages.editProfile.cancelBtn")}
                 </button>
               </>
             )}

@@ -201,7 +201,7 @@ create table public.notifications (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   type text not null check (type in (
-    'review_received', 'forum_reply', 'vendor_approved', 'content_removed',
+    'review_received', 'review_replied', 'forum_reply', 'vendor_approved', 'content_removed',
     'report_received', 'report_resolved',
     'bid_won', 'bid_lost', 'topup_credited'
   )),
