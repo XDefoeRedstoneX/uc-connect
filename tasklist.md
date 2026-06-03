@@ -76,3 +76,12 @@
 - [x] **Customer profile** edits major + graduation_year (`/api/profile` GET/PUT extended; `UserProfile` type updated).
 
 > ⚠️ Requires DB re-run (`schema.sql` adds the two columns).
+
+## Phase A — backend hardening — DONE
+> No DB changes. Behavior-preserving refactor of the API layer. `tsc --noEmit`,
+> `eslint`, and `next build` all EXIT:0. Addresses the project-review findings #1/#2/#5/#6.
+- [x] **`createHandler` wrapper (`lib/api-handler.ts`)** — single entry point owning method routing, auth (`none`/`user`/`admin`), optional rate limit, optional zod body validation, and a try/catch that funnels every throw to `sendInternalServerError` (structured log + `requestId`). Per-resource ownership stays in each handler by design.
+- [x] **All 32 authed/public API routes migrated** to the wrapper (only `health` + Midtrans `webhook` hand-written). Eliminated the copy-pasted `resolveAuthedUser` 503/401 dance and **all 23 `console.error`** calls in `pages/api`.
+- [x] **Server-side zod validation (`lib/validation.ts`)** — typed bodies + standardized 400s on reports/bids/topup/reviews/favorites/whatsapp-click; Bahasa messages preserved. (Endpoints with conditional/partial-update bodies keep faithful in-handler parsing.)
+- [x] **`clientIp` hardened** — prefers `x-real-ip` over the spoofable left-most `x-forwarded-for`.
+- [x] **Distributed rate limiting** — `lib/rate-limit.ts` uses **Upstash Redis** when `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` are set (hard global limit), else the in-memory fallback; a Redis failure degrades to memory, never errors. Documented in `.env.example` + `IMPLEMENTATION_GUIDE.md`.

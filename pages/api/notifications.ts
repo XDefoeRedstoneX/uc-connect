@@ -1,78 +1,60 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { resolveAuthedUser } from "@/lib/api-auth";
-import {
-  sendInternalServerError,
-  sendMethodNotAllowed,
-  sendServiceUnavailable,
-} from "@/lib/api-response";
+import { createHandler, method } from "@/lib/api-handler";
+import { sendInternalServerError } from "@/lib/api-response";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const auth = await resolveAuthedUser(req);
-  if (auth.status === 503) return sendServiceUnavailable(res);
-  if (auth.status !== 200 || !auth.supabase || !auth.userId) {
-    return res.status(auth.status).json({ error: auth.error ?? "Unauthorized" });
-  }
+export default createHandler({
+  GET: method({
+    auth: "user",
+    handler: async ({ req, supabase, userId, res }) => {
+      const onlyUnread = req.query.unread === "1";
+      const limit = Math.min(parseInt(String(req.query.limit ?? "50"), 10) || 50, 200);
 
-  const { supabase, userId } = auth;
+      let query = supabase
+        .from("notifications")
+        .select("id,user_id,type,payload,read_at,created_at")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(limit);
 
-  if (req.method === "GET") {
-    const onlyUnread = req.query.unread === "1";
-    const limit = Math.min(parseInt(String(req.query.limit ?? "50"), 10) || 50, 200);
+      if (onlyUnread) query = query.is("read_at", null);
 
-    let query = supabase
-      .from("notifications")
-      .select("id,user_id,type,payload,read_at,created_at")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(limit);
+      const { data, error } = await query;
+      if (error) return sendInternalServerError(res, "Gagal memuat notifikasi", error);
 
-    if (onlyUnread) query = query.is("read_at", null);
+      const { count: unread } = await supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .is("read_at", null);
 
-    const { data, error } = await query;
-    if (error) {
-      console.error("[api/notifications GET]", error);
-      return sendInternalServerError(res, "Gagal memuat notifikasi");
-    }
+      return res.status(200).json({ notifications: data ?? [], unread_count: unread ?? 0 });
+    },
+  }),
 
-    const { count: unread } = await supabase
-      .from("notifications")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .is("read_at", null);
+  PATCH: method({
+    auth: "user",
+    handler: async ({ supabase, userId, body, res }) => {
+      const { id, all } = (body ?? {}) as { id?: string; all?: boolean };
+      const now = new Date().toISOString();
 
-    return res.status(200).json({ notifications: data ?? [], unread_count: unread ?? 0 });
-  }
+      if (all) {
+        const { error } = await supabase
+          .from("notifications")
+          .update({ read_at: now })
+          .eq("user_id", userId)
+          .is("read_at", null);
+        if (error) return sendInternalServerError(res, "Gagal menandai notifikasi", error);
+        return res.status(200).json({ success: true });
+      }
 
-  if (req.method === "PATCH") {
-    const { id, all } = req.body as { id?: string; all?: boolean };
-    const now = new Date().toISOString();
+      if (!id) return res.status(400).json({ error: "id atau all wajib" });
 
-    if (all) {
       const { error } = await supabase
         .from("notifications")
         .update({ read_at: now })
-        .eq("user_id", userId)
-        .is("read_at", null);
-      if (error) {
-        console.error("[api/notifications PATCH all]", error);
-        return sendInternalServerError(res, "Gagal menandai notifikasi");
-      }
+        .eq("id", id)
+        .eq("user_id", userId);
+      if (error) return sendInternalServerError(res, "Gagal menandai notifikasi", error);
       return res.status(200).json({ success: true });
-    }
-
-    if (!id) return res.status(400).json({ error: "id atau all wajib" });
-
-    const { error } = await supabase
-      .from("notifications")
-      .update({ read_at: now })
-      .eq("id", id)
-      .eq("user_id", userId);
-    if (error) {
-      console.error("[api/notifications PATCH one]", error);
-      return sendInternalServerError(res, "Gagal menandai notifikasi");
-    }
-    return res.status(200).json({ success: true });
-  }
-
-  return sendMethodNotAllowed(res, "GET, PATCH");
-}
+    },
+  }),
+});

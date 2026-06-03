@@ -1,30 +1,26 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { requireAdmin } from "@/lib/api-admin";
-import { sendInternalServerError, sendMethodNotAllowed, sendServiceUnavailable } from "@/lib/api-response";
+import { createHandler, method } from "@/lib/api-handler";
+import { sendInternalServerError, sendServiceUnavailable } from "@/lib/api-response";
 import { getSupabaseServiceClient } from "@/lib/supabase-server";
 
 // Manual settlement trigger. pg_cron runs this daily; this lets an admin run a
 // round on demand (useful for demos and for recovering a missed cron run).
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST") return sendMethodNotAllowed(res, "POST");
+export default createHandler({
+  POST: method({
+    auth: "admin",
+    handler: async ({ body, res }) => {
+      // settle_featured_auction mutates featured_slots, wallet_ledger, and bid
+      // rows across owners — service-role only. Anon fallback would partial-settle.
+      const supabase = getSupabaseServiceClient();
+      if (!supabase) return sendServiceUnavailable(res);
 
-  const ctx = await requireAdmin(req, res);
-  if (!ctx) return;
+      const { round_date } = (body ?? {}) as { round_date?: string };
+      // Default to "tomorrow" — the round most bids target (round_date = current_date + 1).
+      const round = round_date ?? new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
 
-  // settle_featured_auction mutates featured_slots, wallet_ledger, and bid
-  // rows across owners — service-role only. Anon fallback would partial-settle.
-  const supabase = getSupabaseServiceClient();
-  if (!supabase) return sendServiceUnavailable(res);
+      const { data, error } = await supabase.rpc("settle_featured_auction", { p_round: round });
+      if (error) return sendInternalServerError(res, "Gagal menjalankan settlement", error);
 
-  const { round_date } = req.body as { round_date?: string };
-  // Default to "tomorrow" — the round most bids target (round_date = current_date + 1).
-  const round = round_date ?? new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
-
-  const { data, error } = await supabase.rpc("settle_featured_auction", { p_round: round });
-  if (error) {
-    console.error("[api/admin/featured/settle]", error);
-    return sendInternalServerError(res, "Gagal menjalankan settlement");
-  }
-
-  return res.status(200).json({ success: true, round_date: round, winners: data ?? 0 });
-}
+      return res.status(200).json({ success: true, round_date: round, winners: data ?? 0 });
+    },
+  }),
+});

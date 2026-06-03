@@ -1,102 +1,89 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import { resolveAuthedUser } from "@/lib/api-auth";
-import {
-  sendInternalServerError,
-  sendMethodNotAllowed,
-  sendServiceUnavailable,
-} from "@/lib/api-response";
-import { getSupabaseServerClient } from "@/lib/supabase-server";
-import { rateLimited } from "@/lib/rate-limit";
+import { createHandler, method } from "@/lib/api-handler";
+import { sendInternalServerError, sendServiceUnavailable } from "@/lib/api-response";
+import { z } from "@/lib/validation";
+import { log } from "@/lib/logger";
 
 const REVIEW_COLUMNS =
   "id,vendor_id,user_id,rating,content,image_url,vendor_reply,vendor_reply_at,created_at,profiles:user_id(full_name,avatar_url)";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const vendorId = req.query.id as string;
-  if (!vendorId) return res.status(400).json({ error: "Missing vendor id" });
+const reviewSchema = z.object({
+  rating: z.coerce
+    .number({ message: "Rating harus antara 1-5" })
+    .refine((v) => v >= 1 && v <= 5, { message: "Rating harus antara 1-5" }),
+  content: z.string().trim().optional(),
+  image_url: z.string().optional(),
+});
 
-  if (req.method === "GET") {
-    const supabase = getSupabaseServerClient();
-    if (!supabase) return sendServiceUnavailable(res);
+export default createHandler({
+  GET: method({
+    auth: "none",
+    handler: async ({ req, supabase, res }) => {
+      const vendorId = req.query.id as string;
+      if (!vendorId) return res.status(400).json({ error: "Missing vendor id" });
 
-    const { data, error } = await supabase
-      .from("vendor_reviews")
-      .select(REVIEW_COLUMNS)
-      .eq("vendor_id", vendorId)
-      .order("created_at", { ascending: false })
-      .limit(50);
+      const { data, error } = await supabase
+        .from("vendor_reviews")
+        .select(REVIEW_COLUMNS)
+        .eq("vendor_id", vendorId)
+        .order("created_at", { ascending: false })
+        .limit(50);
 
-    if (error) {
-      console.error("[api/vendor/[id]/reviews GET]", error);
-      return sendInternalServerError(res, "Failed to load reviews");
-    }
+      if (error) return sendInternalServerError(res, "Failed to load reviews", error);
+      return res.status(200).json({ reviews: data ?? [] });
+    },
+  }),
 
-    return res.status(200).json({ reviews: data ?? [] });
-  }
+  POST: method({
+    auth: "user",
+    rateLimit: { key: "review", limit: 10, windowMs: 60_000 },
+    body: reviewSchema,
+    handler: async ({ req, supabase, userId, body, res }) => {
+      const vendorId = req.query.id as string;
+      if (!vendorId) return res.status(400).json({ error: "Missing vendor id" });
 
-  if (req.method === "POST") {
-    const authContext = await resolveAuthedUser(req);
-    if (authContext.status === 503) return sendServiceUnavailable(res);
-    if (authContext.status !== 200 || !authContext.supabase || !authContext.userId) {
-      return res.status(authContext.status).json({ error: authContext.error ?? "Unauthorized" });
-    }
-
-    const { supabase, userId } = authContext;
-    if (rateLimited(res, `review:${userId}`, { limit: 10, windowMs: 60_000 })) return;
-
-    const { rating, content, image_url } = req.body as { rating?: number; content?: string; image_url?: string };
-
-    if (!rating || rating < 1 || rating > 5) {
-      return res.status(400).json({ error: "Rating harus antara 1-5" });
-    }
-
-    // Only accept image URLs that point at our own Supabase storage. If the
-    // env var is missing server-side the prefix would degenerate to a relative
-    // "/storage/..." and reject every absolute URL, silently dropping images —
-    // so require the env var explicitly and fail loud rather than mis-validate.
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    if (!supabaseUrl) {
-      console.error("[api/vendor/[id]/reviews] NEXT_PUBLIC_SUPABASE_URL missing — cannot validate image URLs");
-      return sendServiceUnavailable(res);
-    }
-    const storagePrefix = `${supabaseUrl}/storage/v1/object/public/`;
-    const cleanImageUrl =
-      typeof image_url === "string" && image_url.startsWith(storagePrefix) ? image_url : null;
-
-    const { data: vendor } = await supabase
-      .from("vendors")
-      .select("id,owner_id")
-      .eq("id", vendorId)
-      .maybeSingle();
-
-    if (!vendor) return res.status(404).json({ error: "Vendor tidak ditemukan" });
-
-    if (vendor.owner_id === userId) {
-      return res.status(403).json({ error: "Tidak bisa mereview toko sendiri" });
-    }
-
-    const { data: review, error: insertError } = await supabase
-      .from("vendor_reviews")
-      .insert({
-        vendor_id: vendorId,
-        user_id: userId,
-        rating: Math.round(rating),
-        content: content?.trim() || null,
-        image_url: cleanImageUrl,
-      })
-      .select("id,vendor_id,user_id,rating,content,image_url,vendor_reply,vendor_reply_at,created_at")
-      .single();
-
-    if (insertError) {
-      if (insertError.code === "23505") {
-        return res.status(409).json({ error: "Kamu sudah pernah memberikan ulasan untuk vendor ini" });
+      // Only accept image URLs that point at our own Supabase storage. If the
+      // env var is missing the prefix would degenerate and reject every URL —
+      // require it explicitly and fail loud rather than mis-validate.
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      if (!supabaseUrl) {
+        log.error("reviews_missing_supabase_url", { vendorId });
+        return sendServiceUnavailable(res);
       }
-      console.error("[api/vendor/[id]/reviews POST]", insertError);
-      return sendInternalServerError(res, "Failed to save review");
-    }
+      const storagePrefix = `${supabaseUrl}/storage/v1/object/public/`;
+      const cleanImageUrl =
+        typeof body.image_url === "string" && body.image_url.startsWith(storagePrefix) ? body.image_url : null;
 
-    return res.status(201).json({ review });
-  }
+      const { data: vendor } = await supabase
+        .from("vendors")
+        .select("id,owner_id")
+        .eq("id", vendorId)
+        .maybeSingle();
 
-  return sendMethodNotAllowed(res, "GET, POST");
-}
+      if (!vendor) return res.status(404).json({ error: "Vendor tidak ditemukan" });
+      if (vendor.owner_id === userId) {
+        return res.status(403).json({ error: "Tidak bisa mereview toko sendiri" });
+      }
+
+      const { data: review, error: insertError } = await supabase
+        .from("vendor_reviews")
+        .insert({
+          vendor_id: vendorId,
+          user_id: userId,
+          rating: Math.round(body.rating),
+          content: body.content?.trim() || null,
+          image_url: cleanImageUrl,
+        })
+        .select("id,vendor_id,user_id,rating,content,image_url,vendor_reply,vendor_reply_at,created_at")
+        .single();
+
+      if (insertError) {
+        if (insertError.code === "23505") {
+          return res.status(409).json({ error: "Kamu sudah pernah memberikan ulasan untuk vendor ini" });
+        }
+        return sendInternalServerError(res, "Failed to save review", insertError);
+      }
+
+      return res.status(201).json({ review });
+    },
+  }),
+});
