@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { VendorReview } from "@/types/domain";
+import { useToast } from "@/components/ToastProvider";
 
 type Props = {
   vendorId: string;
@@ -7,6 +8,7 @@ type Props = {
 };
 
 export default function TabReviews({ vendorId, token }: Props) {
+  const { showToast } = useToast();
   const [reviews, setReviews] = useState<VendorReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,8 +57,9 @@ export default function TabReviews({ vendorId, token }: Props) {
       const j = await r.json();
       setReviews((prev) => prev.map((rv) => (rv.id === reviewId ? { ...rv, ...j.review } : rv)));
       cancelReply();
+      showToast("Balasan tersimpan.");
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Gagal menyimpan balasan");
+      showToast(e instanceof Error ? e.message : "Gagal menyimpan balasan", "error");
     } finally {
       setSaving(false);
     }

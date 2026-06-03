@@ -5,7 +5,7 @@ import Link from "next/link";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import AccountNav from "@/components/AccountNav";
-import LoadingScreen from "@/components/LoadingScreen";
+import SkeletonList from "@/components/SkeletonList";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type MyThread = {
@@ -38,7 +38,12 @@ export default function MyThreadsPage() {
     void init();
   }, [router]);
 
-  if (loading) return <SiteLayout title="Diskusi Saya | UC Connect"><LoadingScreen message="Memuat diskusi..." /></SiteLayout>;
+  if (loading) return (
+    <SiteLayout title="Diskusi Saya | UC Connect">
+      <AccountNav current="threads" />
+      <section className="card compact-top"><SkeletonList rows={3} /></section>
+    </SiteLayout>
+  );
 
   return (
     <SiteLayout title="Diskusi Saya | UC Connect">

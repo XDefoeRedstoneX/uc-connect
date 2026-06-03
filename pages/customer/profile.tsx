@@ -4,6 +4,7 @@ import { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
 import SiteLayout from "@/components/SiteLayout";
 import AccountNav from "@/components/AccountNav";
+import { useToast } from "@/components/ToastProvider";
 import { useLanguage } from "@/lib/language-context";
 import { toPublicPageErrorMessage } from "@/lib/public-errors";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -449,6 +450,7 @@ export default function CustomerProfilePage() {
 
 function DangerZone() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [confirmText, setConfirmText] = useState("");
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -474,7 +476,7 @@ function DangerZone() {
       await supabase.auth.signOut();
       await router.replace("/");
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Gagal menghapus akun");
+      showToast(e instanceof Error ? e.message : "Gagal menghapus akun", "error");
       setSubmitting(false);
     }
   }

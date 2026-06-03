@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import type { VendorProfile, VendorItem } from "@/pages/vendor/dashboard";
 import { useToast } from "@/components/ToastProvider";
+import { useConfirm } from "@/components/ConfirmProvider";
 import { compressAndResize } from "@/lib/compress-image";
 
 type Props = {
@@ -48,6 +49,7 @@ export default function TabItems({ items, vendor, token, userId, onItemsChange }
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const { showToast } = useToast();
+  const confirm = useConfirm();
   const imageRef = useRef<HTMLInputElement>(null);
   const set = (k: keyof ItemForm, v: string) => setForm(f => ({ ...f, [k]: v }));
 
@@ -115,7 +117,8 @@ export default function TabItems({ items, vendor, token, userId, onItemsChange }
   }
 
   async function remove(id: string) {
-    if (!confirm("Hapus item ini?")) return;
+    const ok = await confirm({ title: "Hapus item ini?", confirmLabel: "Hapus", destructive: true });
+    if (!ok) return;
     const res = await fetch(`/api/vendor/items/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
     if (res.ok) { onItemsChange(items.filter(i => i.id !== id)); showToast("Item dihapus."); }
   }

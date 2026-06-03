@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import AccountNav from "@/components/AccountNav";
-import LoadingScreen from "@/components/LoadingScreen";
+import SkeletonList from "@/components/SkeletonList";
 import VendorCard from "@/components/VendorCard";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { Vendor } from "@/types/domain";
@@ -66,7 +66,8 @@ export default function FavoritesPage() {
 
   if (loading) return (
     <SiteLayout title="Favorit Saya | UC Connect">
-      <LoadingScreen message="Memuat favorit..." />
+      <AccountNav current="favorites" />
+      <section className="card compact-top"><SkeletonList rows={3} /></section>
     </SiteLayout>
   );
 

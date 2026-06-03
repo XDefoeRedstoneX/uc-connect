@@ -1,5 +1,5 @@
 import { GetServerSideProps } from "next";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import BottomCTA from "@/components/BottomCTA";
 import VendorCard from "@/components/VendorCard";
 import SiteLayout from "@/components/SiteLayout";
@@ -95,6 +95,21 @@ export default function ExplorePage({ initialVendors, initialFeatured, initialEr
     setFeatured(data.featured ?? []);
     setLoading(false);
   }
+
+  // Live search: debounce typing so the directory filters as you type,
+  // matching the instant category chips. Skip the first render (SSR already
+  // provided initialVendors) and let selectCategory handle category changes.
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    const id = setTimeout(() => { void loadData(q, activeCategory); }, 300);
+    return () => clearTimeout(id);
+    // Only re-run on query text changes; activeCategory is read fresh inside.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q]);
 
   function onSearch(e: FormEvent) {
     e.preventDefault();

@@ -13,20 +13,23 @@ export default function ReportButton({ targetType, targetId, size = "sm" }: Prop
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const close = () => {
     setOpen(false);
     setReason("");
     setDone(false);
+    setError(null);
   };
 
   const submit = async () => {
     setSubmitting(true);
+    setError(null);
     try {
       const supabase = getSupabaseBrowserClient();
       const token = supabase ? (await supabase.auth.getSession()).data.session?.access_token : null;
       if (!token) {
-        alert("Login dulu untuk melaporkan konten.");
+        setError("Login dulu untuk melaporkan konten.");
         setSubmitting(false);
         return;
       }
@@ -37,7 +40,7 @@ export default function ReportButton({ targetType, targetId, size = "sm" }: Prop
       });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) {
-        alert(j.error ?? "Gagal mengirim laporan");
+        setError(j.error ?? "Gagal mengirim laporan");
       } else {
         setDone(true);
       }
@@ -100,6 +103,7 @@ export default function ReportButton({ targetType, targetId, size = "sm" }: Prop
                   placeholder="Contoh: spam, kasar, menyesatkan, dll."
                   style={{ width: "100%", marginBottom: "0.75rem" }}
                 />
+                {error && <p className="err" style={{ marginBottom: "0.5rem" }}>{error}</p>}
                 <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
                   <button type="button" className="ghost" onClick={close}>Batal</button>
                   <button

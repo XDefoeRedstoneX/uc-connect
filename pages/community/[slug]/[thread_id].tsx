@@ -4,6 +4,7 @@ import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import ReportButton from "@/components/ReportButton";
 import { useToast } from "@/components/ToastProvider";
+import { useConfirm } from "@/components/ConfirmProvider";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { compressAndResize } from "@/lib/compress-image";
@@ -59,6 +60,7 @@ export default function ThreadPage({ category, thread: initialThread, replies: i
   const [saving, setSaving] = useState(false);
 
   const { showToast } = useToast();
+  const confirm = useConfirm();
   const imageRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -88,7 +90,13 @@ export default function ThreadPage({ category, thread: initialThread, replies: i
 
   async function deleteThread() {
     if (!thread) return;
-    if (!confirm("Hapus thread ini? Semua balasan akan ikut dihapus.")) return;
+    const ok = await confirm({
+      title: "Hapus thread ini?",
+      message: "Semua balasan akan ikut dihapus. Tindakan ini tidak bisa dibatalkan.",
+      confirmLabel: "Hapus",
+      destructive: true,
+    });
+    if (!ok) return;
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
     const { error } = await supabase.from("forum_threads").delete().eq("id", thread.id);
@@ -116,7 +124,8 @@ export default function ThreadPage({ category, thread: initialThread, replies: i
   }
 
   async function deleteReply(replyId: string) {
-    if (!confirm("Hapus balasan ini?")) return;
+    const ok = await confirm({ title: "Hapus balasan ini?", confirmLabel: "Hapus", destructive: true });
+    if (!ok) return;
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
     const { error } = await supabase.from("forum_replies").delete().eq("id", replyId);

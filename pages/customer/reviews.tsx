@@ -5,8 +5,9 @@ import Link from "next/link";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import AccountNav from "@/components/AccountNav";
-import LoadingScreen from "@/components/LoadingScreen";
+import SkeletonList from "@/components/SkeletonList";
 import { useToast } from "@/components/ToastProvider";
+import { useConfirm } from "@/components/ConfirmProvider";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type MyReview = {
@@ -23,6 +24,7 @@ type MyReview = {
 export default function MyReviewsPage() {
   const router = useRouter();
   const { showToast } = useToast();
+  const confirm = useConfirm();
   const [reviews, setReviews] = useState<MyReview[]>([]);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,7 +45,9 @@ export default function MyReviewsPage() {
   }, [router]);
 
   async function deleteReview(vendorId: string, reviewId: string) {
-    if (!token || !confirm("Hapus ulasan ini?")) return;
+    if (!token) return;
+    const ok = await confirm({ title: "Hapus ulasan ini?", confirmLabel: "Hapus", destructive: true });
+    if (!ok) return;
     // Reviews are deleted via the public reviews endpoint (RLS: user owns it).
     const supabase = getSupabaseBrowserClient();
     if (!supabase) return;
@@ -56,7 +60,12 @@ export default function MyReviewsPage() {
     showToast("Ulasan dihapus.");
   }
 
-  if (loading) return <SiteLayout title="Ulasan Saya | UC Connect"><LoadingScreen message="Memuat ulasan..." /></SiteLayout>;
+  if (loading) return (
+    <SiteLayout title="Ulasan Saya | UC Connect">
+      <AccountNav current="reviews" />
+      <section className="card compact-top"><SkeletonList rows={3} /></section>
+    </SiteLayout>
+  );
 
   return (
     <SiteLayout title="Ulasan Saya | UC Connect">

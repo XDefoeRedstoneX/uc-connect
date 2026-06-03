@@ -4,6 +4,8 @@ import { useRouter } from "next/router";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import AdminNav from "@/components/admin/AdminNav";
+import { useToast } from "@/components/ToastProvider";
+import { useConfirm } from "@/components/ConfirmProvider";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type AdminUser = {
@@ -20,6 +22,8 @@ const ROLE_BADGE: Record<string, { bg: string; color: string; label: string }> =
 
 export default function AdminUsersPage() {
   const router = useRouter();
+  const { showToast } = useToast();
+  const confirm = useConfirm();
   const [token, setToken] = useState<string | null>(null);
   const [myId, setMyId] = useState<string | null>(null);
   const [filter, setFilter] = useState<"" | "customer" | "vendor" | "admin">("");
@@ -67,7 +71,8 @@ export default function AdminUsersPage() {
 
   async function changeRole(userId: string, newRole: string) {
     if (!token) return;
-    if (!confirm(`Ubah role user ini menjadi ${newRole}?`)) return;
+    const ok = await confirm({ title: `Ubah role menjadi ${newRole}?`, confirmLabel: "Ubah Role" });
+    if (!ok) return;
     const res = await fetch("/api/admin/users", {
       method: "PATCH",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -81,16 +86,23 @@ export default function AdminUsersPage() {
   async function deleteUser(user: AdminUser) {
     if (!token) return;
     const name = user.full_name ?? user.username ?? "user ini";
-    if (!confirm(`Hapus akun ${name} secara permanen? Semua kontennya akan ikut terhapus.`)) return;
+    const ok = await confirm({
+      title: `Hapus akun ${name}?`,
+      message: "Akun dihapus permanen dan semua kontennya ikut terhapus. Tindakan ini tidak bisa dibatalkan.",
+      confirmLabel: "Hapus Permanen",
+      destructive: true,
+    });
+    if (!ok) return;
     const res = await fetch(`/api/admin/users/${user.id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
     if (res.ok) {
       setUsers((prev) => prev.filter((u) => u.id !== user.id));
+      showToast("Akun dihapus.");
     } else {
       const j = await res.json().catch(() => ({}));
-      alert(j.error ?? "Gagal menghapus akun");
+      showToast(j.error ?? "Gagal menghapus akun", "error");
     }
   }
 

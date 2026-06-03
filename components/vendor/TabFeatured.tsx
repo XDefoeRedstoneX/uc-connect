@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { FeaturedBid, WalletTransaction } from "@/types/domain";
+import { useConfirm } from "@/components/ConfirmProvider";
 
 type Props = {
   vendorId: string;
@@ -20,6 +21,7 @@ declare global {
 const rupiah = (n: number) => `Rp${n.toLocaleString("id-ID")}`;
 
 export default function TabFeatured({ vendorId, token }: Props) {
+  const confirm = useConfirm();
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [activeBid, setActiveBid] = useState<FeaturedBid | null>(null);
@@ -123,11 +125,18 @@ export default function TabFeatured({ vendorId, token }: Props) {
   }
 
   async function withdrawBid() {
-    if (!confirm("Tarik bid aktif kamu?")) return;
+    const ok = await confirm({ title: "Tarik bid aktif kamu?", confirmLabel: "Tarik Bid", destructive: true });
+    if (!ok) return;
     setBusy(true);
     try {
       const res = await fetch("/api/featured/bids", { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
-      if (res.ok) { setMsg("Bid ditarik."); await refresh(); }
+      if (res.ok) {
+        setMsg("Bid ditarik.");
+        await refresh();
+      } else {
+        const j = await res.json().catch(() => ({}));
+        setMsg(j.error ?? "Gagal menarik bid.");
+      }
     } finally {
       setBusy(false);
     }
