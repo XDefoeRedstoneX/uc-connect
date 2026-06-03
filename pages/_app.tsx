@@ -2,7 +2,7 @@ import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { LanguageProvider } from "@/lib/language-context";
 import ToastProvider from "@/components/ToastProvider";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Plus_Jakarta_Sans, Sora } from "next/font/google";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -10,11 +10,18 @@ const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
 });
 
+// Modern display face — used for headings & oversized numerals.
+const sora = Sora({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-sora",
+});
+
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <LanguageProvider>
       <ToastProvider>
-        <div className={plusJakartaSans.variable}>
+        <div className={`${plusJakartaSans.variable} ${sora.variable}`}>
           <Component {...pageProps} />
         </div>
       </ToastProvider>

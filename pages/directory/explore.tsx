@@ -3,6 +3,12 @@ import { FormEvent, useEffect, useState } from "react";
 import BottomCTA from "@/components/BottomCTA";
 import VendorCard from "@/components/VendorCard";
 import SiteLayout from "@/components/SiteLayout";
+import { SkeletonCard } from "@/components/LoadingSkeleton";
+import Button from "@/components/ui/Button";
+import Icon, { type IconName } from "@/components/ui/Icon";
+import SectionHeader from "@/components/ui/SectionHeader";
+import EmptyState from "@/components/ui/EmptyState";
+import Reveal from "@/components/ui/Reveal";
 import { useLanguage } from "@/lib/language-context";
 import { toPublicPageErrorMessage } from "@/lib/public-errors";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
@@ -10,14 +16,14 @@ import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { Vendor } from "@/types/domain";
 
 // Canonical category values — must match VendorOnboardingWizard.tsx and TabEditProfile.tsx
-const CATEGORIES = [
-  { label: "Semua", value: "" },
-  { label: "🍜 Makanan & Minuman", value: "Makanan & Minuman" },
-  { label: "🎨 Kreatif & Desain", value: "Kreatif & Desain" },
-  { label: "🛠 Jasa & Layanan", value: "Jasa & Layanan" },
-  { label: "👗 Fashion", value: "Fashion" },
-  { label: "📱 Elektronik", value: "Elektronik" },
-  { label: "💊 Kesehatan & Kecantikan", value: "Kesehatan & Kecantikan" },
+const CATEGORIES: { label: string; value: string; icon: IconName }[] = [
+  { label: "Semua", value: "", icon: "grid" },
+  { label: "Makanan & Minuman", value: "Makanan & Minuman", icon: "utensils" },
+  { label: "Kreatif & Desain", value: "Kreatif & Desain", icon: "palette" },
+  { label: "Jasa & Layanan", value: "Jasa & Layanan", icon: "wrench" },
+  { label: "Fashion", value: "Fashion", icon: "shirt" },
+  { label: "Elektronik", value: "Elektronik", icon: "smartphone" },
+  { label: "Kesehatan & Kecantikan", value: "Kesehatan & Kecantikan", icon: "sparkle-heart" },
 ];
 
 type Props = {
@@ -62,9 +68,10 @@ export default function ExplorePage({ initialVendors, initialFeatured, initialEr
     if (!token) return; // not logged in
     const isFav = favIds.has(vendorId);
     // Optimistic update
-    setFavIds(prev => {
+    setFavIds((prev) => {
       const next = new Set(prev);
-      if (isFav) next.delete(vendorId); else next.add(vendorId);
+      if (isFav) next.delete(vendorId);
+      else next.add(vendorId);
       return next;
     });
     await fetch("/api/favorites", {
@@ -107,63 +114,57 @@ export default function ExplorePage({ initialVendors, initialFeatured, initialEr
   }
 
   return (
-    <SiteLayout title="Jelajahi Vendor | UC Connect" description="Temukan dan jelajahi vendor bisnis mahasiswa terbaik di UC Connect.">
-      {/* ── Hero Search ── */}
-      <section className="hero bubble-section" aria-labelledby="explore-title">
-        <h1 id="explore-title" style={{ position: "relative", zIndex: 1 }}>{t("pages.explore.title")}</h1>
-        <p style={{ color: "var(--muted)", marginBottom: "1.25rem", position: "relative", zIndex: 1 }}>
+    <SiteLayout
+      title="Jelajahi Vendor | UC Connect"
+      description="Temukan dan jelajahi vendor bisnis mahasiswa terbaik di UC Connect."
+    >
+      {/* ── Search hero ── */}
+      <Reveal as="section" className="hero" aria-labelledby="explore-title" style={{ paddingBottom: "1.75rem" }}>
+        <span className="kicker" style={{ position: "relative", zIndex: 1 }}>
+          <Icon name="search" size={14} strokeWidth={2.6} />
+          Jelajahi Direktori
+        </span>
+        <h1 id="explore-title" className="display" style={{ position: "relative", zIndex: 1, fontSize: "var(--fs-h1)", margin: "0.5rem 0 0" }}>
+          {t("pages.explore.title")}
+        </h1>
+        <p style={{ color: "var(--muted)", margin: "0.6rem 0 1.4rem", position: "relative", zIndex: 1, maxWidth: "52ch" }}>
           {t("pages.explore.subtitle")}
         </p>
 
-        <form onSubmit={onSearch} aria-label="Search vendors" style={{
-          display: "flex", gap: "0.5rem", maxWidth: "36rem",
-          position: "relative", zIndex: 1,
-        }}>
+        <form onSubmit={onSearch} aria-label="Cari vendor" className="explore-search" style={{ position: "relative", zIndex: 1 }}>
+          <Icon name="search" size={18} className="search-ico" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={t("pages.explore.searchPlaceholder")}
-            style={{ flex: 1 }}
+            aria-label={t("pages.explore.searchPlaceholder")}
           />
-          <button type="submit" style={{ whiteSpace: "nowrap" }}>
+          <Button type="submit" style={{ whiteSpace: "nowrap" }}>
             {t("pages.explore.searchBtn")}
-          </button>
+          </Button>
         </form>
 
-        {/* Filter chips */}
-        <div role="group" aria-label="Filter kategori" style={{
-          display: "flex", gap: "0.5rem", flexWrap: "wrap",
-          marginTop: "1rem", position: "relative", zIndex: 1,
-        }}>
+        {/* Category pills */}
+        <div role="group" aria-label="Filter kategori" style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "1.25rem", position: "relative", zIndex: 1 }}>
           {CATEGORIES.map((cat) => (
             <button
               key={cat.value}
               type="button"
               onClick={() => selectCategory(cat.value)}
-              className="chip"
-              style={{
-                cursor: "pointer",
-                background: activeCategory === cat.value ? "var(--pacific-soft)" : "#fff",
-                borderColor: activeCategory === cat.value ? "var(--pacific)" : undefined,
-                color: activeCategory === cat.value ? "var(--pacific-dark)" : undefined,
-                fontWeight: activeCategory === cat.value ? 700 : 600,
-              }}
+              className="cat-pill"
+              aria-pressed={activeCategory === cat.value}
             >
+              <Icon name={cat.icon} size={15} strokeWidth={2.2} />
               {cat.label}
             </button>
           ))}
         </div>
-      </section>
+      </Reveal>
 
       {/* ── Sponsored row (paid featured) ── */}
       {showFeatured && (
-        <section className="card compact-top" aria-label="Sponsored vendors"
-          style={{ background: "linear-gradient(135deg, rgba(232,97,0,0.06), rgba(28,169,201,0.06))", border: "1.5px solid var(--orange-light)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap" }}>
-            <span style={{ fontSize: "1.1rem" }}>⭐</span>
-            <h2 style={{ margin: 0, fontSize: "1.1rem" }}>Vendor Sponsor</h2>
-            <span className="badge gold" style={{ fontSize: "0.72rem" }}>Bersponsor</span>
-          </div>
+        <Reveal as="section" index={1} aria-label="Vendor sponsor" style={{ marginTop: "2rem" }}>
+          <SectionHeader kicker="Bersponsor" kickerIcon="sparkles" title="Vendor Sponsor" />
           <ul className="vendor-grid vendor-grid--explore">
             {featured.map((vendor) => (
               <VendorCard
@@ -172,59 +173,64 @@ export default function ExplorePage({ initialVendors, initialFeatured, initialEr
                 meta={vendor.tagline ?? `${vendor.category ?? "Uncategorized"} · ${vendor.city ?? "Unknown city"}`}
                 href={`/directory/vendor/${vendor.id}`}
                 imageSrc={vendor.hero_image_url ?? "/images/vendor-placeholder.svg"}
-                imageAlt={`Placeholder image for ${vendor.name}`}
-                description={vendor.description ?? "No description yet."}
+                imageAlt={`Gambar untuk ${vendor.name}`}
+                description={vendor.description ?? undefined}
                 highlight
-                badges={vendor.is_verified ? [{ tone: "success" as const, text: t("pages.explore.verifiedBadge") }] : []}
+                badges={vendor.is_verified ? [{ tone: "success", text: t("pages.explore.verifiedBadge") }] : []}
                 ctaLabel={t("pages.explore.viewDetail")}
                 isFavorited={favIds.has(vendor.id)}
                 onToggleFavorite={token ? () => toggleFav(vendor.id) : undefined}
               />
             ))}
           </ul>
-        </section>
+        </Reveal>
       )}
 
       {/* ── Results ── */}
-      <section className="card compact-top" aria-label="Vendor results">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", flexWrap: "wrap", gap: "0.5rem" }}>
-          <p style={{ color: "var(--muted)", fontSize: "0.9rem", margin: 0 }}>
-            {loading ? "Mencari..." : `${vendors.length} vendor ditemukan`}
-          </p>
-        </div>
+      <section aria-label="Hasil vendor" style={{ marginTop: "2rem" }}>
+        <SectionHeader
+          kicker="Direktori"
+          kickerIcon="store"
+          title="Vendor Mahasiswa"
+          action={
+            <span style={{ color: "var(--muted)", fontSize: "0.9rem", fontWeight: 600 }}>
+              {loading ? "Mencari…" : `${vendors.length} vendor`}
+            </span>
+          }
+        />
 
         {error && <p className="err">{error}</p>}
 
-        {!loading && !error && vendors.length === 0 && (
-          <div style={{
-            textAlign: "center", padding: "3rem 1rem",
-            background: "var(--gradient-subtle)", borderRadius: "var(--radius-md)",
-          }}>
-            <p style={{ fontSize: "2.5rem", margin: "0 0 0.5rem" }}>🔍</p>
-            <p style={{ color: "var(--muted)" }}>{t("pages.explore.noResults")}</p>
-          </div>
+        {loading ? (
+          <ul className="vendor-grid vendor-grid--explore">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <li key={i}><SkeletonCard /></li>
+            ))}
+          </ul>
+        ) : !error && vendors.length === 0 ? (
+          <EmptyState icon="search" title="Tidak ada vendor yang cocok" description={t("pages.explore.noResults")} />
+        ) : (
+          <ul className="vendor-grid vendor-grid--explore">
+            {vendors.map((vendor) => (
+              <VendorCard
+                key={vendor.id}
+                title={vendor.name}
+                meta={vendor.tagline ?? `${vendor.category ?? "Uncategorized"} · ${vendor.city ?? "Unknown city"}`}
+                href={`/directory/vendor/${vendor.id}`}
+                imageSrc={vendor.hero_image_url ?? "/images/vendor-placeholder.svg"}
+                imageAlt={`Gambar untuk ${vendor.name}`}
+                description={vendor.description ?? undefined}
+                badges={[
+                  ...(vendor.is_verified ? [{ tone: "success" as const, text: t("pages.explore.verifiedBadge") }] : []),
+                  { tone: "gold" as const, text: t("pages.explore.campusBadge") },
+                ]}
+                ctaLabel={t("pages.explore.viewDetail")}
+                isFavorited={favIds.has(vendor.id)}
+                onToggleFavorite={token ? () => toggleFav(vendor.id) : undefined}
+              />
+            ))}
+          </ul>
         )}
-
-        <ul className="vendor-grid vendor-grid--explore">
-          {vendors.map((vendor) => (
-            <VendorCard
-              key={vendor.id}
-              title={vendor.name}
-              meta={vendor.tagline ?? `${vendor.category ?? "Uncategorized"} · ${vendor.city ?? "Unknown city"}`}
-              href={`/directory/vendor/${vendor.id}`}
-              imageSrc={vendor.hero_image_url ?? "/images/vendor-placeholder.svg"}
-              imageAlt={`Placeholder image for ${vendor.name}`}
-              description={vendor.description ?? "No description yet."}
-              badges={[
-                ...(vendor.is_verified ? [{ tone: "success" as const, text: t("pages.explore.verifiedBadge") }] : []),
-                { tone: "gold" as const, text: t("pages.explore.campusBadge") },
-              ]}
-              ctaLabel={t("pages.explore.viewDetail")}
-              isFavorited={favIds.has(vendor.id)}
-              onToggleFavorite={token ? () => toggleFav(vendor.id) : undefined}
-            />
-          ))}
-        </ul>
       </section>
 
       <BottomCTA />
