@@ -71,17 +71,38 @@ export default function SiteLayout({ title, children, description, ogImage }: Pr
 
             {/* Desktop nav */}
             <nav className="topnav" aria-label="Primary navigation" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="nav-link"
-                  aria-current={isActive(item.href) ? "page" : undefined}
-                  style={isActive(item.href) ? { color: "var(--pacific-dark)", fontWeight: 700 } : undefined}
-                >
-                  {item.label}
-                </Link>
-              ))}
+              {navItems.map((item) => {
+                const active = isActive(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="nav-link"
+                    aria-current={active ? "page" : undefined}
+                    // Stronger visual differentiation: the active page is a
+                    // filled pacific-soft pill with a darker text + ring;
+                    // inactive items sit on translucent white so the eye
+                    // jumps to the active one without relying on font weight.
+                    style={
+                      active
+                        ? {
+                            background: "var(--pacific-soft)",
+                            color: "var(--pacific-dark)",
+                            borderColor: "var(--pacific)",
+                            fontWeight: 700,
+                            boxShadow: "inset 0 0 0 1px rgba(28,169,201,0.25)",
+                          }
+                        : {
+                            background: "rgba(255,255,255,0.6)",
+                            color: "var(--text)",
+                            fontWeight: 600,
+                          }
+                    }
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
 
               {isVendor && (
                 <button
@@ -113,7 +134,19 @@ export default function SiteLayout({ title, children, description, ogImage }: Pr
                   </Link>
                 </>
               ) : (
-                <Link href="/auth/login" className="nav-link" style={{ background: '#fff', fontWeight: 700, color: 'var(--pacific-dark)' }}>
+                <Link
+                  href="/auth/login"
+                  className="nav-link"
+                  // Primary CTA: solid pacific fill + white text so the
+                  // sign-in entry point reads as an action, not a nav item.
+                  style={{
+                    background: 'var(--pacific)',
+                    color: '#fff',
+                    fontWeight: 700,
+                    borderColor: 'var(--pacific)',
+                    boxShadow: '0 2px 8px rgba(28,169,201,0.25)',
+                  }}
+                >
                   Masuk
                 </Link>
               )}
