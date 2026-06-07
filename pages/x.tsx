@@ -6,12 +6,24 @@ import SiteLayout from "@/components/SiteLayout";
 import FormField from "@/components/FormField";
 import LoadingScreen from "@/components/LoadingScreen";
 import EmptyState from "@/components/ui/EmptyState";
-import Icon from "@/components/ui/Icon";
+import Icon, { type IconName } from "@/components/ui/Icon";
 import Button from "@/components/ui/Button";
-import { compressAvatar } from "@/lib/compress-image";
+import { compressAvatar, compressBanner } from "@/lib/compress-image";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type TokenState = "checking" | "valid" | "invalid" | "disabled";
+
+// Canonical category list — must match VendorOnboardingWizard.tsx and the
+// explore filter chips.
+const CATEGORY_OPTIONS = [
+  "Makanan & Minuman",
+  "Jasa & Layanan",
+  "Fashion",
+  "Kreatif & Desain",
+  "Elektronik",
+  "Kesehatan & Kecantikan",
+  "Lainnya",
+] as const;
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -22,20 +34,58 @@ function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
+// Reused for both the logo and the booth photo. Self-contained file picker that
+// opens the camera or gallery (mobile) and shows a thumbnail once picked.
+function PhotoField({ label, hint, preview, icon, onFile }: {
+  label: string;
+  hint: string;
+  preview: string | null;
+  icon: IconName;
+  onFile: (file: File | null) => void;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <div>
+      <span style={{ fontWeight: 600, fontSize: "0.88rem", color: "var(--muted)" }}>{label}</span>
+      <button type="button" onClick={() => ref.current?.click()} style={{
+        marginTop: "0.4rem", width: "100%", display: "flex", alignItems: "center", gap: "0.9rem",
+        border: "1.5px dashed var(--border)", borderRadius: "var(--radius-md)", padding: "0.8rem",
+        background: "transparent", cursor: "pointer", textAlign: "left",
+      }}>
+        <span style={{
+          width: 56, height: 56, borderRadius: "var(--radius-md)", overflow: "hidden", flexShrink: 0,
+          display: "grid", placeItems: "center", background: "var(--pacific-soft, #eef6fb)", color: "var(--pacific)",
+        }}>
+          {preview
+            // eslint-disable-next-line @next/next/no-img-element
+            ? <img src={preview} alt="Pratinjau" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            : <Icon name={icon} size={22} strokeWidth={2.2} />}
+        </span>
+        <span style={{ fontSize: "0.85rem", color: "var(--muted)", fontWeight: 600 }}>
+          {preview ? "Ganti foto" : hint}
+        </span>
+      </button>
+      <input ref={ref} type="file" accept="image/*" hidden onChange={(e) => onFile(e.target.files?.[0] ?? null)} />
+    </div>
+  );
+}
+
 export default function ExpoSignupPage() {
   const router = useRouter();
-  const logoRef = useRef<HTMLInputElement>(null);
 
   const [tokenState, setTokenState] = useState<TokenState>("checking");
   const [token, setToken] = useState<string>("");
 
   const [businessName, setBusinessName] = useState("");
+  const [category, setCategory] = useState<string>("");
   const [description, setDescription] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [boothFile, setBoothFile] = useState<File | null>(null);
+  const [boothPreview, setBoothPreview] = useState<string | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,14 +110,19 @@ export default function ExpoSignupPage() {
     })();
   }, [router.isReady, router.query.t]);
 
-  async function handleLogo(file: File | null) {
+  async function pickImage(
+    file: File | null,
+    compress: (f: File) => Promise<File>,
+    setFile: (f: File | null) => void,
+    setPreview: (p: string | null) => void,
+  ) {
     if (!file) return;
     try {
-      const compressed = await compressAvatar(file);
-      setLogoFile(compressed);
-      setLogoPreview(URL.createObjectURL(compressed));
+      const compressed = await compress(file);
+      setFile(compressed);
+      setPreview(URL.createObjectURL(compressed));
     } catch {
-      setError("Gagal memproses gambar logo.");
+      setError("Gagal memproses gambar.");
     }
   }
 
@@ -75,15 +130,17 @@ export default function ExpoSignupPage() {
     e.preventDefault();
     setError(null);
 
+    if (!category) { setError("Pilih kategori usaha."); return; }
     if (password.length < 8) { setError("Kata sandi minimal 8 karakter."); return; }
     setSubmitting(true);
 
     try {
       const logoDataUrl = logoFile ? await fileToDataUrl(logoFile) : undefined;
+      const boothDataUrl = boothFile ? await fileToDataUrl(boothFile) : undefined;
       const res = await fetch("/api/expo/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ t: token, businessName, email, password, whatsapp, description, logoDataUrl }),
+        body: JSON.stringify({ t: token, businessName, category, email, password, whatsapp, description, logoDataUrl, boothDataUrl }),
       });
       const json = await res.json().catch(() => ({}));
 
@@ -150,33 +207,22 @@ export default function ExpoSignupPage() {
 
       <section className="card" style={{ maxWidth: 520, margin: "0 auto" }}>
         <form onSubmit={onSubmit} className="stack" style={{ gap: "1.1rem" }} aria-label="Form pendaftaran kilat">
-          {/* Logo */}
-          <div>
-            <span style={{ fontWeight: 600, fontSize: "0.88rem", color: "var(--muted)" }}>Logo / Foto Usaha (opsional)</span>
-            <button type="button" onClick={() => logoRef.current?.click()} style={{
-              marginTop: "0.4rem", width: "100%", display: "flex", alignItems: "center", gap: "0.9rem",
-              border: "1.5px dashed var(--border)", borderRadius: "var(--radius-md)", padding: "0.8rem",
-              background: "transparent", cursor: "pointer", textAlign: "left",
-            }}>
-              <span style={{
-                width: 56, height: 56, borderRadius: "var(--radius-md)", overflow: "hidden", flexShrink: 0,
-                display: "grid", placeItems: "center", background: "var(--pacific-soft, #eef6fb)", color: "var(--pacific)",
-              }}>
-                {logoPreview
-                  // eslint-disable-next-line @next/next/no-img-element
-                  ? <img src={logoPreview} alt="Pratinjau logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  : <Icon name="camera" size={22} strokeWidth={2.2} />}
-              </span>
-              <span style={{ fontSize: "0.85rem", color: "var(--muted)", fontWeight: 600 }}>
-                {logoFile ? "Ganti foto" : "Ambil foto / pilih dari galeri"}
-              </span>
-            </button>
-            <input ref={logoRef} type="file" accept="image/*" hidden
-              onChange={(e) => void handleLogo(e.target.files?.[0] ?? null)} />
-          </div>
+          <PhotoField label="Logo / Foto Usaha (opsional)" hint="Ambil foto / pilih dari galeri" icon="camera"
+            preview={logoPreview} onFile={(f) => void pickImage(f, compressAvatar, setLogoFile, setLogoPreview)} />
+
+          <PhotoField label="Foto Booth / Lokasi (opsional)" hint="Foto stand kamu biar gampang ditemukan" icon="map-pin"
+            preview={boothPreview} onFile={(f) => void pickImage(f, compressBanner, setBoothFile, setBoothPreview)} />
 
           <FormField id="x-name" label="Nama Usaha" value={businessName}
             onChange={(e) => setBusinessName(e.target.value)} required maxLength={120} placeholder="cth. Kopi Senja" />
+
+          <label htmlFor="x-category">
+            <span>Kategori</span>
+            <select id="x-category" value={category} onChange={(e) => setCategory(e.target.value)} required>
+              <option value="" disabled>Pilih kategori…</option>
+              {CATEGORY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </label>
 
           <label htmlFor="x-desc">
             <span>Deskripsi Singkat</span>

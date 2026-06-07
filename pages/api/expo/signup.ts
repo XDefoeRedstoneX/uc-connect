@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "@/lib/validation";
 import { createHandler, method } from "@/lib/api-handler";
 import { sendInternalServerError, sendServiceUnavailable } from "@/lib/api-response";
@@ -7,14 +8,25 @@ import { isExpoEnabled, recordExpoSignup } from "@/lib/expo-state";
 import { isValidIndonesianPhone } from "@/lib/phone";
 import { log } from "@/lib/logger";
 
-// Allow a slightly larger JSON body so a compressed (~150 KB) logo can ride
-// along as a base64 data URL. Everything else is tiny.
-export const config = { api: { bodyParser: { sizeLimit: "2mb" } } };
+// Allow a slightly larger JSON body so two compressed images (logo + booth
+// photo) can ride along as base64 data URLs. Everything else is tiny.
+export const config = { api: { bodyParser: { sizeLimit: "4mb" } } };
 
-// Defaults for fields the one-screen expo form intentionally skips — the vendor
-// polishes these later from the dashboard.
+// Canonical category list — must match VendorOnboardingWizard.tsx,
+// TabEditProfile.tsx, and the explore filter chips.
+const CATEGORY_OPTIONS = [
+  "Makanan & Minuman",
+  "Jasa & Layanan",
+  "Fashion",
+  "Kreatif & Desain",
+  "Elektronik",
+  "Kesehatan & Kecantikan",
+  "Lainnya",
+] as const;
+
+// Fields the one-screen expo form intentionally skips — polished later from the
+// dashboard. City is hardcoded since every expo vendor is in Surabaya.
 const DEFAULT_CITY = "Surabaya";
-const DEFAULT_CATEGORY = "Lainnya";
 const DEFAULT_SALES_SYSTEM = "ready-stock";
 const DEFAULT_DELIVERY = "COD Kampus";
 
@@ -22,16 +34,43 @@ function slugify(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
 }
 
-const LOGO_RE = /^data:image\/(png|jpe?g|webp);base64,/;
+const IMAGE_RE = /^data:image\/(png|jpe?g|webp);base64,/;
+
+/** Decode a base64 data URL and upload it to the public vendor-assets bucket via
+ *  the service role (the just-created user has no session yet). Best-effort:
+ *  returns null and logs on failure rather than aborting the whole signup. */
+async function uploadImage(
+  service: SupabaseClient,
+  userId: string,
+  dataUrl: string,
+  kind: "logo" | "booth",
+): Promise<string | null> {
+  const match = dataUrl.match(IMAGE_RE);
+  if (!match) return null;
+  const ext = match[1].startsWith("jp") ? "jpg" : match[1];
+  const base64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
+  const buffer = Buffer.from(base64, "base64");
+  const path = `${userId}/${kind}-${Date.now()}.${ext}`;
+  const { error } = await service.storage
+    .from("vendor-assets")
+    .upload(path, buffer, { contentType: `image/${ext === "jpg" ? "jpeg" : ext}`, upsert: true });
+  if (error) {
+    log.warn(`expo_signup_${kind}_failed`, { userId, message: error.message });
+    return null;
+  }
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/vendor-assets/${path}`;
+}
 
 const signupSchema = z.object({
   t: z.string().min(1),
   businessName: z.string().trim().min(2, "Nama bisnis minimal 2 karakter").max(120, "Nama bisnis terlalu panjang"),
+  category: z.enum(CATEGORY_OPTIONS, { message: "Pilih kategori bisnis" }),
   email: z.string().trim().email("Email tidak valid").max(200),
   password: z.string().min(8, "Kata sandi minimal 8 karakter").max(200),
   whatsapp: z.string().trim().refine(isValidIndonesianPhone, "Nomor WhatsApp tidak valid (contoh: 0812xxxxxxx)"),
   description: z.string().trim().min(10, "Deskripsi minimal 10 karakter").max(150, "Deskripsi maksimal 150 karakter"),
-  logoDataUrl: z.string().regex(LOGO_RE, "Format logo tidak didukung").optional().nullable(),
+  logoDataUrl: z.string().regex(IMAGE_RE, "Format logo tidak didukung").optional().nullable(),
+  boothDataUrl: z.string().regex(IMAGE_RE, "Format foto booth tidak didukung").optional().nullable(),
 });
 
 export default createHandler({
@@ -56,7 +95,7 @@ export default createHandler({
       const service = getSupabaseServiceClient();
       if (!service) return sendServiceUnavailable(res);
 
-      const { businessName, email, password, whatsapp, description } = body;
+      const { businessName, category, email, password, whatsapp, description } = body;
 
       // 2. Create the account already email-confirmed (no inbox round-trip).
       const { data: created, error: createErr } = await service.auth.admin.createUser({
@@ -81,26 +120,10 @@ export default createHandler({
         await service.auth.admin.deleteUser(userId).catch(() => {});
       };
 
-      // 3. Optional logo → public vendor-assets bucket via service role (the user
-      //    has no session yet, so the server does the upload).
-      let logoUrl: string | null = null;
-      if (body.logoDataUrl) {
-        const match = body.logoDataUrl.match(LOGO_RE);
-        const ext = match?.[1]?.startsWith("jp") ? "jpg" : (match?.[1] ?? "jpg");
-        const base64 = body.logoDataUrl.slice(body.logoDataUrl.indexOf(",") + 1);
-        const buffer = Buffer.from(base64, "base64");
-        const path = `${userId}/logo-${Date.now()}.${ext}`;
-        const { error: upErr } = await service.storage
-          .from("vendor-assets")
-          .upload(path, buffer, { contentType: `image/${ext === "jpg" ? "jpeg" : ext}`, upsert: true });
-        if (upErr) {
-          // Logo is non-essential — log and continue without it rather than
-          // failing the whole signup at a busy booth.
-          log.warn("expo_signup_logo_failed", { userId, message: upErr.message });
-        } else {
-          logoUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/vendor-assets/${path}`;
-        }
-      }
+      // 3. Optional images → public vendor-assets bucket. Logo → logo_url, booth
+      //    photo → hero_image_url (the banner shown on the public profile).
+      const logoUrl = body.logoDataUrl ? await uploadImage(service, userId, body.logoDataUrl, "logo") : null;
+      const heroUrl = body.boothDataUrl ? await uploadImage(service, userId, body.boothDataUrl, "booth") : null;
 
       // 4. Promote the auto-created profile (handle_new_user trigger already
       //    inserted it as 'customer') to vendor.
@@ -121,11 +144,12 @@ export default createHandler({
           owner_id: userId,
           slug,
           name: businessName,
-          category: DEFAULT_CATEGORY,
+          category,
           city: DEFAULT_CITY,
           description,
           whatsapp,
           logo_url: logoUrl,
+          hero_image_url: heroUrl,
           sales_system: DEFAULT_SALES_SYSTEM,
           delivery_methods: DEFAULT_DELIVERY,
           is_verified: true,
@@ -137,7 +161,23 @@ export default createHandler({
         return sendInternalServerError(res, "Gagal membuat data vendor", vendorErr);
       }
 
-      // 6. Audit trail for the admin's post-expo review (best-effort).
+      // 6. Seed open hours for all 7 days so the vendor isn't shown as closed
+      //    during the expo (the dashboard's fallback marks Sunday closed).
+      //    Best-effort — the vendor can fine-tune from the dashboard.
+      const defaultHours = Array.from({ length: 7 }, (_, day) => ({
+        vendor_id: vendor.id,
+        day_of_week: day,
+        opens_at: "08:00",
+        closes_at: "21:00",
+        is_closed: false,
+        notes: null,
+      }));
+      const { error: hoursErr } = await service
+        .from("vendor_hours")
+        .upsert(defaultHours, { onConflict: "vendor_id,day_of_week" });
+      if (hoursErr) log.warn("expo_signup_hours_failed", { userId, vendorId: vendor.id, message: hoursErr.message });
+
+      // 7. Audit trail for the admin's post-expo review (best-effort).
       await recordExpoSignup({ vendorId: vendor.id, vendorName: businessName, email, slug, ts: Date.now() });
 
       log.info("expo_signup", { userId, vendorId: vendor.id });
