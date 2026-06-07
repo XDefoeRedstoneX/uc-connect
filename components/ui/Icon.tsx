@@ -59,7 +59,9 @@ export type IconName =
   | "help-circle"
   | "chevron-down"
   | "info"
-  | "globe";
+  | "globe"
+  | "qr-code"
+  | "power";
 
 // Each entry returns the inner SVG markup. Stroke inherits `currentColor`.
 const PATHS: Record<IconName, React.ReactNode> = {
@@ -117,6 +119,8 @@ const PATHS: Record<IconName, React.ReactNode> = {
   "chevron-down": <path d="m6 9 6 6 6-6" />,
   info: <><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></>,
   globe: <><circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /><path d="M2 12h20" /></>,
+  "qr-code": <><rect width="5" height="5" x="3" y="3" rx="1" /><rect width="5" height="5" x="16" y="3" rx="1" /><rect width="5" height="5" x="3" y="16" rx="1" /><path d="M21 16h-3a2 2 0 0 0-2 2v3" /><path d="M21 21v.01" /><path d="M12 7v3a2 2 0 0 1-2 2H7" /><path d="M3 12h.01" /><path d="M12 3h.01" /><path d="M12 16v.01" /><path d="M16 12h1" /><path d="M21 12v.01" /><path d="M12 21v-1" /></>,
+  power: <><path d="M12 2v10" /><path d="M18.4 6.6a9 9 0 1 1-12.77.04" /></>,
 };
 
 type IconProps = {

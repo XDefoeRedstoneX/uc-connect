@@ -1,10 +1,11 @@
 import Link from "next/link";
 import Icon, { type IconName } from "@/components/ui/Icon";
 
-export type AdminNavId = "dash" | "vendors" | "users" | "reviews" | "forum" | "reports" | "featured";
+export type AdminNavId = "dash" | "vendors" | "users" | "reviews" | "forum" | "reports" | "featured" | "expo";
 
 const ITEMS: { href: string; label: string; id: AdminNavId; icon: IconName }[] = [
   { href: "/admin",          label: "Dashboard",          id: "dash",     icon: "grid" },
+  { href: "/admin/expo",     label: "Expo QR",            id: "expo",     icon: "qr-code" },
   { href: "/admin/vendors",  label: "Verifikasi Vendor",  id: "vendors",  icon: "store" },
   { href: "/admin/users",    label: "Users",              id: "users",    icon: "users" },
   { href: "/admin/reviews",  label: "Ulasan",             id: "reviews",  icon: "star" },

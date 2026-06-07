@@ -97,6 +97,7 @@ export default function AdminDashboard() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.75rem", marginTop: "1rem" }}>
         {([
+          { icon: "qr-code", title: "Expo QR", desc: "Pendaftaran kilat vendor lewat QR", href: "/admin/expo" },
           { icon: "store", title: "Verifikasi Vendor", desc: "Setujui atau tolak vendor baru", href: "/admin/vendors" },
           { icon: "users", title: "Kelola Users", desc: "Lihat dan ubah role pengguna", href: "/admin/users" },
           { icon: "star", title: "Moderasi Ulasan", desc: "Hapus ulasan yang melanggar", href: "/admin/reviews" },
