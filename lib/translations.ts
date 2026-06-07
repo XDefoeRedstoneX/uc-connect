@@ -179,7 +179,7 @@ export const translations = {
         successMsg: "Profile updated successfully.",
         internationalFormat: "International format:",
         passwordPlaceholder: "Enter a new password",
-        cancelButton: "Cancel",
+        cancelBtn: "Cancel",
       },
     },
     errors: {
@@ -368,7 +368,7 @@ export const translations = {
         successMsg: "Profil berhasil diperbarui.",
         internationalFormat: "Format internasional:",
         passwordPlaceholder: "Masukkan kata sandi baru",
-        cancelButton: "Batal",
+        cancelBtn: "Batal",
       },
     },
     errors: {

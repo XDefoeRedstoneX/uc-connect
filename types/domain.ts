@@ -17,6 +17,7 @@ export type Vendor = {
   delivery_methods?: string | null;
   ktm_url?: string | null;
   whatsapp_clicks?: number;
+  owner_id?: string | null;
   created_at: string;
 };
 
