@@ -1,15 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
 import Link from "next/link";
 import { GetServerSideProps } from "next";
-import SiteLayout from "@/components/SiteLayout";
-import AccountNav from "@/components/AccountNav";
+import CustomerLayout from "@/components/CustomerLayout";
 import SkeletonList from "@/components/SkeletonList";
 import Icon from "@/components/ui/Icon";
 import Button from "@/components/ui/Button";
 import EmptyStateUI from "@/components/ui/EmptyState";
-import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type MyThread = {
   id: string; title: string; content: string; created_at: string;
@@ -21,36 +18,33 @@ type MyReply = {
 };
 
 export default function MyThreadsPage() {
-  const router = useRouter();
+  return (
+    <CustomerLayout current="threads" title="Diskusi Saya | UC Connect">
+      {(token) => <ThreadsContent token={token} />}
+    </CustomerLayout>
+  );
+}
+
+function ThreadsContent({ token }: { token: string | null }) {
   const [threads, setThreads] = useState<MyThread[]>([]);
   const [replies, setReplies] = useState<MyReply[]>([]);
   const [tab, setTab] = useState<"threads" | "replies">("threads");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const init = async () => {
-      const supabase = getSupabaseBrowserClient();
-      if (!supabase) { void router.replace("/auth/login"); return; }
-      const { data: sd } = await supabase.auth.getSession();
-      const tok = sd.session?.access_token;
-      if (!tok) { void router.replace("/auth/login"); return; }
-      const res = await fetch("/api/profile/threads", { headers: { Authorization: `Bearer ${tok}` } });
+    if (!token) return;
+    const run = async () => {
+      const res = await fetch("/api/profile/threads", { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) { const j = await res.json(); setThreads(j.threads ?? []); setReplies(j.replies ?? []); }
       setLoading(false);
     };
-    void init();
-  }, [router]);
+    void run();
+  }, [token]);
 
-  if (loading) return (
-    <SiteLayout title="Diskusi Saya | UC Connect">
-      <AccountNav current="threads" />
-      <section className="card compact-top"><SkeletonList rows={3} /></section>
-    </SiteLayout>
-  );
+  if (loading) return <section className="card compact-top"><SkeletonList rows={3} /></section>;
 
   return (
-    <SiteLayout title="Diskusi Saya | UC Connect">
-      <AccountNav current="threads" />
+    <>
       <section className="hero">
         <span className="kicker" style={{ position: "relative", zIndex: 1 }}>
           <Icon name="chat" size={14} strokeWidth={2.6} /> Forum
@@ -103,7 +97,7 @@ export default function MyThreadsPage() {
           )
         )}
       </section>
-    </SiteLayout>
+    </>
   );
 }
 

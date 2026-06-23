@@ -1,10 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
 import Link from "next/link";
 import { GetServerSideProps } from "next";
-import SiteLayout from "@/components/SiteLayout";
-import AccountNav from "@/components/AccountNav";
+import CustomerLayout from "@/components/CustomerLayout";
 import SkeletonList from "@/components/SkeletonList";
 import Icon from "@/components/ui/Icon";
 import Button from "@/components/ui/Button";
@@ -25,29 +23,30 @@ type MyReview = {
 };
 
 export default function MyReviewsPage() {
-  const router = useRouter();
+  return (
+    <CustomerLayout current="reviews" title="Ulasan Saya | UC Connect">
+      {(token) => <ReviewsContent token={token} />}
+    </CustomerLayout>
+  );
+}
+
+function ReviewsContent({ token }: { token: string | null }) {
   const { showToast } = useToast();
   const confirm = useConfirm();
   const [reviews, setReviews] = useState<MyReview[]>([]);
-  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const init = async () => {
-      const supabase = getSupabaseBrowserClient();
-      if (!supabase) { void router.replace("/auth/login"); return; }
-      const { data: sd } = await supabase.auth.getSession();
-      const tok = sd.session?.access_token;
-      if (!tok) { void router.replace("/auth/login"); return; }
-      setToken(tok);
-      const res = await fetch("/api/profile/reviews", { headers: { Authorization: `Bearer ${tok}` } });
+    if (!token) return;
+    const run = async () => {
+      const res = await fetch("/api/profile/reviews", { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) { const j = await res.json(); setReviews(j.reviews ?? []); }
       setLoading(false);
     };
-    void init();
-  }, [router]);
+    void run();
+  }, [token]);
 
-  async function deleteReview(vendorId: string, reviewId: string) {
+  async function deleteReview(_vendorId: string, reviewId: string) {
     if (!token) return;
     const ok = await confirm({ title: "Hapus ulasan ini?", confirmLabel: "Hapus", destructive: true });
     if (!ok) return;
@@ -63,16 +62,10 @@ export default function MyReviewsPage() {
     showToast("Ulasan dihapus.");
   }
 
-  if (loading) return (
-    <SiteLayout title="Ulasan Saya | UC Connect">
-      <AccountNav current="reviews" />
-      <section className="card compact-top"><SkeletonList rows={3} /></section>
-    </SiteLayout>
-  );
+  if (loading) return <section className="card compact-top"><SkeletonList rows={3} /></section>;
 
   return (
-    <SiteLayout title="Ulasan Saya | UC Connect">
-      <AccountNav current="reviews" />
+    <>
       <section className="hero">
         <span className="kicker" style={{ position: "relative", zIndex: 1 }}>
           <Icon name="star" size={14} strokeWidth={2.6} /> Ulasan
@@ -123,7 +116,7 @@ export default function MyReviewsPage() {
           </div>
         )}
       </section>
-    </SiteLayout>
+    </>
   );
 }
 

@@ -9,6 +9,13 @@ type AuthState = {
   isLoggedIn: boolean;
   role: Role;
   userId: string | null;
+  /**
+   * Cached JWT access token. May lag the live session by a few seconds
+   * if Supabase auto-refreshes; pages that need a guaranteed-fresh token
+   * for a sensitive call should use `getAccessToken()` from the helper
+   * below instead of reading this directly.
+   */
+  token: string | null;
   /** Force a re-read of session + profile (e.g. after onboarding flips role). */
   refresh: () => Promise<void>;
 };
@@ -23,6 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [role, setRole] = useState<Role>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
@@ -36,11 +44,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoggedIn(false);
       setRole(null);
       setUserId(null);
+      setToken(null);
       setLoading(false);
       return;
     }
     setIsLoggedIn(true);
     setUserId(session.user?.id ?? null);
+    setToken(session.access_token);
     try {
       const resp = await fetch("/api/profile", {
         headers: { Authorization: `Bearer ${session.access_token}` },
@@ -67,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   return (
-    <AuthContext.Provider value={{ loading, isLoggedIn, role, userId, refresh }}>
+    <AuthContext.Provider value={{ loading, isLoggedIn, role, userId, token, refresh }}>
       {children}
     </AuthContext.Provider>
   );
@@ -78,7 +88,20 @@ export function useAuth(): AuthState {
   if (!ctx) {
     // Safe fallback for any component rendered outside the provider (shouldn't
     // happen via _app, but keeps SSR/tests from throwing).
-    return { loading: false, isLoggedIn: false, role: null, userId: null, refresh: async () => {} };
+    return { loading: false, isLoggedIn: false, role: null, userId: null, token: null, refresh: async () => {} };
   }
   return ctx;
+}
+
+/**
+ * Always reads the *live* JWT from supabase-js (which auto-refreshes
+ * silently). Use this in fetch() calls instead of the cached `token` from
+ * useAuth() — that one can be a few seconds stale right after Supabase
+ * rotates the token, which is enough to make some API calls 401.
+ */
+export async function getAccessToken(): Promise<string | null> {
+  const supabase = getSupabaseBrowserClient();
+  if (!supabase) return null;
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? null;
 }

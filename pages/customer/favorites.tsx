@@ -1,35 +1,35 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
 import { GetServerSideProps } from "next";
-import SiteLayout from "@/components/SiteLayout";
-import AccountNav from "@/components/AccountNav";
+import CustomerLayout from "@/components/CustomerLayout";
 import SkeletonList from "@/components/SkeletonList";
 import VendorCard from "@/components/VendorCard";
 import Icon from "@/components/ui/Icon";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
-import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { Vendor } from "@/types/domain";
 
 export default function FavoritesPage() {
-  const router = useRouter();
-  const [token, setToken] = useState<string | null>(null);
+  return (
+    <CustomerLayout
+      current="favorites"
+      title="Favorit Saya | UC Connect"
+      description="Lihat vendor yang telah Anda favoritkan di UC Connect."
+    >
+      {(token) => <FavoritesContent token={token} />}
+    </CustomerLayout>
+  );
+}
+
+function FavoritesContent({ token }: { token: string | null }) {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const init = async () => {
-      const supabase = getSupabaseBrowserClient();
-      if (!supabase) { void router.replace("/auth/login"); return; }
-      const { data: sd } = await supabase.auth.getSession();
-      const tok = sd.session?.access_token;
-      if (!tok) { void router.replace("/auth/login"); return; }
-      setToken(tok);
-
-      // Fetch favorites
-      const favRes = await fetch("/api/favorites", { headers: { Authorization: `Bearer ${tok}` } });
+    if (!token) return;
+    const run = async () => {
+      const favRes = await fetch("/api/favorites", { headers: { Authorization: `Bearer ${token}` } });
       if (!favRes.ok) { setLoading(false); return; }
       const favJson = await favRes.json();
       const ids: string[] = favJson.vendorIds ?? [];
@@ -37,7 +37,6 @@ export default function FavoritesPage() {
 
       if (ids.length === 0) { setLoading(false); return; }
 
-      // Fetch vendor details for each favorite
       const vendorRes = await fetch("/api/vendors");
       if (vendorRes.ok) {
         const vj = await vendorRes.json();
@@ -46,8 +45,8 @@ export default function FavoritesPage() {
       }
       setLoading(false);
     };
-    void init();
-  }, [router]);
+    void run();
+  }, [token]);
 
   async function toggleFav(vendorId: string) {
     if (!token) return;
@@ -57,9 +56,7 @@ export default function FavoritesPage() {
       if (isFav) next.delete(vendorId); else next.add(vendorId);
       return next;
     });
-    if (isFav) {
-      setVendors(prev => prev.filter(v => v.id !== vendorId));
-    }
+    if (isFav) setVendors(prev => prev.filter(v => v.id !== vendorId));
     await fetch("/api/favorites", {
       method: isFav ? "DELETE" : "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -67,16 +64,10 @@ export default function FavoritesPage() {
     });
   }
 
-  if (loading) return (
-    <SiteLayout title="Favorit Saya | UC Connect">
-      <AccountNav current="favorites" />
-      <section className="card compact-top"><SkeletonList rows={3} /></section>
-    </SiteLayout>
-  );
+  if (loading) return <section className="card compact-top"><SkeletonList rows={3} /></section>;
 
   return (
-    <SiteLayout title="Favorit Saya | UC Connect" description="Lihat vendor yang telah Anda favoritkan di UC Connect.">
-      <AccountNav current="favorites" />
+    <>
       <section className="hero">
         <span className="kicker" style={{ position: "relative", zIndex: 1 }}>
           <Icon name="heart" size={14} strokeWidth={2.6} /> Tersimpan
@@ -119,7 +110,7 @@ export default function FavoritesPage() {
           </>
         )}
       </section>
-    </SiteLayout>
+    </>
   );
 }
 
