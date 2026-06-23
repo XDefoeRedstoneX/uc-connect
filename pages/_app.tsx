@@ -4,6 +4,7 @@ import { LanguageProvider } from "@/lib/language-context";
 import { AuthProvider } from "@/lib/auth-context";
 import ToastProvider from "@/components/ToastProvider";
 import ConfirmProvider from "@/components/ConfirmProvider";
+import InstallPrompt from "@/components/InstallPrompt";
 import { Plus_Jakarta_Sans, Sora } from "next/font/google";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -27,6 +28,8 @@ export default function App({ Component, pageProps }: AppProps) {
           <ConfirmProvider>
             <div className={`${plusJakartaSans.variable} ${sora.variable}`}>
               <Component {...pageProps} />
+              {/* Fixed-position, only renders when beforeinstallprompt fires on Android. */}
+              <InstallPrompt />
             </div>
           </ConfirmProvider>
         </ToastProvider>
