@@ -13,6 +13,7 @@ export default createHandler({
       let query = supabase
         .from("vendors")
         .select(VENDOR_LIST_COLUMNS)
+        .is("archived_at", null)                // hide archived/unresponsive vendors
         .order("created_at", { ascending: false })
         .limit(50);
 
@@ -45,6 +46,7 @@ export default createHandler({
           .from("vendors")
           .select(VENDOR_LIST_COLUMNS)
           .in("id", featuredIds)
+          .is("archived_at", null)
           .eq("is_verified", true);
         // Preserve rank ordering.
         const byId = new Map((featuredVendors ?? []).map((v) => [v.id, v]));

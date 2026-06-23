@@ -53,8 +53,58 @@ export default createHandler({
   PATCH: method({
     auth: "admin",
     handler: async ({ supabase, userId: adminId, body, res }) => {
-      const { vendor_id, action } = (body ?? {}) as { vendor_id?: string; action?: "approve" | "reject" };
+      const { vendor_id, action, reason } = (body ?? {}) as {
+        vendor_id?: string;
+        action?: "approve" | "reject" | "archive" | "reactivate";
+        // Optional override for archive (defaults to 'admin'); ignored for others.
+        reason?: "unresponsive" | "admin" | "self" | "duplicate" | "spam";
+      };
       if (!vendor_id || !action) return res.status(400).json({ error: "vendor_id and action required" });
+
+      if (action === "archive") {
+        // Archive replaces hard-delete for the lifecycle flow: keeps history
+        // intact (threads/reviews/wallet ledger) and is reversible.
+        const archiveReason = reason ?? "admin";
+        const { data: archived, error } = await supabase
+          .from("vendors")
+          .update({ archived_at: new Date().toISOString(), archive_reason: archiveReason })
+          .eq("id", vendor_id)
+          .is("archived_at", null)               // idempotent — double-archive is a no-op
+          .select("id,owner_id,name")
+          .maybeSingle();
+        if (error) return sendInternalServerError(res, "Failed to archive vendor", error);
+        if (!archived) {
+          log.info("admin_vendor_archive_noop", { adminId, vendorId: vendor_id });
+          return res.status(200).json({ success: true, archived: true, noop: true });
+        }
+        log.warn("admin_vendor_archive", { adminId, vendorId: vendor_id, ownerId: archived.owner_id, reason: archiveReason });
+        return res.status(200).json({ success: true, archived: true });
+      }
+
+      if (action === "reactivate") {
+        // Reactivation also resets the confirmation window so the vendor gets
+        // a fresh 90 days before the next "still active?" email fires.
+        const { data: reactivated, error } = await supabase
+          .from("vendors")
+          .update({
+            archived_at: null,
+            archive_reason: null,
+            last_confirmed_at: new Date().toISOString(),
+            confirmation_token_hash: null,
+            confirmation_sent_at: null,
+          })
+          .eq("id", vendor_id)
+          .not("archived_at", "is", null)        // only act on currently-archived rows
+          .select("id,owner_id,name")
+          .maybeSingle();
+        if (error) return sendInternalServerError(res, "Failed to reactivate vendor", error);
+        if (!reactivated) {
+          log.info("admin_vendor_reactivate_noop", { adminId, vendorId: vendor_id });
+          return res.status(200).json({ success: true, reactivated: true, noop: true });
+        }
+        log.warn("admin_vendor_reactivate", { adminId, vendorId: vendor_id, ownerId: reactivated.owner_id });
+        return res.status(200).json({ success: true, reactivated: true });
+      }
 
       if (action === "approve") {
         // Update only the still-unverified rows so a double-click can't fire two

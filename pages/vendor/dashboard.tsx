@@ -22,6 +22,9 @@ export type VendorProfile = {
   whatsapp: string | null; website_url: string | null; hero_image_url: string | null; logo_url: string | null;
   is_verified: boolean; whatsapp_clicks: number;
   university?: string | null; sales_system?: string | null; delivery_methods?: string | null;
+  archived_at?: string | null;
+  archive_reason?: "unresponsive" | "admin" | "self" | "duplicate" | "spam" | null;
+  last_confirmed_at?: string;
 };
 export type VendorHour = {
   id?: string; day_of_week: number; opens_at: string | null;

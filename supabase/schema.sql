@@ -107,9 +107,28 @@ create table public.vendors (
   sales_system text,
   delivery_methods text,
   ktm_url text,
+  -- ─ Lifecycle ──────────────────────────────────────────────────────────────
+  -- Archive replaces hard-delete: when a vendor goes inactive (admin action,
+  -- self-archive, or 90-day unresponsive auto-archive) we keep the row so
+  -- their forum threads / reviews / history don't cascade away. The
+  -- vendors_public_read RLS policy (others.sql) hides archived rows from
+  -- anonymous listings; the owner and admins can still see their own.
+  archived_at        timestamptz,
+  archive_reason     text check (archive_reason in ('unresponsive','admin','self','duplicate','spam')),
+  -- 90-day activity confirmation loop (Phase 23b). The cron job emails the
+  -- owner when last_confirmed_at < now() - 90d, stores a single-use token
+  -- here, and auto-archives if no response within 30d of confirmation_sent_at.
+  last_confirmed_at        timestamptz not null default now(),
+  confirmation_token_hash  text,
+  confirmation_sent_at     timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Phase 23a indexes for the lifecycle queries.
+create index if not exists vendors_archived_idx on public.vendors (archived_at);
+create index if not exists vendors_confirmation_due_idx
+  on public.vendors (last_confirmed_at) where archived_at is null;
 
 create table public.vendor_metrics (
   vendor_id uuid primary key references public.vendors(id) on delete cascade,

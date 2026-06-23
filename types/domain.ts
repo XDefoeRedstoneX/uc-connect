@@ -18,6 +18,9 @@ export type Vendor = {
   ktm_url?: string | null;
   whatsapp_clicks?: number;
   owner_id?: string | null;
+  archived_at?: string | null;
+  archive_reason?: "unresponsive" | "admin" | "self" | "duplicate" | "spam" | null;
+  last_confirmed_at?: string;
   created_at: string;
 };
 

@@ -35,8 +35,12 @@ drop policy if exists "profiles_admin_update_all" on public.profiles;
 create policy "profiles_admin_update_all" on public.profiles for update using (public.is_admin()) with check (public.is_admin());
 
 -- ─── 3. vendors ─────────────────────────────────────────────────────────────
+-- Hides archived vendors from anonymous listings while letting the owner and
+-- admins still read their own (so the owner can see the "your shop was
+-- archived, reactivate?" notice on their dashboard).
 drop policy if exists "vendors_public_read" on public.vendors;
-create policy "vendors_public_read" on public.vendors for select using (true);
+create policy "vendors_public_read" on public.vendors for select
+  using (archived_at is null or auth.uid() = owner_id or public.is_admin());
 drop policy if exists "vendors_update_own" on public.vendors;
 create policy "vendors_update_own" on public.vendors for update using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
 drop policy if exists "vendors_admin_update_all" on public.vendors;

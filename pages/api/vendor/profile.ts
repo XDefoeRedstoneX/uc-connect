@@ -2,7 +2,7 @@ import { createHandler, method } from "@/lib/api-handler";
 import { sendInternalServerError } from "@/lib/api-response";
 
 const VENDOR_COLUMNS =
-  "id,slug,name,tagline,category,city,address,description,whatsapp,website_url,hero_image_url,logo_url,is_verified,whatsapp_clicks,university,sales_system,delivery_methods,created_at,updated_at";
+  "id,slug,name,tagline,category,city,address,description,whatsapp,website_url,hero_image_url,logo_url,is_verified,whatsapp_clicks,university,sales_system,delivery_methods,archived_at,archive_reason,last_confirmed_at,created_at,updated_at";
 
 export default createHandler({
   GET: method({
