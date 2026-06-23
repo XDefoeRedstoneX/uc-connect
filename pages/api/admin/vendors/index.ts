@@ -7,15 +7,31 @@ export default createHandler({
   GET: method({
     auth: "admin",
     handler: async ({ req, supabase, res }) => {
-      const status = req.query.status as string | undefined; // "pending" | "verified" | "all"
+      // "pending" | "verified" | "all" | "archived" | "pending_confirmation"
+      // (the last two are Phase 23 lifecycle states surfaced in the admin UI)
+      const status = req.query.status as string | undefined;
       let query = supabase
         .from("vendors")
-        .select("id,slug,name,tagline,category,city,whatsapp,is_verified,created_at,owner_id,university,ktm_url,profiles!vendors_owner_id_fkey(full_name,username)")
+        .select(
+          "id,slug,name,tagline,category,city,whatsapp,is_verified,created_at,owner_id,university,ktm_url," +
+            "archived_at,archive_reason,last_confirmed_at,confirmation_sent_at," +
+            "profiles!vendors_owner_id_fkey(full_name,username)",
+        )
         .order("created_at", { ascending: false })
         .limit(100);
 
-      if (status === "pending") query = query.eq("is_verified", false);
-      else if (status === "verified") query = query.eq("is_verified", true);
+      if (status === "pending") query = query.eq("is_verified", false).is("archived_at", null);
+      else if (status === "verified") query = query.eq("is_verified", true).is("archived_at", null);
+      else if (status === "archived") query = query.not("archived_at", "is", null);
+      else if (status === "pending_confirmation") {
+        // Sent the email but no response yet (still active, in the grace window).
+        query = query
+          .is("archived_at", null)
+          .not("confirmation_sent_at", "is", null);
+      } else if (status === "all" || !status) {
+        // Default to "active scope" so the existing UI doesn't suddenly show archived.
+        query = query.is("archived_at", null);
+      }
 
       const { data, error } = await query;
       if (error) return sendInternalServerError(res, "Failed to load vendors", error);
@@ -25,8 +41,15 @@ export default createHandler({
       const serviceClient = getSupabaseServiceClient();
       if (!serviceClient) return sendServiceUnavailable(res);
 
+      // The PostgREST select string above includes a join, which supabase-js's
+      // type inference collapses to a `GenericStringError`-tainted union. The
+      // runtime shape is correct, so narrow it once here and let the rest of
+      // the handler work against a concrete row type.
+      type VendorRow = { owner_id: string | null; [k: string]: unknown };
+      const rows = (data ?? []) as unknown as VendorRow[];
+
       const uniqueOwnerIds = Array.from(
-        new Set((data ?? []).map((v) => v.owner_id).filter((id): id is string => Boolean(id))),
+        new Set(rows.map((v) => v.owner_id).filter((id): id is string => Boolean(id))),
       );
       const emailByOwnerId = new Map<string, string | null>();
       await Promise.all(
@@ -41,7 +64,7 @@ export default createHandler({
         }),
       );
 
-      const vendors = (data ?? []).map((v) => ({
+      const vendors = rows.map((v) => ({
         ...v,
         owner_email: v.owner_id ? emailByOwnerId.get(v.owner_id) ?? null : null,
       }));

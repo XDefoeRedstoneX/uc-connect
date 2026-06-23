@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import { GetServerSideProps } from "next";
 import SiteLayout from "@/components/SiteLayout";
 import AdminNav from "@/components/admin/AdminNav";
-import Icon from "@/components/ui/Icon";
+import Icon, { type IconName } from "@/components/ui/Icon";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import EmptyState from "@/components/ui/EmptyState";
@@ -18,22 +18,30 @@ type AdminVendor = {
   is_verified: boolean; created_at: string; owner_id: string | null;
   university: string | null; ktm_url: string | null;
   owner_email: string | null;
+  archived_at: string | null;
+  archive_reason: "unresponsive" | "admin" | "self" | "duplicate" | "spam" | null;
+  last_confirmed_at: string | null;
+  confirmation_sent_at: string | null;
   profiles: { full_name: string | null; username: string | null } | null;
 };
+
+type LifecycleFilter = "pending" | "verified" | "all" | "pending_confirmation" | "archived";
 
 export default function AdminVendorsPage() {
   const router = useRouter();
   const { showToast } = useToast();
   const confirm = useConfirm();
   const [token, setToken] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"pending" | "verified" | "all">("pending");
+  const [filter, setFilter] = useState<LifecycleFilter>("pending");
 
   // Sync the filter from the URL once router is ready, so deep-links from the
   // admin dashboard (e.g. /admin/vendors?status=verified) land on the right tab.
   useEffect(() => {
     if (!router.isReady) return;
     const q = router.query.status;
-    if (q === "verified" || q === "all" || q === "pending") setFilter(q);
+    if (q === "verified" || q === "all" || q === "pending" || q === "archived" || q === "pending_confirmation") {
+      setFilter(q);
+    }
   }, [router.isReady, router.query.status]);
   const [vendors, setVendors] = useState<AdminVendor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,13 +78,21 @@ export default function AdminVendorsPage() {
     else showToast(j.error ?? "Gagal membuka KTM", "error");
   }
 
-  async function act(vendorId: string, action: "approve" | "reject") {
+  async function act(vendorId: string, action: "approve" | "reject" | "archive" | "reactivate") {
     if (!token) return;
     if (action === "reject") {
       const ok = await confirm({
         title: "Tolak & hapus vendor ini?",
         message: "Vendor akan dihapus dan role pemiliknya dikembalikan ke customer.",
         confirmLabel: "Tolak Vendor",
+        destructive: true,
+      });
+      if (!ok) return;
+    } else if (action === "archive") {
+      const ok = await confirm({
+        title: "Arsipkan vendor?",
+        message: "Vendor disembunyikan dari direktori publik tapi data tetap ada. Bisa diaktifkan kembali kapan saja.",
+        confirmLabel: "Arsipkan",
         destructive: true,
       });
       if (!ok) return;
@@ -87,9 +103,24 @@ export default function AdminVendorsPage() {
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ vendor_id: vendorId, action }),
     });
+    const json = await res.json().catch(() => ({}));
     if (res.ok) {
-      setVendors(prev => prev.filter(v => action === "reject" ? v.id !== vendorId : true)
-        .map(v => v.id === vendorId ? { ...v, is_verified: true } : v));
+      if (action === "reject" || action === "archive") {
+        // Both remove the row from the current view (reject hard-deletes; archive
+        // moves it into the "Archived" tab, which the user can switch to).
+        setVendors(prev => prev.filter(v => v.id !== vendorId));
+      } else if (action === "approve") {
+        setVendors(prev => prev.map(v => v.id === vendorId ? { ...v, is_verified: true } : v));
+      } else if (action === "reactivate") {
+        setVendors(prev => prev.filter(v => v.id !== vendorId));
+      }
+      showToast(
+        action === "approve" ? "Vendor disetujui." :
+        action === "reject" ? "Vendor ditolak." :
+        action === "archive" ? "Vendor diarsipkan." : "Vendor diaktifkan kembali.",
+      );
+    } else {
+      showToast(json.error ?? "Gagal memproses aksi", "error");
     }
     setActionId(null);
   }
@@ -103,17 +134,25 @@ export default function AdminVendorsPage() {
           <h2 style={{ margin: 0, display: "flex", alignItems: "center", gap: "0.45rem" }}>
             <Icon name="store" size={20} strokeWidth={2.2} /> Vendor Management
           </h2>
-          <div style={{ display: "flex", gap: "0.35rem" }}>
-            {(["pending", "verified", "all"] as const).map(f => (
-              <button key={f} type="button" className="chip" onClick={() => setFilter(f)}
+          <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
+            {(
+              [
+                { id: "pending",              label: "Pending",     icon: "clock" },
+                { id: "verified",             label: "Verified",    icon: "check" },
+                { id: "pending_confirmation", label: "Menunggu konfirmasi", icon: "mail" },
+                { id: "all",                  label: "Aktif",       icon: "grid" },
+                { id: "archived",             label: "Arsip",       icon: "package" },
+              ] as { id: LifecycleFilter; label: string; icon: IconName }[]
+            ).map(f => (
+              <button key={f.id} type="button" className="chip" onClick={() => setFilter(f.id)}
                 style={{
                   display: "inline-flex", alignItems: "center", gap: "0.3rem", cursor: "pointer",
-                  background: filter === f ? "var(--pacific-soft)" : "#fff",
-                  borderColor: filter === f ? "var(--pacific)" : undefined,
-                  fontWeight: filter === f ? 700 : 600,
+                  background: filter === f.id ? "var(--pacific-soft)" : "#fff",
+                  borderColor: filter === f.id ? "var(--pacific)" : undefined,
+                  fontWeight: filter === f.id ? 700 : 600,
                 }}>
-                <Icon name={f === "pending" ? "clock" : f === "verified" ? "check" : "grid"} size={13} strokeWidth={2.4} />
-                {f === "pending" ? "Pending" : f === "verified" ? "Verified" : "Semua"}
+                <Icon name={f.icon} size={13} strokeWidth={2.4} />
+                {f.label}
               </button>
             ))}
           </div>
@@ -132,11 +171,16 @@ export default function AdminVendorsPage() {
             {vendors.map(v => (
               <div key={v.id} className="product-row" style={{ alignItems: "flex-start" }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.3rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.3rem", flexWrap: "wrap" }}>
                     <p className="product-name" style={{ margin: 0 }}>{v.name}</p>
-                    {v.is_verified
-                      ? <Badge tone="success" icon="check">Verified</Badge>
-                      : <Badge tone="gold" icon="clock">Pending</Badge>}
+                    {v.archived_at
+                      ? <Badge tone="gold" icon="package">Archived · {v.archive_reason ?? "admin"}</Badge>
+                      : v.is_verified
+                        ? <Badge tone="success" icon="check">Verified</Badge>
+                        : <Badge tone="gold" icon="clock">Pending</Badge>}
+                    {!v.archived_at && v.confirmation_sent_at && (
+                      <Badge tone="pacific" icon="mail">Menunggu konfirmasi</Badge>
+                    )}
                   </div>
                   {v.tagline && <p style={{ color: "var(--muted)", fontSize: "0.85rem", margin: "0 0 0.25rem" }}>{v.tagline}</p>}
                   <div className="row-wrap" style={{ gap: "0.35rem", fontSize: "0.8rem", alignItems: "center" }}>
@@ -153,17 +197,34 @@ export default function AdminVendorsPage() {
                     Owner: {v.profiles?.full_name ?? v.profiles?.username ?? "—"}
                     {v.owner_email ? ` · ${v.owner_email}` : ""}
                     {" · "}{new Date(v.created_at).toLocaleDateString("id-ID")}
+                    {v.last_confirmed_at && (
+                      <> · konfirmasi terakhir {new Date(v.last_confirmed_at).toLocaleDateString("id-ID")}</>
+                    )}
                   </p>
                 </div>
-                <div style={{ display: "flex", gap: "0.4rem", flexShrink: 0 }}>
-                  {!v.is_verified && (
+                <div style={{ display: "flex", gap: "0.4rem", flexShrink: 0, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                  {v.archived_at ? (
+                    // Archived row: only show reactivate (+ KTM/View if relevant).
+                    <Button size="sm" icon="refresh-cw" onClick={() => act(v.id, "reactivate")} disabled={actionId === v.id}>
+                      Aktifkan
+                    </Button>
+                  ) : (
                     <>
-                      <Button size="sm" icon="check" onClick={() => act(v.id, "approve")} disabled={actionId === v.id}>
-                        Approve
-                      </Button>
-                      <Button size="sm" variant="danger" icon="x" onClick={() => act(v.id, "reject")} disabled={actionId === v.id}>
-                        Reject
-                      </Button>
+                      {!v.is_verified && (
+                        <>
+                          <Button size="sm" icon="check" onClick={() => act(v.id, "approve")} disabled={actionId === v.id}>
+                            Approve
+                          </Button>
+                          <Button size="sm" variant="danger" icon="x" onClick={() => act(v.id, "reject")} disabled={actionId === v.id}>
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                      {v.is_verified && (
+                        <Button size="sm" variant="ghost" icon="package" onClick={() => act(v.id, "archive")} disabled={actionId === v.id}>
+                          Arsipkan
+                        </Button>
+                      )}
                     </>
                   )}
                   {v.ktm_url && (
