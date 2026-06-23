@@ -236,3 +236,43 @@ begin
 exception when others then
   raise notice 'pg_cron not available (%). Use the admin "Run settlement" trigger.', sqlerrm;
 end; $$;
+
+-- ─── 14. Vendor lifecycle cron (Phase 23b) ───────────────────────────────────
+-- Two jobs:
+--   • 02:00 daily — send 90-day "still active?" emails to due vendors.
+--   • 03:00 daily — auto-archive vendors who didn't respond within 30 days.
+--
+-- Both call API routes under /api/cron with X-Cron-Secret. They need:
+--   • NEXT_PUBLIC_APP_URL  — your deployed origin (no trailing slash)
+--   • CRON_SECRET          — random string shared with the API routes
+--   • RESEND_API_KEY       — for the confirmation emails (the auto-archive
+--                            job runs regardless, but skipping confirmations
+--                            means nothing will ever get auto-archived)
+--
+-- Run THIS BLOCK manually after the env is in place; until then the lifecycle
+-- loop sits dormant (vendors stay 'active'). Replace the two placeholders.
+--
+--   select cron.schedule('vendor-confirmation-daily', '0 2 * * *', $$
+--     select net.http_post(
+--       url := 'https://<your-app-host>/api/cron/vendor-confirmation',
+--       headers := jsonb_build_object(
+--         'Content-Type', 'application/json',
+--         'X-Cron-Secret', '<your-CRON_SECRET>'
+--       ),
+--       body := '{}'::jsonb
+--     );
+--   $$);
+--
+--   select cron.schedule('vendor-auto-archive-daily', '0 3 * * *', $$
+--     select net.http_post(
+--       url := 'https://<your-app-host>/api/cron/vendor-auto-archive',
+--       headers := jsonb_build_object(
+--         'Content-Type', 'application/json',
+--         'X-Cron-Secret', '<your-CRON_SECRET>'
+--       ),
+--       body := '{}'::jsonb
+--     );
+--   $$);
+--
+-- net.http_post comes from Supabase's pg_net extension (enable under
+-- Database → Extensions if not already on).
